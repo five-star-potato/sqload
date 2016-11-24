@@ -1,0 +1,4 @@
+node_modules
+gendat-win32-x64
+dist
+*.rar
