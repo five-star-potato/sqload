@@ -6,11 +6,11 @@ var ipcMain = require('electron').ipcRenderer;
 function execSQL(sqlStmt, callback) {
     var Connection = require('tedious').Connection;
     var config = {
-        userName: global.userName,
-        password: global.password,
-        server: global.serverName,
+        userName: global.connection.userName,
+        password: global.connection.password,
+        server: global.connection.serverName,
         // If you are on Microsoft Azure, you need this:  
-        options: { encrypt: true, database: global.databaseName }
+        options: { encrypt: true, database: global.connection.databaseName }
     };
     var connection = new Connection(config);
     connection.on('connect', function (err) {
@@ -40,13 +40,10 @@ function execSQL(sqlStmt, callback) {
             }
         });
 
-        request.on('row', function (columns) {
-            dataSet = [];
-            columns.forEach(function (column) {
-                dataSet.push({
-                    name: column.metadata.colName,
-                    value: column.value
-                });
+        request.on('row', function (row) {
+            dataSet = {};
+            row.forEach(function (column) {
+                dataSet[column.metadata.colName] = column.value;
             });
             newData.push(dataSet);
         });
@@ -54,13 +51,18 @@ function execSQL(sqlStmt, callback) {
     }
 }
 
-app.on('ready', _ => {
+function init() {
     global.fnExecSQL = execSQL;
-    global.serverName = '127.0.0.1';
-    global.databaseName = 'AdventureWorks2014';
-    global.userName = 'sa';
-    global.password = "LongLive1";
-    
+    global.connection = {
+        serverName : '127.0.0.1',
+        databaseName : 'AdventureWorks2014',
+        userName : 'sa',
+        password : "LongLive1"
+    };
+    global.selectedTables = [];
+}
+app.on('ready', _ => {
+    init();
     var mainWindow = new BrowserWindow({
         width: 1200,
         height: 800

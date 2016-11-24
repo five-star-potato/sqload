@@ -1,6 +1,7 @@
 import { Component, OnInit, NgZone } from '@angular/core';
-
-declare var electron: any;
+import { Router } from '@angular/router';
+import { TRON } from "./constants";
+import { BaseComponent } from './base.component';
 
 @Component({
     template: `
@@ -28,60 +29,39 @@ declare var electron: any;
     
       <div class="row">
         <div class="col-md-12">
-          <button class='btn btn-primary'>Connect</button>
+          <button class='btn btn-primary' (click)="next()">Connect</button>
         </div>
       </div>
-      <p>Sample Data 9</p>
-      <p>{{serverName}}</p>
-      <p>{{dataSet.length}}</p>
-      
-      <table>
-        <tr *ngFor="let dr of dataSet">
-            <td *ngFor="let dc of dr">
-                <span>{{dc.value}}</span>
-            </td>
-        </tr>
-      </table>            
     </div>
     `,
     styles: [`
     `]
 })
-export class ConnectionComponent implements OnInit {
+export class ConnectionComponent extends BaseComponent implements OnInit {
     serverName: string;
     userName: string;
     password: string;
     databaseName: string;
     dataSet: any[] = [];
 
-    constructor(private _ngZone: NgZone) {
+    constructor(router: Router, ngZone: NgZone) {
+      super(router, ngZone);
+    }
+    next() {
+        this.getGlobal(TRON.connection).serverName = this.serverName;
+        this.getGlobal(TRON.connection).databaseName = this.databaseName;
+        this.getGlobal(TRON.connection).userName, this.userName;
+        this.getGlobal(TRON.connection).password = this.password;
+        this.router.navigate(['/tables']);
     }
     ngOnInit() {
         //electron.ipcRenderer.send("message");
-        var remote = electron.remote;
-        this.serverName = remote.getGlobal('serverName'); 
-        this.databaseName = remote.getGlobal('databaseName'); 
-        this.userName = remote.getGlobal('userName'); 
-        this.password = remote.getGlobal('password'); 
+        console.log("ServerName");
+        console.log(this.getGlobal(TRON.connection));
 
-        let dataSet = remote.getGlobal('fnExecSQL')("SELECT top 10 * from Person.Person ",
-            (err, res) => {
-                this._ngZone.run(() => {
-                    console.log("inside fnExecSQL callback");
-                    this.dataSet = res;
-                    console.log(this.dataSet);
-                });
-            }
-        );
-        /*
-                console.log("err = " + err);
-                res.forEach((ds) => {
-                  console.log("-----------------------------------");
-                  ds.forEach((col) => {
-                    console.log("column: " + col.name);
-                    console.log("value: " + col.value);
-                  })
-                });
-        */
+        this.serverName = this.getGlobal(TRON.connection).serverName;
+        this.databaseName = this.getGlobal(TRON.connection).databaseName;
+        this.userName = this.getGlobal(TRON.connection).userName;
+        this.password = this.getGlobal(TRON.connection).password;
     }
 }
