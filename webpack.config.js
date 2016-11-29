@@ -41,7 +41,7 @@ module.exports = {
             { from: 'src/jquery-3.1.1.js'},
             { from: 'node_modules/bootstrap/dist/js/bootstrap.min.js'},
             */
-            { from: 'src/bootstrap-bootswatch-paper.min.css', to: "css"},
+            { from: 'src/bootstrap.min.css', to: "css"},
             { from: 'node_modules/bootstrap/dist/fonts', to: "fonts" },
             { from: 'src/app/columns.component.html' }
         ])
