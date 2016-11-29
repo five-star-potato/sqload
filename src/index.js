@@ -1,22 +1,43 @@
 var electron = require('electron');
+var fs = require('fs');
 var app = electron.app;
 var BrowserWindow = electron.BrowserWindow;
 var ipcMain = require('electron').ipcRenderer;
 
+function saveOutputFile(content) {
+    var btns = ['OK'];
+    const {dialog} = require('electron')
+
+    dialog.showSaveDialog(function (fileName) {
+        if (fileName === undefined){
+            console.log("You didn't save the file");
+            return;
+        }
+        // fileName is a string that contains the path and filename created in the save file dialog.  
+        fs.writeFile(fileName, content, function (err) {
+            if(err){
+                dialog.showMessageBox({ type: 'error', title:"Save Output", buttons: btns, message: "An error ocurred creating the file "+ err.message });
+                return;
+            }
+            dialog.showMessageBox({ type: 'info', title:"Save Output", buttons: btns, message: "The file has been succesfully saved" });
+        });
+    }); 
+}
+
 function execSQL(sqlStmt, callback) {
     var Connection = require('tedious').Connection;
     var config = {
-        userName: global.connection.userName,
-        password: global.connection.password,
-        server: global.connection.serverName,
+        userName: global.project.connection.userName,
+        password: global.project.connection.password,
+        server: global.project.connection.serverName,
         // If you are on Microsoft Azure, you need this:  
-        options: { encrypt: true, database: global.connection.databaseName }
+        options: { encrypt: true, database: global.project.connection.databaseName }
     };
     var connection = new Connection(config);
     connection.on('connect', function (err) {
         // If no error, then good to proceed.  
+        console.log("connection error: ");
         console.log(err);
-        console.log('connected');
         executeStatement(sqlStmt);
     });
 
@@ -53,13 +74,17 @@ function execSQL(sqlStmt, callback) {
 
 function init() {
     global.fnExecSQL = execSQL;
-    global.connection = {
-        serverName : '127.0.0.1',
-        databaseName : 'AdventureWorks2014',
-        userName : 'sa',
-        password : "LongLive1"
-    };
-    global.selectedTables = [];
+    global.fnSaveOutput = saveOutputFile;
+    global.project = {
+        connection: {
+            serverName : '127.0.0.1',
+            databaseName : 'AdventureWorks2014',
+            userName : 'sa',
+            password : "LongLive1"
+        },
+        selectedTables: [],
+        columnDefs: {}
+    }
 }
 app.on('ready', _ => {
     init();

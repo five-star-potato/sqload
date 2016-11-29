@@ -5,7 +5,7 @@ var CopyWebpackPlugin = require('copy-webpack-plugin');
 module.exports = {
     devtool: 'source-map',
     
-    entry: ['./src/main', './src/bootstrap-flex.min.css'],
+    entry: ['./src/main'],
     output: {
         path: './dist',
         filename: 'app.bundle.js'
@@ -34,19 +34,16 @@ module.exports = {
         new webpack.ProvidePlugin({
             $: "jquery",
             jQuery: "jquery",
-            "window.jQuery": "jquery",
-            "window.Tether": "tether"
-        })
-        /*
+            "window.jQuery": "jquery"
+        }),
         new CopyWebpackPlugin([
-            { from: 'src/bootstrap.css' }
+            /*
+            { from: 'src/jquery-3.1.1.js'},
+            { from: 'node_modules/bootstrap/dist/js/bootstrap.min.js'},
+            */
+            { from: 'src/bootstrap-bootswatch-paper.min.css', to: "css"},
+            { from: 'node_modules/bootstrap/dist/fonts', to: "fonts" },
+            { from: 'src/app/columns.component.html' }
         ])
-        new webpack.ProvidePlugin({
-            $: "jquery",
-            jQuery: "jquery",
-            "window.jQuery": "jquery",
-            "window.Tether": "tether"
-        })
-        */
     ]
 };

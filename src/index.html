@@ -9,10 +9,12 @@
 	<meta http-equiv="x-ua-compatible" content="ie=edge">
 
 	<title>Angular 2 Starter</title>
-
+	<link rel="stylesheet" href="css/bootstrap-bootswatch-paper.min.css">
 	<script>
     	var electron = require('electron');
 	</script>
+	<script src="https://use.fontawesome.com/d0b0359521.js"></script>
+
 	<style>
 	*, *:before, *:after
 	{
@@ -32,24 +34,60 @@
 
 	body
 	{
-		background: #444444;
-		
-		color: #cccccc;
-		font-size: 14px;
-		/* Helvetica/Arial-based sans serif stack */
-		font-family: Frutiger, "Frutiger Linotype", Univers, Calibri, "Gill Sans", "Gill Sans MT", "Myriad Pro", Myriad, "DejaVu Sans Condensed", "Liberation Sans", "Nimbus Sans L", Tahoma, Geneva, "Helvetica Neue", Helvetica, Arial, sans-serif;
-
+		padding-top:20px
 	}
+
+	.flexbox-parent
+	{
+		width: 100%;
+		height: 100%;
+		display: flex;
+		flex-direction: column;
+		
+		justify-content: flex-start; /* align items in Main Axis */
+		align-items: stretch; /* align items in Cross Axis */
+		align-content: stretch; /* Extra space in Cross Axis */
+	}
+
+	.flexbox-item
+	{
+		padding: 8px;
+	}
+	.flexbox-item.footer
+	{
+		padding: 8px;
+		margin-bottom: 20px;
+	}
+	.flexbox-item-grow
+	{
+		flex: 1; /* same as flex: 1 1 auto; */
+	}
+	.fill-area
+	{
+		display: flex;
+		flex-direction: row;
+		justify-content: flex-start; /* align items in Main Axis */
+		align-items: stretch; /* align items in Cross Axis */
+		align-content: stretch; /* Extra space in Cross Axis */
+		
+	}
+	.fill-area-content
+	{
+		/* Needed for when the area gets squished too far and there is content that can't be displayed */
+		overflow: hidden; 
+	}
+
+	
 	</style>	
 
 </head>
 <body>
 	<my-app>Loading...</my-app>
-<!--
-	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js" integrity="sha384-3ceskX3iaEnIogmQchP8opvBy3Mi7Ce34nWjpBIwVTHfGYWQS9jwHDVRnpKKHJg7" crossorigin="anonymous"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tether/1.3.7/js/tether.min.js" integrity="sha384-XTs3FgkjiBgo8qjEjBk0tGmf3wPrWtA6coPfQDfFEY8AnYJwjalXCiosYRBIBZX8" crossorigin="anonymous"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.5/js/bootstrap.min.js" integrity="sha384-BLiI7JTZm+JWlgKa0M0kGRpJbF2J8q+qreVrKBC47e3K6BW78kGLrCkeRX6I9RoK" crossorigin="anonymous"></script>
--->
-</body>
+	<!--
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+	-->
+</body>	
+
 
 </html>

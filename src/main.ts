@@ -1,7 +1,6 @@
 declare var require:(moduleId:string) => any;
-require('script!jquery/dist/jquery.min.js');
-require('script!tether/dist/js/tether.min.js');
-require("bootstrap");
+require('jquery');
+require('bootstrap');
 
 import "core-js";
 import "reflect-metadata";

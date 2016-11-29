@@ -4,8 +4,7 @@ import { TRON } from "./constants";
 import { BaseComponent } from './base.component';
 
 @Component({
-    template: `
-    <div class="container page2">
+  template: `
       <div class="row">
         <div class="col-md-12">
           <div class="form-group">
@@ -32,36 +31,34 @@ import { BaseComponent } from './base.component';
           <button class='btn btn-primary' (click)="next()">Connect</button>
         </div>
       </div>
-    </div>
     `,
-    styles: [`
+  styles: [`
     `]
 })
 export class ConnectionComponent extends BaseComponent implements OnInit {
-    serverName: string;
-    userName: string;
-    password: string;
-    databaseName: string;
-    dataSet: any[] = [];
+  serverName: string;
+  userName: string;
+  password: string;
+  databaseName: string;
+  dataSet: any[] = [];
 
-    constructor(router: Router, ngZone: NgZone) {
-      super(router, ngZone);
-    }
-    next() {
-        this.getGlobal(TRON.connection).serverName = this.serverName;
-        this.getGlobal(TRON.connection).databaseName = this.databaseName;
-        this.getGlobal(TRON.connection).userName, this.userName;
-        this.getGlobal(TRON.connection).password = this.password;
-        this.router.navigate(['/tables']);
-    }
-    ngOnInit() {
-        //electron.ipcRenderer.send("message");
-        console.log("ServerName");
-        console.log(this.getGlobal(TRON.connection));
+  constructor(router: Router, ngZone: NgZone) {
+    super(router, ngZone);
+  }
+  back() { }
+  next() {
+    this.getGlobal().connection.serverName = this.serverName;
+    this.getGlobal().connection.databaseName = this.databaseName;
+    this.getGlobal().connection.userName, this.userName;
+    this.getGlobal().connection.password = this.password;
+    this.router.navigate(['/tables']);
+  }
+  ngOnInit() {
+    //electron.ipcRenderer.send("message");
 
-        this.serverName = this.getGlobal(TRON.connection).serverName;
-        this.databaseName = this.getGlobal(TRON.connection).databaseName;
-        this.userName = this.getGlobal(TRON.connection).userName;
-        this.password = this.getGlobal(TRON.connection).password;
-    }
+    this.serverName = this.getGlobal().connection.serverName;
+    this.databaseName = this.getGlobal().connection.databaseName;
+    this.userName = this.getGlobal().connection.userName;
+    this.password = this.getGlobal().connection.password;
+  }
 }

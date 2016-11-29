@@ -1,0 +1,139 @@
+<div class="flexbox-parent">
+    <div class="flexbox-item header">
+        <h3>Configure columns for each table</h3>
+    </div>
+
+    <div class="flexbox-item fill-area content flexbox-item-grow">
+        <div class="fill-area-content flexbox-item-grow" style="display:flex; flex-direction:row; padding: 5px">
+            <div style="display:flex; flex-direction:column; margin-right:10px">
+                <legend>Tables</legend>
+                <nav class="nav nav-pills nav-stacked">
+                    <a class="nav-link" *ngFor="let item of tables" (click)="setActiveTable(item.value)" [class.active]="item.value == activeTableId"
+                        href="javascript:void(0)">
+                    {{item.name}}
+                </a>
+                </nav>
+            </div>
+            <div style="margin-right:10px; display:flex; flex-direction: column; flex-grow: 1">
+                <div style="overflow-y: scroll; overflow-x: hidden; flex-direction: column; fdisplay:flex; flex-grow: 1">
+                    <legend>Columns</legend>
+                    <table class="table table-hover table-sm table-condensed">
+                        <thead>
+                            <tr>
+                                <th>Generate</th>
+                                <th>#</th>
+                                <th>Name</th>
+                                <th>Type</th>
+                                <th>Default</th>
+                                <th>Nullable</th>
+                                <th>Generator</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr [class.table-info]="activeColDef.name == c.name" *ngFor="let c of columns; let x = index" (click)="setActiveColumn(c)">
+                                <td><input type="checkbox" [(ngModel)]="c.include"></td>
+                                <td>{{x + 1}}</td>
+                                <td>{{c.name}}</td>
+                                <td>{{getTypeDesc(c)}}</td>
+                                <td>{{c.colDefault}}</td>
+                                <td>{{c.nullable}}</td>
+                                <td>
+                                    <select class='form-control input-sm' (change)="changeGenerator($event)" [ngModel]="getGeneratorName(c)" [disabled]="!c.include">
+                                        <option value='IntegerGenerator'>Random Integer</option>
+                                        <option value='TextGenerator'>Random Text</option>
+                                        <option value='DateGenerator'>Random Date</option>
+                                        <option value='UUIDGenerator'>Random UUID</option>
+                                        <option value='CustomSqlGenerator'>Custom SQL</option>
+                                        <option value='CustomValueGenerator'>Hardcode Value</option>
+                                        <option [disabled]="c.fkConstraintID > 0" value='FKGenerator'>Foreign Key</option>
+                                    </select>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div style="display:flex; flex-direction: column; flex-grow: 2; min-height:150px; overflow-y: scroll; overflow-x: hidden">
+                    <legend>Data Generation</legend>
+                    <template [ngTemplateOutlet]="activeColDef.template" [ngOutletContext]="{ $implicit: activeColDef }"></template>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="flexbox-item footer">
+        <button style="margin-top:30px" class='btn btn-primary' (click)="back()">Back</button>
+        <button style="margin-top:30px" class='btn btn-primary' (click)="next()">Next</button>
+    </div>
+</div>
+
+<template #IntegerTemplate>
+    <div class="form">
+        <div class="form-group">
+            <label for="minField">Lower Bound</label>
+            <input type="text" [(ngModel)]="activeColDef.plugIn[0].min" class="form-control input-sm" id="minField" placeholder="min">
+        </div>
+        <div class="form-group">
+            <label for="maxField">Upper Bound</label>
+            <input type="text" [(ngModel)]="activeColDef.plugIn[0].max" class="form-control input-sm" id="maxField" placeholder="min">
+        </div>
+    </div>
+</template>
+
+<template #TextTemplate>
+    <div class="form">
+        <div class="form-group">
+            <label for="lenField">Maximum text length</label>
+            <input type="text" [(ngModel)]="activeColDef.plugIn[0].maxLength" class="form-control input-sm" id="lenField" placeholder="min">
+        </div>
+    </div>
+</template>
+<template #DateTemplate>
+    <div class="form">
+        <div class="form-group">
+            <label for="datFromField">From Date</label>
+            <input type="date" [(ngModel)]="activeColDef.plugIn[0].min" class="form-control input-sm" id="dateFromField" placeholder="from">
+        </div>
+    </div>
+    <div class="form">
+        <div class="form-group">
+            <label for="dateToField">To Date</label>
+            <input type="date" [(ngModel)]="activeColDef.plugIn[0].max" class="form-control input-sm" id="dateToField" placeholder="to">
+        </div>
+    </div>
+</template>
+<template #FKTemplate>
+    <div class="form">
+        <div class="form-group">
+            <label for="fkTblField">Foreign Key Table</label>
+            <input readonly type="text" [(ngModel)]="activeColDef.fkTable" class="form-control input-sm" id="fkTblField">
+        </div>
+    </div>
+    <div class="form">
+        <div class="form-group">
+            <label for="fkColField">Foreign Key Table</label>
+            <input readonly type="text" [(ngModel)]="activeColDef.fkColumn" class="form-control input-sm" id="fkColField">
+        </div>
+    </div>
+</template>
+<template #CustomValueTemplate>
+    <div class="form">
+        <div class="form-group">
+            <label for="custValField">Custom Value</label>
+            <input type="text" [(ngModel)]="activeColDef.plugIn.value" class="form-control input-sm" id="custValField">
+        </div>
+    </div>
+</template>
+<template #CustomSqlTemplate>
+    <div class="form">
+        <div class="form-group">
+            <label for="custSqlField">Custom Value</label>
+            <textarea type="text" [(ngModel)]="activeColDef.plugIn.sql" class="form-control input-sm" id="custSqlField"></textarea>
+        </div>
+    </div>
+</template>
+<template #UUIDTemplate>
+    <h1>Random UUID</h1>
+</template>
+<template #DefaultTemplate>
+    <h1>Default</h1>
+</template>

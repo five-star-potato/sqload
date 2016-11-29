@@ -1,4 +1,4 @@
-import {  NgZone } from '@angular/core';
+import { NgZone } from '@angular/core';
 import { Router } from '@angular/router';
 import { TRON } from './constants';
 
@@ -14,8 +14,16 @@ export abstract class BaseComponent {
         this.ngZone = ngZone;
         this.remote = electron.remote;
    }
+    abstract back(): void;
     abstract next(): void;
-    protected getGlobal(name:string):any {
-        return this.remote.getGlobal(name);
+    protected getGlobal():any {
+        return this.remote.getGlobal(TRON.project);
     }
+    protected getSQLFn():any {
+        return this.remote.getGlobal(TRON.fnExecSQL);
+    }
+    protected getSaveOutputFn():any {
+        return this.remote.getGlobal(TRON.fnSaveOutput);
+    }
+    
 }

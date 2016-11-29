@@ -5,64 +5,94 @@ import { BaseComponent } from './base.component';
 
 @Component({
     template: `	
-    <h3>Choose one or more tables</h3>
-    <div class="container-fluid">
-        <div class="row">
-            <div class="col-md-12">
-                <select class="form-control" multiple (change)="setSelected($event.target)" style="min-height:400px; border: 1px solid gray">
-                    <option *ngFor="let item of options" [value]="item.value">{{item.name}}</option>
-                </select>
+        <div class="flexbox-parent">
+            <div class="flexbox-item header">
+                <h3>Choose one or more tables</h3>
             </div>
-        </div>
-        <div class="row">
-            <div class="col-md-12">
+            
+            <div class="flexbox-item fill-area content flexbox-item-grow">
+                <div class="fill-area-content flexbox-item-grow" style="display:flex; flex-direction:row; padding: 5px">
+                    <div style="display:flex; flex-direction:column">
+                        <p>Available Tables</p>
+                        <select [(ngModel)]="selectedOpts" class="form-control" multiple style="border: 1px solid gray; flex-grow: 1">
+                            <option *ngFor="let item of tables | selectedObjects:false " [value]="item.value">{{item.name}}</option>
+                        </select>
+                    </div>
+                    <div style="margin:80px 10px 0px 10px; display:flex; flex-direction:column">
+                        <button (click)="selectTbls()"><i class="fa fa-angle-right" aria-hidden="true"></i></button><br>
+                        <button (click)="unselectTbls()"><i class="fa fa-angle-left" aria-hidden="true"></i></button>
+                    </div>
+                    <div style="display:flex; flex-direction:column; flex-grow: 1">
+                        <p>Selected Tables</p>
+                        <select [(ngModel)]="unselectedOpts" class="form-control" multiple style="border: 1px solid gray; flex-grow: 1">
+                            <option *ngFor="let item of tables | selectedObjects:true " [value]="item.value">{{item.name}}</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flexbox-item footer">
+                <button style="margin-top:30px" class='btn btn-primary' (click)="back()">Back</button>
                 <button style="margin-top:30px" class='btn btn-primary' (click)="next()">Next</button>
             </div>
-        </div>        
-    </div>
+        </div>
     `,
     styles: [`
     `]
 })
 export class TablesComponent extends BaseComponent {
     dataSet: any[] = [];
-    options: any[] = [];
+    tables: any[] = [];
+    selectedOpts: any;
+    unselectedOpts: any;
 
     constructor(router: Router,  ngZone: NgZone) { 
         super(router, ngZone);
     }
-    private setSelected(selectEle) {
-        for (var i = 0; i < selectEle.options.length; i++) {
-            var opt = selectEle.options[i];
-            this.options[i].selected = opt.selected;
-            if (this.options[i].selected)
-                console.log("selected: " + this.options[i].name)
-        }
-    }
-    next() {
-        var tbls = this.getGlobal(TRON.selectedTables);
-        tbls.length = 0;
-        this.options.forEach((opt) => {
-            if (opt.selected) {
-                tbls.push(opt);
+    private selectTbls() {
+        this.tables.forEach((t) => {
+            let found = this.selectedOpts.filter(x => x == t.value );
+            if (found.length > 0) {
+                t.selected = true;
             }
         })
-        console.log(tbls);
+    }
+    private unselectTbls(sel) {
+        this.tables.forEach((t) => {
+            let found = this.unselectedOpts.filter(x => x == t.value );
+            if (found.length > 0) {
+                t.selected = false;
+            }
+        })
+    }
+    back() {
+        this.router.navigate(['/connect']);
+    }
+    next() {
+        var tbls = [];
+        tbls.length = 0;
+        this.tables.forEach((t) => {
+            if (t.selected) {
+                tbls.push(t);
+            }
+        }); 
+        this.getGlobal().selectedTables = tbls; 
+        this.router.navigate(['/columns']);
     }
     ngOnInit() {
         //electron.ipcRenderer.send("message");
-        let dataSet = this.getGlobal(TRON.fnExecSQL)("SELECT object_id, SCHEMA_NAME(schema_id) [Schema], OBJECT_NAME(object_id) [Table] FROM sys.tables ORDER BY 2, 3",
+        let dataSet = this.getSQLFn()("SELECT object_id, SCHEMA_NAME(schema_id) [Schema], OBJECT_NAME(object_id) [Table] FROM sys.tables ORDER BY 2, 3",
             (err, res) => {
                 this.ngZone.run(() => {
-                    console.log("inside fnExecSQL callback");
+                    let i:number = 0;
                     res.forEach((row) => {
-                        this.options.push({
+                        this.tables.push({
                             name: `${row["Schema"]}.${row["Table"]}`,
-                            value: row["object_id"]
+                            value: row["object_id"],
+                            selected: false
                         });
                     });
                     this.dataSet = res;
-                    console.log(this.dataSet);
                 });
             }
         );
