@@ -4,20 +4,30 @@
     </div>
 
     <div class="flexbox-item fill-area content flexbox-item-grow">
-        <div class="fill-area-content flexbox-item-grow" style="display:flex; flex-direction:row; padding: 5px">
-            <div style="display:flex; flex-direction:column; margin-right:10px">
+        <div class="fill-area-content flexbox-item-grow" style="display:flex; flex-direction:row; padding: 5px; overflow-y:auto">
+            <div style="display:flex; flex-direction:column; margin-right:10px; border-right: 1px solid #ddd; padding-right:10px">
                 <legend>Tables</legend>
-                <nav class="nav nav-pills nav-stacked">
-                    <a class="nav-link" *ngFor="let item of tables" (click)="setActiveTable(item.value)" [class.active]="item.value == activeTableId"
-                        href="javascript:void(0)">
-                    {{item.name}}
-                </a>
-                </nav>
+                <table class="table">
+                    <tbody>
+                        <tr *ngFor="let item of tables"  [class.success]="activeTableId == item.value" >
+                            <td>
+                                <a class="nav-link"(click)="setActiveTable(item.value)" [class.active]="activeTableId == item.value" href="javascript:void(0)">
+                                    {{item.name}}
+                                </a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="flexbox-item footer">
+                    <button style="margin-top:30px" class='btn btn-primary' (click)="back()">Back</button>
+                    <button style="margin-top:30px" class='btn btn-primary' (click)="next()">Next</button>
+                </div>
+
             </div>
-            <div style="margin-right:10px; display:flex; flex-direction: column; flex-grow: 1">
-                <div style="overflow-y: scroll; overflow-x: hidden; flex-direction: column; fdisplay:flex; flex-grow: 1">
+            <div style="margin-right:10px; display:flex; flex-direction: row; flex-grow: 1; border-right: 1px solid #ddd">
+                <div style="overflow-y: auto; overflow-x: hidden; flex-direction: column; display:flex; flex-grow: 1; border-right: 1px solid #ddd;padding-right:10px">
                     <legend>Columns</legend>
-                    <table class="table table-hover table-sm table-condensed">
+                    <table class="table table-hover table-sm table-condensed" style="font-size:12px">
                         <thead>
                             <tr>
                                 <th>Generate</th>
@@ -30,7 +40,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr [class.table-info]="activeColDef.name == c.name" *ngFor="let c of columns; let x = index" (click)="setActiveColumn(c)">
+                            <tr [class.info]="activeColDef.name == c.name" *ngFor="let c of columns; let x = index" (click)="setActiveColumn(c)">
                                 <td><input type="checkbox" [(ngModel)]="c.include"></td>
                                 <td>{{x + 1}}</td>
                                 <td>{{c.name}}</td>
@@ -38,10 +48,11 @@
                                 <td>{{c.colDefault}}</td>
                                 <td>{{c.nullable}}</td>
                                 <td>
-                                    <select class='form-control input-sm' (change)="changeGenerator($event)" [ngModel]="getGeneratorName(c)" [disabled]="!c.include">
+                                    <select class='form-control input-sm' (change)="changeGenerator(c, $event)" [ngModel]="getGeneratorName(c)" [disabled]="!c.include" style="font-size:12px; height:30px">
                                         <option value='IntegerGenerator'>Random Integer</option>
                                         <option value='TextGenerator'>Random Text</option>
                                         <option value='DateGenerator'>Random Date</option>
+                                        <option value='DateTimeGenerator'>Random Date &amp; Time</option>
                                         <option value='UUIDGenerator'>Random UUID</option>
                                         <option value='CustomSqlGenerator'>Custom SQL</option>
                                         <option value='CustomValueGenerator'>Hardcode Value</option>
@@ -52,22 +63,17 @@
                         </tbody>
                     </table>
                 </div>
-                <div style="display:flex; flex-direction: column; flex-grow: 2; min-height:150px; overflow-y: scroll; overflow-x: hidden">
+                <div style="display:flex; flex-direction: column; flex-grow: 1; overflow-y: auto; overflow-x: hidden; margin-left:10px; padding-right: 10px" >
                     <legend>Data Generation</legend>
                     <template [ngTemplateOutlet]="activeColDef.template" [ngOutletContext]="{ $implicit: activeColDef }"></template>
                 </div>
             </div>
         </div>
     </div>
-
-    <div class="flexbox-item footer">
-        <button style="margin-top:30px" class='btn btn-primary' (click)="back()">Back</button>
-        <button style="margin-top:30px" class='btn btn-primary' (click)="next()">Next</button>
-    </div>
 </div>
 
 <template #IntegerTemplate>
-    <div class="form-inline">
+    <div class="form">
         <div class="form-group">
             <label for="minField">Lower Bound</label>
             <input type="text" [(ngModel)]="activeColDef.plugIn[0].min" class="form-control input-sm" id="minField" placeholder="min">
@@ -80,7 +86,7 @@
 </template>
 
 <template #TextTemplate>
-    <div class="form-inline">
+    <div class="form">
         <div class="form-group">
             <label for="lenField">Maximum text length</label>
             <input type="text" [(ngModel)]="activeColDef.plugIn[0].maxLength" class="form-control input-sm" id="lenField" placeholder="min">
@@ -88,35 +94,43 @@
     </div>
 </template>
 <template #DateTemplate>
-    <div class="form-inline">
+    <div class="form">
         <div class="form-group">
             <label for="datFromField">From Date</label>
-            <input type="date" [(ngModel)]="activeColDef.plugIn[0].min" class="form-control input-sm" id="dateFromField" placeholder="from">
+            <input type="date" [(ngModel)]="activeColDef.plugIn[0].minDate" class="form-control input-sm" id="dateFromField" placeholder="from">
         </div>
-    </div>
-    <div class="form-inline">
         <div class="form-group">
             <label for="dateToField">To Date</label>
-            <input type="date" [(ngModel)]="activeColDef.plugIn[0].max" class="form-control input-sm" id="dateToField" placeholder="to">
+            <input type="date" [(ngModel)]="activeColDef.plugIn[0].maxDate" class="form-control input-sm" id="dateToField" placeholder="to">
+        </div>
+    </div>
+</template>
+<template #DateTimeTemplate>
+    <div class="form">
+        <div class="form-group">
+            <label for="datFromField">From Date</label>
+            <input type="datetime-local" [(ngModel)]="activeColDef.plugIn[0].minDate" class="form-control input-sm" id="dateFromField" placeholder="from">
+        </div>
+        <div class="form-group">
+            <label for="dateToField">To Date</label>
+            <input type="datetime-local" [(ngModel)]="activeColDef.plugIn[0].maxDate" class="form-control input-sm" id="dateToField" placeholder="to">
         </div>
     </div>
 </template>
 <template #FKTemplate>
-    <div class="form-inline">
+    <div class="form">
         <div class="form-group">
             <label for="fkTblField">Foreign Key Table</label>
             <input readonly type="text" [(ngModel)]="activeColDef.fkTable" class="form-control input-sm" id="fkTblField">
         </div>
-    </div>
-    <div class="form-inline">
         <div class="form-group">
-            <label for="fkColField">Foreign Key Table</label>
+            <label for="fkColField">Foreign Key Column</label>
             <input readonly type="text" [(ngModel)]="activeColDef.fkColumn" class="form-control input-sm" id="fkColField">
         </div>
     </div>
 </template>
 <template #CustomValueTemplate>
-    <div class="form-inline">
+    <div class="form">
         <div class="form-group">
             <label for="custValField">Custom Value</label>
             <input type="text" [(ngModel)]="activeColDef.plugIn.value" class="form-control input-sm" id="custValField">
@@ -124,7 +138,7 @@
     </div>
 </template>
 <template #CustomSqlTemplate>
-    <div class="form-inline">
+    <div class="form">
         <div class="form-group">
             <label for="custSqlField">Custom Value</label>
             <textarea type="text" [(ngModel)]="activeColDef.plugIn.sql" class="form-control input-sm" id="custSqlField"></textarea>

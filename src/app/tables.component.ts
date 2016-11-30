@@ -51,18 +51,20 @@ export class TablesComponent extends BaseComponent {
     }
     private selectTbls() {
         this.tables.forEach((t) => {
+            if (this.selectedOpts.includes(t.value))
+                t.selected = true;
+            /*
             let found = this.selectedOpts.filter(x => x == t.value );
             if (found.length > 0) {
                 t.selected = true;
             }
+            */
         })
     }
     private unselectTbls(sel) {
         this.tables.forEach((t) => {
-            let found = this.unselectedOpts.filter(x => x == t.value );
-            if (found.length > 0) {
+            if (this.unselectedOpts.includes(t.value))
                 t.selected = false;
-            }
         })
     }
     back() {
@@ -80,16 +82,22 @@ export class TablesComponent extends BaseComponent {
         this.router.navigate(['/columns']);
     }
     ngOnInit() {
+        let tbls = this.getGlobal().selectedTables;
         //electron.ipcRenderer.send("message");
         let dataSet = this.getSQLFn()("SELECT object_id, SCHEMA_NAME(schema_id) [Schema], OBJECT_NAME(object_id) [Table] FROM sys.tables ORDER BY 2, 3",
             (err, res) => {
                 this.ngZone.run(() => {
                     let i:number = 0;
                     res.forEach((row) => {
+                        let tblName = `${row["Schema"]}.${row["Table"]}`; 
+                        let sel:any = tbls.filter((t) => { // was this table already selected?
+                            return t.name == tblName;
+                        });
+
                         this.tables.push({
-                            name: `${row["Schema"]}.${row["Table"]}`,
+                            name: tblName,
                             value: row["object_id"],
-                            selected: false
+                            selected: (sel.length > 0)
                         });
                     });
                     this.dataSet = res;

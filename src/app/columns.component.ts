@@ -1,68 +1,135 @@
-import { Component, OnInit, NgZone,TemplateRef, ViewChild } from '@angular/core';
+import { Component, OnInit, NgZone, TemplateRef, ViewChild } from '@angular/core';
 import { Router } from '@angular/router';
 import { TRON } from './constants';
 import { DataGenerator, ColumnDef, fnGetDataTypeDesc } from './include';
 import { BaseComponent } from './base.component';
-import { IntegerGenerator, TextGenerator, DateGenerator, UUIDGenerator, CustomSqlGenerator, CustomValueGenerator, FKGenerator } from './generator/generators.component';
+import * as gen from './generator/generators.component';
 
 @Component({
     templateUrl: "./columns.component.html",
     styles: [`
-    table.table > tbody > tr.active td {
+    .table > tbody > tr.active td {
         background-color: wheat;
     }
+    .table > tbody > tr > td {
+     vertical-align: middle;
+    }   
     .table-condensed>thead>tr>th, .table-condensed>tbody>tr>th, .table-condensed>tfoot>tr>th, .table-condensed>thead>tr>td, .table-condensed>tbody>tr>td, .table-condensed>tfoot>tr>td{
         padding: 5px;
     }
-
     `]
 })
 export class ColumnsComponent extends BaseComponent {
-    @ViewChild('IntegerTemplate') integerTemplate : TemplateRef<any>;
+    @ViewChild('IntegerTemplate') integerTemplate: TemplateRef<any>;
     @ViewChild('TextTemplate') textTemplate: TemplateRef<any>;
-    @ViewChild('DateTemplate') dateTemplate : TemplateRef<any>;
+    @ViewChild('DateTemplate') dateTemplate: TemplateRef<any>;
+    @ViewChild('DateTimeTemplate') dateTimeTemplate: TemplateRef<any>;
     @ViewChild('FKTemplate') fkTemplate: TemplateRef<any>;
     @ViewChild('UUIDTemplate') uuidTemplate: TemplateRef<any>;
     @ViewChild('DefaultTemplate') defaultTemplate: TemplateRef<any>;
-    
+    @ViewChild('CustomSqlTemplate') sqlTemplate: TemplateRef<any>;
+    @ViewChild('CustomValueTemplate') valueTemplate: TemplateRef<any>;
+
     tables: any[] = [];
     columns: ColumnDef[] = [];
     activeTableId: number;
     activeColDef: ColumnDef = new ColumnDef();
-    constructor(router: Router,  ngZone: NgZone) { 
+    constructor(router: Router, ngZone: NgZone) {
         super(router, ngZone);
     }
 
-    back() { }
+    back() {
+        this.router.navigate(['/tables']);
+    }
     next() {
         //this.getGlobal().columnDefs = this.columns; 
         this.router.navigate(['/generate']);
     }
-    private setActiveTable(objId:number) {
+    private setActiveTable(objId: number) {
         this.activeTableId = objId;
         this.columns = this.getGlobal().columnDefs[objId];
     }
     private setActiveColumn(c: ColumnDef) {
-        this.activeColDef = c;        
+        this.activeColDef = c;
     }
-    private getTypeDesc(cf: ColumnDef):string {
+    private getTypeDesc(cf: ColumnDef): string {
         return fnGetDataTypeDesc(cf);
     }
-    private changeGenerator(evt:any) {
+    private changeGenerator(cf: ColumnDef, evt: any) {
+        var genName = evt.target.value;
+        let i = 0;
+        while (i < cf.plugIn.length) {
+            if (cf.plugIn[i].constructor.name == genName)
+                break;
+            i++;
+        }
+        if (i < cf.plugIn.length) {
+            // found existing generator in plugIn array
+            let dg = cf.plugIn.splice(i, 1)[0];
+            cf.plugIn.unshift(dg);
+        }
+        else {
+            cf.plugIn.unshift(new gen[genName]())
+        }
+        cf.template = this.getTemplateFromPlugIn(cf.plugIn[0]);
         console.log("select change");
         console.log(evt);
+    }
+    private getTemplateFromPlugIn(plugIn: DataGenerator): TemplateRef<any> {
+        switch (plugIn.constructor.name) {
+            case "IntegerGenerator":
+                return this.integerTemplate;
+            case "TextGenerator":
+                return this.textTemplate;
+            case "DateGenerator":
+                return this.dateTemplate;
+            case "DateTimeGenerator":
+                return this.dateTimeTemplate;
+            case "CustomValueGenerator":
+                return this.valueTemplate;
+            case "CustomSqlGenerator":
+                return this.sqlTemplate;
+            case "UUIDGenerator":
+                return this.uuidTemplate;
+            case "ListItemGenerator":
+                return null;
+            case "FKGenerato":
+                return this.fkTemplate;
+        }
     }
     private getGeneratorName(cf: ColumnDef) {
         return cf.plugIn.length > 0 ? cf.plugIn[0].constructor.name : '';
     }
     ngOnInit() {
-        debugger;
+        // when moving back and forth among pages, we need to maintain states; 
+        // If columnDefs.length, the user is revisiting this page - clear the table entries that are no longer valid.
+        // If a table Id exists in both selectedTAbles and columnDefs, we don't need to reload column info from DB; take it off from tblIds
         this.tables = this.getGlobal().selectedTables;
         let columnDefs = this.getGlobal().columnDefs;
-        let tblIds = [];
+
+        let tblIds = []; // Create a list of table object Ids for use in constructing the SQL statement
         for (let i = this.tables.length - 1; i >= 0; i--) {
             tblIds.unshift(this.tables[i].value);
         }
+        let keys = []; // get all the "keys" i.e. table Object ID from columnDef. Remove them if the new list of selectedTables does not include them
+        for (var key in columnDefs) {
+            if (columnDefs.hasOwnProperty(key)) {
+                keys.push(parseInt(key));
+            }
+        }
+        keys.forEach(k => {
+            if (!tblIds.includes(k))
+                delete columnDefs[k];
+        });
+        // these tables don't need to be reloaded
+        for (let i = tblIds.length - 1; i >= 0; i--) {
+            if (columnDefs[tblIds[i]] != undefined) {
+                tblIds.splice(i, 1);
+            }
+        }
+        if (tblIds.length == 0) // no need to load column info from DB
+            return;
+
         let sql = `
             SELECT t.object_id, ic.*, fk.name [fk_constraint_name], fk.object_id [fk_constraint_id], fkc.constraint_column_id [fk_constraint_column_id], fk_rt.name [fk_table_name], fk_rc.name [fk_column_name], SCHEMA_NAME(fk_rt.schema_id) [fk_schema_name]
             FROM sys.columns c
@@ -79,12 +146,13 @@ export class ColumnsComponent extends BaseComponent {
         let dataSet = this.getSQLFn()(sql,
             (err, res) => {
                 this.ngZone.run(() => {
-                    let i:number = 0;
+                    let i: number = 0;
                     res.forEach((row) => {
-                        let tbl = row["object_id"];
-                        let colDef = columnDefs[tbl];
+                        let tblId = row["object_id"];
+
+                        let colDef = columnDefs[tblId];
                         if (!colDef) {
-                            columnDefs[tbl] = [];
+                            columnDefs[tblId] = [];
                         }
                         let cf = new ColumnDef({
                             name: row['COLUMN_NAME'],
@@ -98,10 +166,10 @@ export class ColumnsComponent extends BaseComponent {
                             fkConstraintID: row['fk_constraint_id'],
                             fkTable: row['fk_table_name'],
                             fkColumn: row['fk_column_name'],
-                            fkSchema: row['fk_schema_name']   
+                            fkSchema: row['fk_schema_name']
                         });
                         if (cf.fkConstraintID) {
-                            cf.plugIn.push(new FKGenerator());
+                            cf.plugIn.push(new gen.FKGenerator());
                             cf.template = this.fkTemplate;
                         }
                         else {
@@ -111,27 +179,30 @@ export class ColumnsComponent extends BaseComponent {
                                 case "tinyint":
                                 case "smallint":
                                 case "bit":
-                                    cf.plugIn.push(new IntegerGenerator(cf.dataType));
+                                    cf.plugIn.push(new gen.IntegerGenerator(cf.dataType));
                                     cf.template = this.integerTemplate;
                                     break;
 
                                 case "uniqueidentifier":
-                                    cf.plugIn.push(new UUIDGenerator());
+                                    cf.plugIn.push(new gen.UUIDGenerator());
                                     cf.template = this.uuidTemplate;
 
                                 case "date":
+                                    cf.plugIn.push(new gen.DateGenerator());
+                                    cf.template = this.dateTemplate;
+                                    break;
                                 case "datetime":
                                 case "datetime2":
                                 case "smalldatetime":
-                                    cf.plugIn.push(new DateGenerator(new Date(2100, 1, 1), new Date(1970, 1, 1)));
-                                    cf.template = this.dateTemplate;
+                                    cf.plugIn.push(new gen.DateTimeGenerator());
+                                    cf.template = this.dateTimeTemplate;
                                     break;
 
                                 case "char":
                                 case "nchar":
                                 case "varchar":
                                 case "nvarchar":
-                                    cf.plugIn.push(new TextGenerator(cf.charMaxLen));
+                                    cf.plugIn.push(new gen.TextGenerator(cf.charMaxLen));
                                     cf.template = this.textTemplate;
                                     break;
                                 default:
@@ -139,15 +210,15 @@ export class ColumnsComponent extends BaseComponent {
                                     break;
                             }
                         }
-                        if (cf.plugIn.length ==0)    // we don't know how to generate this field
+                        if (cf.plugIn.length == 0)    // we don't know how to generate this field
                             cf.include = false;
-                        columnDefs[tbl].push(cf);
+                        columnDefs[tblId].push(cf);
                     });
 
                     console.log("table columns");
                     console.log(this.getGlobal().columnDefs);
                 });
             }
-        );    
+        );
     }
 }

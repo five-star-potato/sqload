@@ -1,6 +1,7 @@
 import { TemplateRef } from '@angular/core';
 
 export interface DataGenerator {
+    __name__:string;
     generate():any;
 }
 
@@ -51,4 +52,22 @@ export function fnGetDataTypeDesc(c: ColumnDef) {
 
 export function fnOnlyUnique(value, index, self) { 
     return self.indexOf(value) === index;
+}
+
+//http://stackoverflow.com/questions/11616630/json-stringify-avoid-typeerror-converting-circular-structure-to-json
+export function fnStringifyNoCircular(o:any) {
+    let cache = [];
+    let s = JSON.stringify(o, function(key, value) {
+        if (typeof value === 'object' && value !== null) {
+            if (cache.indexOf(value) !== -1) {
+                // Circular reference found, discard key
+                return;
+            }
+            // Store value in our collection
+            cache.push(value);
+        }
+        return value;
+    });
+    cache = null; // Enable garbage collection
+    return s;    
 }

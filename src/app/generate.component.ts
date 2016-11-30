@@ -2,7 +2,7 @@ import { Component, OnInit, NgZone } from '@angular/core';
 import { Router } from '@angular/router';
 import { TRON } from './constants';
 import { BaseComponent } from './base.component';
-import { ColumnDef, fnGetDataTypeDesc, fnOnlyUnique } from './include';
+import { ColumnDef, fnGetDataTypeDesc, fnOnlyUnique, fnStringifyNoCircular } from './include';
 import { IntegerGenerator, TextGenerator, DateGenerator, UUIDGenerator, CustomSqlGenerator, CustomValueGenerator, FKGenerator } from './generator/generators.component';
 
 @Component({
@@ -31,7 +31,25 @@ export class GenerateComponent extends BaseComponent {
     constructor(router: Router,  ngZone: NgZone) { 
         super(router, ngZone);
     }
+    private cleanUnusedPlugin() {
+        var tbls = this.getGlobal().selectedTables;
+        tbls.forEach(t => {
+            // trim unused plugin; cf.plugins is a list of plugins; only the first one is used. The rest are for users to undo changes only
+            this.getGlobal().columnDefs[t.value].forEach((cf:ColumnDef) => {
+                if (cf.plugIn.length > 1) {
+                    cf.plugIn.splice(1);
+                }
+                delete cf.template; 
+            })
+        });
+    }
     private generateData() {
+        this.cleanUnusedPlugin();
+        let projectContent = fnStringifyNoCircular(this.getGlobal());
+        this.getSaveOutputFn()(projectContent);
+        if (1 === 1)
+            return;
+
         let tables = this.getGlobal().selectedTables;
         let colDefs = this.getGlobal().columnDefs;
         tables.forEach((tbl:any) => {
