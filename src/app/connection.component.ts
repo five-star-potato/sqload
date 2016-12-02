@@ -5,32 +5,32 @@ import { BaseComponent } from './base.component';
 
 @Component({
   template: `
-      <div class="row">
-        <div class="col-md-12">
+  <div class="flexbox-parent">
+    <div class="flexbox-item fill-area content flexbox-item-grow" style="flex-direction:column">
+      <div class="col-md-8">
           <div class="form-group">
-            <label>Server Name</label>
-            <input type="text" class="form-control" [(ngModel)]="serverName" placeholder="Server">
+            <label>Server Name</label> <input type="text" [(ngModel)]="serverName" class="form-control" placeholder="Server" />
           </div>
+
           <div class="form-group">
-            <label>User Name</label>
-            <input type="text" class="form-control" [(ngModel)]="databaseName" placeholder="Database Name">
+            <label>User Name</label> <input type="text" [(ngModel)]="databaseName" class="form-control" placeholder="Database Name" />
           </div>
+
           <div class="form-group">
-            <label>User Name</label>
-            <input type="text" class="form-control" [(ngModel)]="userName" placeholder="User Name">
+            <label>User Name</label> <input type="text" [(ngModel)]="userName" class="form-control" placeholder="User Name" />
           </div>
+
           <div class="form-group">
-            <label>Password</label>
-            <input type="password" class="form-control" [(ngModel)]="password" placeholder="Password">
+            <label>Password</label> <input type="password" [(ngModel)]="password" class="form-control" placeholder="Password" />
           </div>
         </div>
-      </div>
-    
-      <div class="row">
-        <div class="col-md-12">
-          <button class='btn btn-primary' (click)="next()">Connect</button>
-        </div>
-      </div>
+    </div>
+
+    <div class="flexbox-item footer">
+      <button class='btn btn-primary wide' (click)="next()">Connect</button>
+    </div>
+  </div>
+
     `,
   styles: [`
     `]
@@ -55,7 +55,6 @@ export class ConnectionComponent extends BaseComponent implements OnInit {
   }
   ngOnInit() {
     //electron.ipcRenderer.send("message");
-
     this.serverName = this.getGlobal().connection.serverName;
     this.databaseName = this.getGlobal().connection.databaseName;
     this.userName = this.getGlobal().connection.userName;

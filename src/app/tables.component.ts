@@ -32,8 +32,8 @@ import { BaseComponent } from './base.component';
             </div>
             
             <div class="flexbox-item footer">
-                <button style="margin-top:30px" class='btn btn-primary' (click)="back()">Back</button>
-                <button style="margin-top:30px" class='btn btn-primary' (click)="next()">Next</button>
+                <button style="margin-top:30px" class='btn btn-primary nav-btn' (click)="back()">Back</button>
+                <button style="margin-top:30px" class='btn btn-primary nav-btn' (click)="next()">Next</button>
             </div>
         </div>
     `,
@@ -78,7 +78,8 @@ export class TablesComponent extends BaseComponent {
                 tbls.push(t);
             }
         }); 
-        this.getGlobal().selectedTables = tbls; 
+        this.getGlobal().selectedTables = tbls;
+        console.log(this.getGlobal().columnDefs); 
         this.router.navigate(['/columns']);
     }
     ngOnInit() {

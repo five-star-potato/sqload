@@ -20,7 +20,8 @@ import { IntegerGenerator, TextGenerator, DateGenerator, UUIDGenerator, CustomSq
             </div>
             
             <div class="flexbox-item footer">
-                <button style="margin-top:30px" class='btn btn-primary' (click)="next()">Save</button>
+                <button style="margin-top:30px" class='btn btn-primary nav-btn' (click)="back()">Back</button>
+                <button style="margin-top:30px" class='btn btn-primary nav-btn' (click)="next()">Save</button>
             </div>
         </div>
     `,
@@ -39,7 +40,6 @@ export class GenerateComponent extends BaseComponent {
                 if (cf.plugIn.length > 1) {
                     cf.plugIn.splice(1);
                 }
-                delete cf.template; 
             })
         });
     }
@@ -108,7 +108,9 @@ export class GenerateComponent extends BaseComponent {
             console.log(str);
         });
     }
-    back() {}
+    back() {
+        this.router.navigate(['/columns']);
+    }
     next() {
         this.generateData();
     }

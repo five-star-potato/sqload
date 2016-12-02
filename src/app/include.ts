@@ -2,6 +2,7 @@ import { TemplateRef } from '@angular/core';
 
 export interface DataGenerator {
     __name__:string;
+    __template__:string;
     generate():any;
 }
 
@@ -19,7 +20,6 @@ export class ColumnDef {
     fkColumn: string;    
     fkSchema: string;
     plugIn: DataGenerator[] = []; // DataGenerator sometimes requires much configuration... save the change in case the user switch generator types by mistakes
-    template: TemplateRef<any>;
 
     public constructor(
         fields?: {

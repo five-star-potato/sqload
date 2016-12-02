@@ -25,5 +25,8 @@ export abstract class BaseComponent {
     protected getSaveOutputFn():any {
         return this.remote.getGlobal(TRON.fnSaveOutput);
     }
+    protected getOpenProjectFn():any {
+        return this.remote.getGlobal(TRON.fnOpenProject);
+    }
     
 }

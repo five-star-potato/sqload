@@ -4,6 +4,33 @@ var app = electron.app;
 var BrowserWindow = electron.BrowserWindow;
 var ipcMain = require('electron').ipcRenderer;
 
+function openProjectFile(callback) {
+    var btns = ['OK'];
+    const {dialog} = require('electron')
+
+    dialog.showOpenDialog(function (fileNames) {
+        // fileNames is an array that contains all the selected
+        if (fileNames === undefined){
+            console.log("No file selected");
+        }
+        else {
+            readFile(fileNames[0], callback);
+        }
+    });
+
+    function readFile(filepath, cb){
+        fs.readFile(filepath, 'utf-8', function (err, data) {
+            if(err){
+                alert("An error ocurred reading the file :" + err.message);
+                return;
+            }
+            // Change how to handle the file content
+            cb(data);
+            return data;
+        });
+    }
+}
+
 function saveOutputFile(content) {
     var btns = ['OK'];
     const {dialog} = require('electron')
@@ -75,6 +102,7 @@ function execSQL(sqlStmt, callback) {
 function init() {
     global.fnExecSQL = execSQL;
     global.fnSaveOutput = saveOutputFile;
+    global.fnOpenProject = openProjectFile;
     global.project = {
         connection: {
             serverName : '127.0.0.1',

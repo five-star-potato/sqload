@@ -16,6 +16,7 @@ function randomString(length, chars) {
 
 export class IntegerGenerator implements DataGenerator {
     __name__:string = "IntegerGenerator";
+    __template__:string = "IntegerTemplate";
     public max: number = 100;
     public min: number = 0;
 
@@ -48,6 +49,7 @@ export class IntegerGenerator implements DataGenerator {
 
 export class TextGenerator implements DataGenerator {
     __name__:string = "TextGenerator";
+    __template__:string = "TextTemplate";
     public maxLength: number = 5;
 
     constructor(maxLength?: number) {
@@ -60,6 +62,7 @@ export class TextGenerator implements DataGenerator {
 
 export class DateGenerator implements DataGenerator {
     __name__:string = "DateGenerator";
+    __template__:string = "DateTemplate";
     public max: Date = new Date(1970, 1, 1);
     public min: Date = new Date(2000, 1, 1);
 
@@ -94,6 +97,7 @@ export class DateGenerator implements DataGenerator {
 
 export class DateTimeGenerator implements DataGenerator {
     __name__:string = "DateTimeGenerator";
+    __template__:string = "DateTimeTemplate";
     public max: Date = new Date(1970, 1, 1);
     public min: Date = new Date(2000, 1, 1);
 
@@ -112,18 +116,19 @@ export class DateTimeGenerator implements DataGenerator {
         this.min = new Date(Date.parse(e));
     }
     get minDate() {
-        return this.min.toISOString().substring(0, 10);
+        return this.min.toISOString().substring(0, 16);
     }
     set maxDate(e:string) {
         this.max = new Date(Date.parse(e));
     }
     get maxDate() {
-        return this.max.toISOString().substring(0, 10);
+        return this.max.toISOString().substring(0, 16);
     }
 }
 
 export class CustomValueGenerator implements DataGenerator {
     __name__:string = "CustomValueGenerator";
+    __template__:string = "CustomValueTemplate";
     public value: string;
 
     constructor(value?: string) {
@@ -137,6 +142,7 @@ export class CustomValueGenerator implements DataGenerator {
 
 export class CustomSqlGenerator implements DataGenerator {
     __name__:string = "CustomSqlGenerator";
+    __template__:string = "CustomSqlTemplate";
     public sql: string;
 
     constructor()
@@ -151,6 +157,7 @@ export class CustomSqlGenerator implements DataGenerator {
 
 export class UUIDGenerator implements DataGenerator {
     __name__:string = "UUIDGenerator";
+    __template__:string = "UUIDTemplate";
     constructor() { }
 
     generate(): String {
@@ -163,6 +170,7 @@ export class UUIDGenerator implements DataGenerator {
 
 export class ListItemGenerator implements DataGenerator {
     __name__:string = "ListItemGenerator";
+    __template__:string = "DefaultTemplate";
     public items: string[] = [];
 
     constructor()
@@ -178,6 +186,7 @@ export class ListItemGenerator implements DataGenerator {
 // just for the same of completeness
 export class FKGenerator implements DataGenerator {
     __name__:string = "FKGenerator";
+    __template__:string = "FKTemplate";
     constructor() { }
 
     generate(): String {

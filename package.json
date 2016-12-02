@@ -4,7 +4,7 @@
   "main": "./src/index.js",
   "scripts": {
     "start": "electron .",
-    "build:electron": "electron-packager . --platform=win32 --arch=x64",
+    "package": "electron-packager . --platform=win32 --arch=x64",
     "build": "rimraf gendat-win32-x64 dist && webpack --progress",
     "build:prod": "webpack -p --progress",
     "rimraf": "rimraf",

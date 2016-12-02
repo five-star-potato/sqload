@@ -18,11 +18,6 @@
                         </tr>
                     </tbody>
                 </table>
-                <div class="flexbox-item footer">
-                    <button style="margin-top:30px" class='btn btn-primary' (click)="back()">Back</button>
-                    <button style="margin-top:30px" class='btn btn-primary' (click)="next()">Next</button>
-                </div>
-
             </div>
             <div style="margin-right:10px; display:flex; flex-direction: row; flex-grow: 1; border-right: 1px solid #ddd">
                 <div style="overflow-y: auto; overflow-x: hidden; flex-direction: column; display:flex; flex-grow: 1; border-right: 1px solid #ddd;padding-right:10px">
@@ -65,11 +60,16 @@
                 </div>
                 <div style="display:flex; flex-direction: column; flex-grow: 1; overflow-y: auto; overflow-x: hidden; margin-left:10px; padding-right: 10px" >
                     <legend>Data Generation</legend>
-                    <template [ngTemplateOutlet]="activeColDef.template" [ngOutletContext]="{ $implicit: activeColDef }"></template>
+                    <template [ngTemplateOutlet]="getTemplate(activeColDef)" [ngOutletContext]="{ $implicit: activeColDef }"></template>
                 </div>
             </div>
         </div>
     </div>
+                <div class="flexbox-item footer">
+                    <button style="margin-top:30px" class='btn btn-primary nav-btn' (click)="back()">Back</button>
+                    <button style="margin-top:30px" class='btn btn-primary nav-btn' (click)="next()">Next</button>
+                </div>
+    
 </div>
 
 <template #IntegerTemplate>
@@ -133,7 +133,7 @@
     <div class="form">
         <div class="form-group">
             <label for="custValField">Custom Value</label>
-            <input type="text" [(ngModel)]="activeColDef.plugIn.value" class="form-control input-sm" id="custValField">
+            <input type="text" [(ngModel)]="activeColDef.plugIn[0].value" class="form-control input-sm" id="custValField">
         </div>
     </div>
 </template>
@@ -141,7 +141,7 @@
     <div class="form">
         <div class="form-group">
             <label for="custSqlField">Custom Value</label>
-            <textarea type="text" [(ngModel)]="activeColDef.plugIn.sql" class="form-control input-sm" id="custSqlField"></textarea>
+            <textarea type="text" [(ngModel)]="activeColDef.plugIn[0].sql" class="form-control input-sm" id="custSqlField"></textarea>
         </div>
     </div>
 </template>
@@ -149,5 +149,5 @@
     <h1>Random UUID</h1>
 </template>
 <template #DefaultTemplate>
-    <h1>Default</h1>
+    <h2>---</h2>
 </template>

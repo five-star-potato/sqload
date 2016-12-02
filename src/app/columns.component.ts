@@ -56,7 +56,8 @@ export class ColumnsComponent extends BaseComponent {
         return fnGetDataTypeDesc(cf);
     }
     private changeGenerator(cf: ColumnDef, evt: any) {
-        var genName = evt.target.value;
+        var genName = evt.target.
+        value;
         let i = 0;
         while (i < cf.plugIn.length) {
             if (cf.plugIn[i].constructor.name == genName)
@@ -71,31 +72,31 @@ export class ColumnsComponent extends BaseComponent {
         else {
             cf.plugIn.unshift(new gen[genName]())
         }
-        cf.template = this.getTemplateFromPlugIn(cf.plugIn[0]);
         console.log("select change");
         console.log(evt);
     }
-    private getTemplateFromPlugIn(plugIn: DataGenerator): TemplateRef<any> {
-        switch (plugIn.constructor.name) {
-            case "IntegerGenerator":
-                return this.integerTemplate;
-            case "TextGenerator":
-                return this.textTemplate;
-            case "DateGenerator":
-                return this.dateTemplate;
-            case "DateTimeGenerator":
-                return this.dateTimeTemplate;
-            case "CustomValueGenerator":
-                return this.valueTemplate;
-            case "CustomSqlGenerator":
-                return this.sqlTemplate;
-            case "UUIDGenerator":
-                return this.uuidTemplate;
-            case "ListItemGenerator":
-                return null;
-            case "FKGenerato":
-                return this.fkTemplate;
+    private getTemplate(cf:ColumnDef): TemplateRef<any> {
+        if (cf.plugIn.length > 0) {
+            switch (cf.plugIn[0].__template__) {
+                case "IntegerTemplate":
+                    return this.integerTemplate;
+                case "TextTemplate":
+                    return this.textTemplate;
+                case "DateTemplate":
+                    return this.dateTemplate;
+                case "DateTimeTemplate":
+                    return this.dateTimeTemplate;
+                case "CustomValueTemplate":
+                    return this.valueTemplate;
+                case "CustomSqlTemplate":
+                    return this.sqlTemplate;
+                case "UUIDTemplate":
+                    return this.uuidTemplate;
+                case "FKTemplate":
+                    return this.fkTemplate;
+            }
         }
+        return this.defaultTemplate;
     }
     private getGeneratorName(cf: ColumnDef) {
         return cf.plugIn.length > 0 ? cf.plugIn[0].constructor.name : '';
@@ -170,7 +171,6 @@ export class ColumnsComponent extends BaseComponent {
                         });
                         if (cf.fkConstraintID) {
                             cf.plugIn.push(new gen.FKGenerator());
-                            cf.template = this.fkTemplate;
                         }
                         else {
                             switch (cf.dataType) {
@@ -180,22 +180,18 @@ export class ColumnsComponent extends BaseComponent {
                                 case "smallint":
                                 case "bit":
                                     cf.plugIn.push(new gen.IntegerGenerator(cf.dataType));
-                                    cf.template = this.integerTemplate;
                                     break;
 
                                 case "uniqueidentifier":
                                     cf.plugIn.push(new gen.UUIDGenerator());
-                                    cf.template = this.uuidTemplate;
 
                                 case "date":
                                     cf.plugIn.push(new gen.DateGenerator());
-                                    cf.template = this.dateTemplate;
                                     break;
                                 case "datetime":
                                 case "datetime2":
                                 case "smalldatetime":
                                     cf.plugIn.push(new gen.DateTimeGenerator());
-                                    cf.template = this.dateTimeTemplate;
                                     break;
 
                                 case "char":
@@ -203,10 +199,8 @@ export class ColumnsComponent extends BaseComponent {
                                 case "varchar":
                                 case "nvarchar":
                                     cf.plugIn.push(new gen.TextGenerator(cf.charMaxLen));
-                                    cf.template = this.textTemplate;
                                     break;
                                 default:
-                                    cf.template = this.defaultTemplate;
                                     break;
                             }
                         }
