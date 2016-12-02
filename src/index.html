@@ -16,6 +16,11 @@
 	<script src="https://use.fontawesome.com/d0b0359521.js"></script>
 
 	<style>
+	@font-face {
+	font-family: Plavsky;
+	src: url("fonts/Plavsky.otf") format("opentype");
+	}
+
 	*, *:before, *:after
 	{
 		-moz-box-sizing: border-box;
@@ -81,15 +86,29 @@
 	{
 		min-width:100px;
 	}
+	.watermark {
+		position:fixed; 
+		right: 20px;
+		font-family: Plavsky;
+		opacity: 0.2;
+		z-index: -999;
+	}
 	</style>	
 
 </head>
 <body>
+	<h1 class="watermark" style="bottom: 35px;right:65px">SQL Server 2012 to 2016</h1>
+	<h1 class="watermark" style="bottom: 4px">Test Data Generation Tool <span style="font-size:12pt">&#40;1.0&#41;</span></h1>
+	<!--<h6 class="watermark" style="bottom: 5px">copyright (c) <span id="copyrightYear"></span></h6> -->
 	<my-app>Loading...</my-app>
 	<!--
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
 	-->
+	<script type="text/javascript">
+		//var d = new Date()
+		//document.getElementById("copyrightYear").innerHTML = d.getFullYear();
+	</script>
 </body>	
 
 

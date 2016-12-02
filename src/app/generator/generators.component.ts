@@ -15,8 +15,8 @@ function randomString(length, chars) {
 //////////////////// Generators ////////////////////////////////////
 
 export class IntegerGenerator implements DataGenerator {
-    __name__:string = "IntegerGenerator";
-    __template__:string = "IntegerTemplate";
+    __name__: string = "IntegerGenerator";
+    __template__: string = "IntegerTemplate";
     public max: number = 100;
     public min: number = 0;
 
@@ -48,8 +48,8 @@ export class IntegerGenerator implements DataGenerator {
 }
 
 export class TextGenerator implements DataGenerator {
-    __name__:string = "TextGenerator";
-    __template__:string = "TextTemplate";
+    __name__: string = "TextGenerator";
+    __template__: string = "TextTemplate";
     public maxLength: number = 5;
 
     constructor(maxLength?: number) {
@@ -61,10 +61,10 @@ export class TextGenerator implements DataGenerator {
 }
 
 export class DateGenerator implements DataGenerator {
-    __name__:string = "DateGenerator";
-    __template__:string = "DateTemplate";
-    public max: Date = new Date(1970, 1, 1);
-    public min: Date = new Date(2000, 1, 1);
+    __name__: string = "DateGenerator";
+    __template__: string = "DateTemplate";
+    public max: Date = new Date(2020, 1, 1);
+    public min: Date = new Date(1990, 1, 1);
 
     constructor(max?: Date, min?: Date) {
         if (max)
@@ -76,28 +76,12 @@ export class DateGenerator implements DataGenerator {
         let dt = new Date(this.min.getTime() + Math.random() * (this.max.getTime() - this.min.getTime()));
         return dt.getFullYear() + '-' + (dt.getMonth() + 1) + "-" + dt.getDate() + " " +
             dt.getHours() + ":" + dt.getMinutes() + ":" + dt.getSeconds() + ":" + dt.getMilliseconds();
-    }
-    set minDate(e:string) {
-        let part: string[] = e.split('-');
-        let d = new Date(Date.UTC(parseInt(part[0]), parseInt(part[1]) - 1, parseInt(part[2])));
-        this.min.setFullYear(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + 1);
-    }
-    get minDate() {
-        return this.min.toISOString().substring(0, 10);
-    }
-    set maxDate(e:string) {
-        let part: string[] = e.split('-');
-        let d = new Date(Date.UTC(parseInt(part[0]), parseInt(part[1]) - 1, parseInt(part[2])));
-        this.max.setFullYear(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + 1);
-    }
-    get maxDate() {
-        return this.max.toISOString().substring(0, 10);
     }
 }
 
 export class DateTimeGenerator implements DataGenerator {
-    __name__:string = "DateTimeGenerator";
-    __template__:string = "DateTimeTemplate";
+    __name__: string = "DateTimeGenerator";
+    __template__: string = "DateTimeTemplate";
     public max: Date = new Date(1970, 1, 1);
     public min: Date = new Date(2000, 1, 1);
 
@@ -112,23 +96,11 @@ export class DateTimeGenerator implements DataGenerator {
         return dt.getFullYear() + '-' + (dt.getMonth() + 1) + "-" + dt.getDate() + " " +
             dt.getHours() + ":" + dt.getMinutes() + ":" + dt.getSeconds() + ":" + dt.getMilliseconds();
     }
-    set minDate(e:string) {
-        this.min = new Date(Date.parse(e));
-    }
-    get minDate() {
-        return this.min.toISOString().substring(0, 16);
-    }
-    set maxDate(e:string) {
-        this.max = new Date(Date.parse(e));
-    }
-    get maxDate() {
-        return this.max.toISOString().substring(0, 16);
-    }
 }
 
 export class CustomValueGenerator implements DataGenerator {
-    __name__:string = "CustomValueGenerator";
-    __template__:string = "CustomValueTemplate";
+    __name__: string = "CustomValueGenerator";
+    __template__: string = "CustomValueTemplate";
     public value: string;
 
     constructor(value?: string) {
@@ -141,8 +113,8 @@ export class CustomValueGenerator implements DataGenerator {
 }
 
 export class CustomSqlGenerator implements DataGenerator {
-    __name__:string = "CustomSqlGenerator";
-    __template__:string = "CustomSqlTemplate";
+    __name__: string = "CustomSqlGenerator";
+    __template__: string = "CustomSqlTemplate";
     public sql: string;
 
     constructor()
@@ -156,12 +128,12 @@ export class CustomSqlGenerator implements DataGenerator {
 }
 
 export class UUIDGenerator implements DataGenerator {
-    __name__:string = "UUIDGenerator";
-    __template__:string = "UUIDTemplate";
+    __name__: string = "UUIDGenerator";
+    __template__: string = "UUIDTemplate";
     constructor() { }
 
     generate(): String {
-        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+        return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
             var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
             return v.toString(16);
         });
@@ -169,9 +141,9 @@ export class UUIDGenerator implements DataGenerator {
 }
 
 export class ListItemGenerator implements DataGenerator {
-    __name__:string = "ListItemGenerator";
-    __template__:string = "DefaultTemplate";
-    public items: string[] = [];
+    __name__: string = "ListItemGenerator";
+    __template__: string = "ListItemTemplate";
+    public items: string[] = ["", "", "", "", "", "", "", "", "", ""];
 
     constructor()
     constructor(items?: string[]) {
@@ -185,8 +157,8 @@ export class ListItemGenerator implements DataGenerator {
 
 // just for the same of completeness
 export class FKGenerator implements DataGenerator {
-    __name__:string = "FKGenerator";
-    __template__:string = "FKTemplate";
+    __name__: string = "FKGenerator";
+    __template__: string = "FKTemplate";
     constructor() { }
 
     generate(): String {

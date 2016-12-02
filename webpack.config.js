@@ -43,6 +43,7 @@ module.exports = {
             */
             { from: 'src/bootstrap.min.css', to: "css"},
             { from: 'node_modules/bootstrap/dist/fonts', to: "fonts" },
+            { from: 'src/Plavsky.otf', to: "fonts" },
             { from: 'src/app/columns.component.html' }
         ])
     ]

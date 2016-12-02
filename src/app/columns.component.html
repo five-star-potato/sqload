@@ -49,8 +49,10 @@
                                         <option value='DateGenerator'>Random Date</option>
                                         <option value='DateTimeGenerator'>Random Date &amp; Time</option>
                                         <option value='UUIDGenerator'>Random UUID</option>
+                                        <option value='ListItemGenerator'>Random Value from a List</option>
                                         <option value='CustomSqlGenerator'>Custom SQL</option>
                                         <option value='CustomValueGenerator'>Hardcode Value</option>
+                                        <!-- if there's no FK constraint in this column, don't let user choose FK gen. If they do want to use lookup data, use custom SQL generator instead -->
                                         <option [disabled]="c.fkConstraintID > 0" value='FKGenerator'>Foreign Key</option>
                                     </select>
                                 </td>
@@ -97,11 +99,11 @@
     <div class="form">
         <div class="form-group">
             <label for="datFromField">From Date</label>
-            <input type="date" [(ngModel)]="activeColDef.plugIn[0].minDate" class="form-control input-sm" id="dateFromField" placeholder="from">
+            <input type="date" [(ngModel)]="activeColDef.plugIn[0].min" class="form-control input-sm" id="dateFromField" placeholder="from">
         </div>
         <div class="form-group">
             <label for="dateToField">To Date</label>
-            <input type="date" [(ngModel)]="activeColDef.plugIn[0].maxDate" class="form-control input-sm" id="dateToField" placeholder="to">
+            <input type="date" [(ngModel)]="activeColDef.plugIn[0].max" class="form-control input-sm" id="dateToField" placeholder="to">
         </div>
     </div>
 </template>
@@ -109,11 +111,11 @@
     <div class="form">
         <div class="form-group">
             <label for="datFromField">From Date</label>
-            <input type="datetime-local" [(ngModel)]="activeColDef.plugIn[0].minDate" class="form-control input-sm" id="dateFromField" placeholder="from">
+            <input type="datetime-local" [(ngModel)]="activeColDef.plugIn[0].min" class="form-control input-sm" id="dateFromField" placeholder="from">
         </div>
         <div class="form-group">
             <label for="dateToField">To Date</label>
-            <input type="datetime-local" [(ngModel)]="activeColDef.plugIn[0].maxDate" class="form-control input-sm" id="dateToField" placeholder="to">
+            <input type="datetime-local" [(ngModel)]="activeColDef.plugIn[0].max" class="form-control input-sm" id="dateToField" placeholder="to">
         </div>
     </div>
 </template>
@@ -140,13 +142,63 @@
 <template #CustomSqlTemplate>
     <div class="form">
         <div class="form-group">
-            <label for="custSqlField">Custom Value</label>
-            <textarea type="text" [(ngModel)]="activeColDef.plugIn[0].sql" class="form-control input-sm" id="custSqlField"></textarea>
+            <label for="custSqlField">Custom SQL</label>
+            <textarea type="text" rows=20 [(ngModel)]="activeColDef.plugIn[0].sql" class="form-control input-sm" id="custSqlField"></textarea>
         </div>
     </div>
 </template>
 <template #UUIDTemplate>
     <h1>Random UUID</h1>
+</template>
+
+<template #ListItemTemplate>
+    <div class="form">
+        <div class="form-group">
+            <label for="custListField">List of Values</label><br>
+            <table class="table">
+                <tr>
+                    <td>#1</td>
+                    <input type="text" [(ngModel)]="activeColDef.plugIn[0].items[0]" class="form-control input-sm">
+                </tr>
+                <tr>
+                    <td>#2</td>
+                    <input type="text" [(ngModel)]="activeColDef.plugIn[0].items[1]" class="form-control input-sm">
+                </tr>
+                <tr>
+                    <td>#3</td>
+                    <input type="text" [(ngModel)]="activeColDef.plugIn[0].items[2]" class="form-control input-sm">
+                </tr>
+                <tr>
+                    <td>#4</td>
+                    <input type="text" [(ngModel)]="activeColDef.plugIn[0].items[3]" class="form-control input-sm">
+                </tr>
+                <tr>
+                    <td>#5</td>
+                    <input type="text" [(ngModel)]="activeColDef.plugIn[0].items[4]" class="form-control input-sm">
+                </tr>
+                <tr>
+                    <td>#6</td>
+                    <input type="text" [(ngModel)]="activeColDef.plugIn[0].items[5]" class="form-control input-sm">
+                </tr>
+                <tr>
+                    <td>#7</td>
+                    <input type="text" [(ngModel)]="activeColDef.plugIn[0].items[6]" class="form-control input-sm">
+                </tr>
+                <tr>
+                    <td>#8</td>
+                    <input type="text" [(ngModel)]="activeColDef.plugIn[0].items[7]" class="form-control input-sm">
+                </tr>
+                <tr>
+                    <td>#9</td>
+                    <input type="text" [(ngModel)]="activeColDef.plugIn[0].items[8]" class="form-control input-sm">
+                </tr>
+                <tr>
+                    <td>#10</td>
+                    <input type="text" [(ngModel)]="activeColDef.plugIn[0].items[9]" class="form-control input-sm">
+                </tr>
+            </table> 
+        </div>
+    </div>
 </template>
 <template #DefaultTemplate>
     <h2>---</h2>

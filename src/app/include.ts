@@ -44,7 +44,7 @@ export class ColumnDef {
 export function fnGetDataTypeDesc(c: ColumnDef) {
     if (c.dataType == "decimal")
         return `decimal(${c.precision},${c.scale})`;
-    else if (c.dataType == "varchar" || c.dataType == "char" || c.dataType == "nvarchar") {
+    else if (c.dataType == "varchar" || c.dataType == "char" || c.dataType == "nvarchar" || c.dataType == "nchar") {
         return `${c.dataType}(${c.charMaxLen})`;
     }
     else return c.dataType;

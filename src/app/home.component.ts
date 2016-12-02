@@ -9,7 +9,7 @@ import * as gen from './generator/generators.component';
     template: `	
         <div class="flexbox-parent">
             <div class="flexbox-item header">
-                <h1>Welcome</h1>
+                <h1 style="font-family:Plavsky;opacity:0.5">Welcome</h1>
             </div>
             
             <div class="flexbox-item fill-area content flexbox-item-grow">
@@ -34,18 +34,16 @@ export class HomeComponent extends BaseComponent {
         super(router, ngZone);
     }
 
-    dateFormat = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/;
     private reviver(key, value):Date | string  {
-        if (value instanceof "string" && dateFormat.test(value)) {
+        let dateFormat = new RegExp(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+        if (typeof value == 'string' && dateFormat.test(value)) {
             return new Date(value);
         }
-        
         return value;
     }
 
-    const text = '{ "date": "2016-04-26T18:09:16Z" }';
-    const obj = JSON.parse(text, reviver);
-
+    //const text = '{ "date": "2016-04-26T18:09:16Z" }';
+    
     back() { }
     next() {
         this.router.navigate(['/connect']);
@@ -56,7 +54,7 @@ export class HomeComponent extends BaseComponent {
             // fix the loaded project file. Make sure its in zone.run, otherwise all databinding will file when you hit tables or columns page.
             this.ngZone.run(() => {
                 let project: any = this.getGlobal();
-                let data = JSON.parse(projectData);
+                let data = JSON.parse(projectData, this.reviver);
                 project.selectedTables = data.selectedTables;
                 data.selectedTables.forEach(t => {
                     let cols = data.columnDefs[t.value];
@@ -68,9 +66,6 @@ export class HomeComponent extends BaseComponent {
                             let obj = c.plugIn[0];
                             let realPlug: any = new gen[obj.__name__]();
                             Object.assign(realPlug, obj);
-                            if (obj.__name__.startWith("Date")) {
-
-                            }
                             realColDef.plugIn.splice(0, 1, realPlug);
                         }
                     }
@@ -78,26 +73,6 @@ export class HomeComponent extends BaseComponent {
                 });
                 console.log(this.getGlobal().columnDefs);
                 this.router.navigate(['/connect']);
-                /*
-
-                tbls.forEach(t => {
-                    let cols = project.columnDefs[t.value];
-                    for (let i = cols.length - 1; i >= 0; i--) {
-                        let c = cols[i];
-                        let realColDef: ColumnDef = Object.assign({}, c);
-                        project.columnDefs[t.value][i] = realColDef; // don't try to point cols[i] to realColDef; it won't affect the original value 
-                        if (c.plugIn.length > 0) {
-                            let obj = c.plugIn[0];
-                            let realPlug: any = new gen[obj.__name__]();
-                            Object.assign(realPlug, obj);
-                            realColDef.plugIn.splice(0, 1, realPlug);
-                        }
-                    }
-                });
-
-                this.router.navigate(['/connect']);
-                console.log(projData);
-                */
             });
         });
     }

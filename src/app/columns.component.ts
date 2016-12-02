@@ -29,6 +29,7 @@ export class ColumnsComponent extends BaseComponent {
     @ViewChild('DefaultTemplate') defaultTemplate: TemplateRef<any>;
     @ViewChild('CustomSqlTemplate') sqlTemplate: TemplateRef<any>;
     @ViewChild('CustomValueTemplate') valueTemplate: TemplateRef<any>;
+    @ViewChild('ListItemTemplate') listItemTemplate: TemplateRef<any>;
 
     tables: any[] = [];
     columns: ColumnDef[] = [];
@@ -94,6 +95,8 @@ export class ColumnsComponent extends BaseComponent {
                     return this.uuidTemplate;
                 case "FKTemplate":
                     return this.fkTemplate;
+                case "ListItemTemplate":
+                    return this.listItemTemplate;
             }
         }
         return this.defaultTemplate;
@@ -198,7 +201,17 @@ export class ColumnsComponent extends BaseComponent {
                                 case "nchar":
                                 case "varchar":
                                 case "nvarchar":
-                                    cf.plugIn.push(new gen.TextGenerator(cf.charMaxLen));
+                                    if (cf.charMaxLen == 1) {
+                                        // most likely it's a code  field like Gender
+                                        let gn:gen.ListItemGenerator = new gen.ListItemGenerator(); 
+                                        if (cf.name.toLowerCase() == "gender" || cf.name.toLowerCase() == "sex") {
+                                            gn.items[0] = "M";
+                                            gn.items[1] = "F";
+                                        }
+                                        cf.plugIn.push(gn);
+                                    }
+                                    else 
+                                        cf.plugIn.push(new gen.TextGenerator(cf.charMaxLen));
                                     break;
                                 default:
                                     break;
