@@ -27,7 +27,7 @@ import { BaseComponent } from './base.component';
     </div>
 
     <div class="flexbox-item footer">
-      <button class='btn btn-primary wide' (click)="next()">Connect</button>
+      <button class='btn btn-primary nav-btn' (click)="next()">Connect</button>
     </div>
   </div>
 

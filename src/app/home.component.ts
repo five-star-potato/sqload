@@ -14,8 +14,8 @@ import * as gen from './generator/generators.component';
             
             <div class="flexbox-item fill-area content flexbox-item-grow">
                 <div class="fill-area-content flexbox-item-grow">
-                    <br /><br />
-                    Data generation tool for SQL Server
+                    <br />
+                    <strong>Lorem Ipsum</strong> is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.
                     <br /><br />      
                 </div>
             </div>
@@ -42,19 +42,20 @@ export class HomeComponent extends BaseComponent {
         return value;
     }
 
-    //const text = '{ "date": "2016-04-26T18:09:16Z" }';
-    
     back() { }
     next() {
+        document.getElementById("projectTitle").innerHTML = "[New Project]";
         this.router.navigate(['/connect']);
     }
 
     private openProject() {
-        let projData = this.getOpenProjectFn()(projectData => {
+        let projData = this.getOpenProjectFn()((filePath, projectData) => {
             // fix the loaded project file. Make sure its in zone.run, otherwise all databinding will file when you hit tables or columns page.
             this.ngZone.run(() => {
                 let project: any = this.getGlobal();
                 let data = JSON.parse(projectData, this.reviver);
+                document.getElementById("projectTitle").innerHTML = filePath;
+
                 project.selectedTables = data.selectedTables;
                 data.selectedTables.forEach(t => {
                     let cols = data.columnDefs[t.value];
@@ -71,7 +72,6 @@ export class HomeComponent extends BaseComponent {
                     }
                     project.columnDefs[t.value] = cols;
                 });
-                console.log(this.getGlobal().columnDefs);
                 this.router.navigate(['/connect']);
             });
         });

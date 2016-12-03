@@ -2,7 +2,6 @@
     <div class="flexbox-item header">
         <h3>Configure columns for each table</h3>
     </div>
-
     <div class="flexbox-item fill-area content flexbox-item-grow">
         <div class="fill-area-content flexbox-item-grow" style="display:flex; flex-direction:row; padding: 5px; overflow-y:auto">
             <div style="display:flex; flex-direction:column; margin-right:10px; border-right: 1px solid #ddd; padding-right:10px">
@@ -61,17 +60,16 @@
                     </table>
                 </div>
                 <div style="display:flex; flex-direction: column; flex-grow: 1; overflow-y: auto; overflow-x: hidden; margin-left:10px; padding-right: 10px" >
-                    <legend>Data Generation</legend>
+                    <legend>Data Generation Settings</legend>
                     <template [ngTemplateOutlet]="getTemplate(activeColDef)" [ngOutletContext]="{ $implicit: activeColDef }"></template>
                 </div>
             </div>
         </div>
     </div>
-                <div class="flexbox-item footer">
-                    <button style="margin-top:30px" class='btn btn-primary nav-btn' (click)="back()">Back</button>
-                    <button style="margin-top:30px" class='btn btn-primary nav-btn' (click)="next()">Next</button>
-                </div>
-    
+    <div class="flexbox-item footer">
+        <button style="margin-top:10px" class='btn btn-primary nav-btn' (click)="back()">Back</button>
+        <button style="margin-top:10px" class='btn btn-primary nav-btn' (click)="next()">Next</button>
+    </div>
 </div>
 
 <template #IntegerTemplate>
@@ -201,5 +199,4 @@
     </div>
 </template>
 <template #DefaultTemplate>
-    <h2>---</h2>
 </template>

@@ -63,19 +63,24 @@ export class TextGenerator implements DataGenerator {
 export class DateGenerator implements DataGenerator {
     __name__: string = "DateGenerator";
     __template__: string = "DateTemplate";
-    public max: Date = new Date(2020, 1, 1);
-    public min: Date = new Date(1990, 1, 1);
+    public max: string = "2000-01-01";
+    public min: string = "2020-12-31";
 
-    constructor(max?: Date, min?: Date) {
+    constructor(max?: string, min?: string) {
         if (max)
             this.max = max;
         if (min)
             this.min = min;
     }
     generate(): string {
-        let dt = new Date(this.min.getTime() + Math.random() * (this.max.getTime() - this.min.getTime()));
-        return dt.getFullYear() + '-' + (dt.getMonth() + 1) + "-" + dt.getDate() + " " +
-            dt.getHours() + ":" + dt.getMinutes() + ":" + dt.getSeconds() + ":" + dt.getMilliseconds();
+        // parse the string date back to date
+        let d1 = this.min.split("-").map(Number);
+        let minDate = new Date(d1[0], d1[1] - 1, d1[2]);
+        let d2 = this.min.split("-").map(Number);
+        let maxDate = new Date(d2[0], d2[1] - 1, d2[2]);
+        
+        let dt = new Date(minDate.getTime() + Math.random() * (maxDate.getTime() - minDate.getTime()));
+        return dt.getFullYear() + '-' + (dt.getMonth() + 1) + "-" + dt.getDate();
     }
 }
 

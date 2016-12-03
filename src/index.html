@@ -16,9 +16,14 @@
 	<script src="https://use.fontawesome.com/d0b0359521.js"></script>
 
 	<style>
+
 	@font-face {
-	font-family: Plavsky;
-	src: url("fonts/Plavsky.otf") format("opentype");
+		font-family: Plavsky;
+		src: url("fonts/Plavsky.otf") format("opentype");
+	}
+	@font-face {
+		font-family: NeoGen;
+		src: url("fonts/NeoGen.ttf") format("truetype");
 	}
 
 	*, *:before, *:after
@@ -39,7 +44,7 @@
 
 	body
 	{
-		padding-top:20px
+		padding:5px
 	}
 
 	.flexbox-parent
@@ -87,20 +92,83 @@
 		min-width:100px;
 	}
 	.watermark {
-		position:fixed; 
+		position:absolute; 
 		right: 20px;
 		font-family: Plavsky;
 		opacity: 0.2;
 		z-index: -999;
 	}
+	h4.projectTitle {
+		position: fixed;
+		right: 70px;
+		top: 5px;
+		/*font-family: Aileron; */
+		opacity: 0.3;
+	}
+
+	/* Ribbon */
+.box {
+  position: relative;
+  border: 1px solid #BBB;
+  height:100%;
+  width:100%;
+}
+
+.ribbon {
+  position: absolute;
+  right: -5px; top: -5px;
+  z-index: 1;
+  overflow: hidden;
+  width: 75px; height: 75px;
+  text-align: right;
+}
+.ribbon span {
+  font-size: 10px;
+  font-weight: bold;
+  color: #FFF;
+  text-transform: uppercase;
+  text-align: center;
+  line-height: 20px;
+  transform: rotate(45deg);
+  -webkit-transform: rotate(45deg);
+  width: 100px;
+  display: block;
+  background: #79A70A;
+  background: linear-gradient(#FAA3C8 0%, #8C066D 100%);
+  box-shadow: 0 3px 10px -5px rgba(0, 0, 0, 1);
+  position: absolute;
+  top: 19px; right: -21px;
+}
+.ribbon span::before {
+  content: "";
+  position: absolute; left: 0px; top: 100%;
+  z-index: -1;
+  border-left: 3px solid #8C066D;
+  border-right: 3px solid transparent;
+  border-bottom: 3px solid transparent;
+  border-top: 3px solid #8C066D;
+}
+.ribbon span::after {
+  content: "";
+  position: absolute; right: 0px; top: 100%;
+  z-index: -1;
+  border-left: 3px solid transparent;
+  border-right: 3px solid #8C066D;
+  border-bottom: 3px solid transparent;
+  border-top: 3px solid #8C066D;
+}
 	</style>	
 
 </head>
 <body>
-	<h1 class="watermark" style="bottom: 35px;right:65px">SQL Server 2012 to 2016</h1>
-	<h1 class="watermark" style="bottom: 4px">Test Data Generation Tool <span style="font-size:12pt">&#40;1.0&#41;</span></h1>
+	<div class="box">
+	<div class="ribbon"><span>BETA 1.1</span></div>
+
+	<h4 class="projectTitle" id="projectTitle"></h4>
+	<h1 class="watermark" style="bottom: 35px">SQL Server 2016</h1>
+	<h1 class="watermark" style="bottom: 4px">Test Data Generation Tool</h1>
 	<!--<h6 class="watermark" style="bottom: 5px">copyright (c) <span id="copyrightYear"></span></h6> -->
-	<my-app>Loading...</my-app>
+	<my-app></my-app>
 	<!--
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
@@ -109,6 +177,7 @@
 		//var d = new Date()
 		//document.getElementById("copyrightYear").innerHTML = d.getFullYear();
 	</script>
+	</div>
 </body>	
 
 

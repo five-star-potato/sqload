@@ -18,14 +18,14 @@ function openProjectFile(callback) {
         }
     });
 
-    function readFile(filepath, cb){
-        fs.readFile(filepath, 'utf-8', function (err, data) {
+    function readFile(filePath, cb){
+        fs.readFile(filePath, 'utf-8', function (err, data) {
             if(err){
                 alert("An error ocurred reading the file :" + err.message);
                 return;
             }
             // Change how to handle the file content
-            cb(data);
+            cb(filePath, data);
             return data;
         });
     }
@@ -104,6 +104,7 @@ function init() {
     global.fnSaveOutput = saveOutputFile;
     global.fnOpenProject = openProjectFile;
     global.project = {
+        filePath: '',
         connection: {
             serverName : '127.0.0.1',
             databaseName : 'AdventureWorks2014',
