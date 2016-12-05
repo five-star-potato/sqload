@@ -58,7 +58,7 @@ export class HomeComponent extends BaseComponent {
 
                 project.selectedTables = data.selectedTables;
                 data.selectedTables.forEach(t => {
-                    let cols = data.columnDefs[t.value];
+                    let cols = data.columnDefs[t.id];
                     for (let i = cols.length - 1; i >= 0; i--) {
                         let c = cols[i];
                         let realColDef: ColumnDef = Object.assign({}, c);
@@ -70,7 +70,7 @@ export class HomeComponent extends BaseComponent {
                             realColDef.plugIn.splice(0, 1, realPlug);
                         }
                     }
-                    project.columnDefs[t.value] = cols;
+                    project.columnDefs[t.id] = cols;
                 });
                 this.router.navigate(['/connect']);
             });

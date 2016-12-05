@@ -1,7 +1,8 @@
-import { Component, OnInit, NgZone } from '@angular/core';
+import { Component, OnInit, NgZone, Pipe } from '@angular/core';
 import { Router } from '@angular/router';
 import { TRON } from './constants';
 import { BaseComponent } from './base.component';
+import { OrderBy } from './orderby.component';
 
 @Component({
     template: `	
@@ -15,7 +16,7 @@ import { BaseComponent } from './base.component';
                     <div style="display:flex; flex-direction:column">
                         <p>Available Tables</p>
                         <select [(ngModel)]="selectedOpts" class="form-control" multiple style="border: 1px solid gray; flex-grow: 1">
-                            <option *ngFor="let item of tables | selectedObjects:false " [value]="item.value">{{item.name}}</option>
+                            <option *ngFor="let item of tables | selectedObjects:false " [value]="item.id">{{item.name}}</option>
                         </select>
                     </div>
                     <div style="margin:80px 10px 0px 10px; display:flex; flex-direction:column">
@@ -25,7 +26,7 @@ import { BaseComponent } from './base.component';
                     <div style="display:flex; flex-direction:column; flex-grow: 1">
                         <p>Selected Tables</p>
                         <select [(ngModel)]="unselectedOpts" class="form-control" multiple style="border: 1px solid gray; flex-grow: 1">
-                            <option *ngFor="let item of tables | selectedObjects:true " [value]="item.value">{{item.name}}</option>
+                            <option *ngFor="let item of tables | selectedObjects:true " [value]="item.id">{{item.name}}</option>
                         </select>
                     </div>
                 </div>
@@ -51,19 +52,13 @@ export class TablesComponent extends BaseComponent {
     }
     private selectTbls() {
         this.tables.forEach((t) => {
-            if (this.selectedOpts.includes(t.value))
+            if (this.selectedOpts.includes(t.id))
                 t.selected = true;
-            /*
-            let found = this.selectedOpts.filter(x => x == t.value );
-            if (found.length > 0) {
-                t.selected = true;
-            }
-            */
         })
     }
     private unselectTbls(sel) {
         this.tables.forEach((t) => {
-            if (this.unselectedOpts.includes(t.value))
+            if (this.unselectedOpts.includes(t.id))
                 t.selected = false;
         })
     }
@@ -73,12 +68,20 @@ export class TablesComponent extends BaseComponent {
     next() {
         var tbls = [];
         tbls.length = 0;
+        let seq:number = Math.max.apply(Math, 
+            this.getGlobal().selectedTables.map(function(t) { return t.sequence; })) | 0; // arbitarily starts with 10. If table is brand now, seq is null
         this.tables.forEach((t) => {
             if (t.selected) {
                 tbls.push(t);
+                if (!t.sequence) {
+                    seq += 10;
+                    t.sequence = seq;
+                }
             }
         }); 
+         
         this.getGlobal().selectedTables = tbls;
+        console.log("connect from tables");
         console.log(this.getGlobal().columnDefs); 
         this.router.navigate(['/columns']);
     }
@@ -95,11 +98,24 @@ export class TablesComponent extends BaseComponent {
                             return t.name == tblName;
                         });
 
-                        this.tables.push({
-                            name: tblName,
-                            value: row["object_id"],
-                            selected: (sel.length > 0)
-                        });
+                        if (sel.length > 0) { // previously selected table
+                            this.tables.push({
+                                name: tblName,
+                                id: row["object_id"],
+                                selected: true,
+                                rowcount: sel[0].rowcount,
+                                sequence: sel[0].sequence
+                            });
+                        }
+                        else {
+                            this.tables.push({
+                                name: tblName,
+                                id: row["object_id"],
+                                selected: false,
+                                rowcount: 100,
+                                sequence: null
+                            });
+                        }
                     });
                     this.dataSet = res;
                 });

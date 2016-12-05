@@ -6,9 +6,11 @@ import { HomeComponent }  from './home.component';
 import { ColumnsComponent }  from './columns.component';
 import { GenerateComponent }  from './generate.component';
 import { TablesComponent }  from './tables.component';
+import { RowsComponent }  from './rows.component';
 import { FormsModule }   from '@angular/forms';
 import { RouterModule, Routes } from '@angular/router';
 import { selectedObjectsPipe } from './pipes.component';
+import { OrderBy } from './orderby.component';
 
 const appRoutes: Routes = [
   { path: '', component: HomeComponent },
@@ -16,12 +18,13 @@ const appRoutes: Routes = [
   { path: 'connect', component: ConnectionComponent },
   { path: 'tables', component: TablesComponent },
   { path: 'generate', component: GenerateComponent },
-  { path: 'columns', component: ColumnsComponent }
+  { path: 'columns', component: ColumnsComponent },
+  { path: 'rows', component: RowsComponent }
 ];
 
 @NgModule({
   imports:      [ BrowserModule, FormsModule, RouterModule.forRoot(appRoutes) ],
-  declarations: [ AppComponent, ConnectionComponent, HomeComponent, TablesComponent, ColumnsComponent, GenerateComponent, selectedObjectsPipe ],
+  declarations: [ AppComponent, ConnectionComponent, HomeComponent, TablesComponent, ColumnsComponent, RowsComponent, GenerateComponent, selectedObjectsPipe, OrderBy ],
   bootstrap:    [ AppComponent ]
 })
 export class AppModule { 

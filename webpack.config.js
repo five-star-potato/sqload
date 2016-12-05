@@ -1,13 +1,13 @@
 var webpack = require('webpack');
+var path = require('path');
 var HtmlWebpackPlugin = require('html-webpack-plugin');
 var CopyWebpackPlugin = require('copy-webpack-plugin');
 
 module.exports = {
     devtool: 'source-map',
-    
-    entry: ['./src/main'],
+    entry: path.join(__dirname, "src", "main"),
     output: {
-        path: './dist',
+        path: path.join(__dirname, "dist"),
         filename: 'app.bundle.js'
     },
     module: {
@@ -29,7 +29,7 @@ module.exports = {
     },
     plugins: [
         new HtmlWebpackPlugin({
-            template: './src/index.html'
+            template: path.join(__dirname, "src", "index.html")
         }),
         new webpack.ProvidePlugin({
             $: "jquery",

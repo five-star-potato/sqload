@@ -6,6 +6,10 @@ import { BaseComponent } from './base.component';
 @Component({
   template: `
   <div class="flexbox-parent">
+    <div class="flexbox-item header">
+        <h3>Connect to your database</h3>
+    </div>
+
     <div class="flexbox-item fill-area content flexbox-item-grow" style="flex-direction:column">
       <div class="col-md-8">
           <div class="form-group">

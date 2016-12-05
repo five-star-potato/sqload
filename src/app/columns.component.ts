@@ -1,4 +1,4 @@
-import { Component, OnInit, NgZone, TemplateRef, ViewChild } from '@angular/core';
+import { Component, OnInit, NgZone, TemplateRef, ViewChild, AfterViewInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { TRON } from './constants';
 import { DataGenerator, ColumnDef, fnGetDataTypeDesc } from './include';
@@ -19,7 +19,7 @@ import * as gen from './generator/generators.component';
     }
     `]
 })
-export class ColumnsComponent extends BaseComponent {
+export class ColumnsComponent extends BaseComponent implements AfterViewInit {
     @ViewChild('IntegerTemplate') integerTemplate: TemplateRef<any>;
     @ViewChild('TextTemplate') textTemplate: TemplateRef<any>;
     @ViewChild('DateTemplate') dateTemplate: TemplateRef<any>;
@@ -44,7 +44,7 @@ export class ColumnsComponent extends BaseComponent {
     }
     next() {
         //this.getGlobal().columnDefs = this.columns; 
-        this.router.navigate(['/generate']);
+        this.router.navigate(['/rows']);
     }
     private setActiveTable(objId: number) {
         this.activeTableId = objId;
@@ -52,6 +52,13 @@ export class ColumnsComponent extends BaseComponent {
     }
     private setActiveColumn(c: ColumnDef) {
         this.activeColDef = c;
+    }
+    private toggleInclude(c: ColumnDef):boolean {
+        if (c.isIdentity)
+            return false;
+        
+        c.include = !c.include;
+        return c.include;
     }
     private getTypeDesc(cf: ColumnDef): string {
         return fnGetDataTypeDesc(cf);
@@ -104,16 +111,23 @@ export class ColumnsComponent extends BaseComponent {
     private getGeneratorName(cf: ColumnDef) {
         return cf.plugIn.length > 0 ? cf.plugIn[0].constructor.name : '';
     }
+    ngAfterViewInit() {
+        //this.setActiveTable(this.tables[0].id);
+    }
     ngOnInit() {
         // when moving back and forth among pages, we need to maintain states; 
         // If columnDefs.length, the user is revisiting this page - clear the table entries that are no longer valid.
         // If a table Id exists in both selectedTAbles and columnDefs, we don't need to reload column info from DB; take it off from tblIds
         this.tables = this.getGlobal().selectedTables;
         let columnDefs = this.getGlobal().columnDefs;
+        //console.log("active table: " + this.tables[0].id);
+        //this.setActiveTable(this.tables[0].id);
+        //if (columnDefs[this.activeTableId])
+        //    this.setActiveColumn(columnDefs[this.activeTableId][0]);
 
         let tblIds = []; // Create a list of table object Ids for use in constructing the SQL statement
         for (let i = this.tables.length - 1; i >= 0; i--) {
-            tblIds.unshift(this.tables[i].value);
+            tblIds.unshift(this.tables[i].id);
         }
         let keys = []; // get all the "keys" i.e. table Object ID from columnDef. Remove them if the new list of selectedTables does not include them
         for (var key in columnDefs) {
@@ -135,7 +149,7 @@ export class ColumnsComponent extends BaseComponent {
             return;
 
         let sql = `
-            SELECT t.object_id, ic.*, fk.name [fk_constraint_name], fk.object_id [fk_constraint_id], fkc.constraint_column_id [fk_constraint_column_id], fk_rt.name [fk_table_name], fk_rc.name [fk_column_name], SCHEMA_NAME(fk_rt.schema_id) [fk_schema_name]
+            SELECT t.object_id, ic.*, fk.name [fk_constraint_name], fk.object_id [fk_constraint_id], fkc.constraint_column_id [fk_constraint_column_id], fk_rt.name [fk_table_name], fk_rc.name [fk_column_name], SCHEMA_NAME(fk_rt.schema_id) [fk_schema_name], c.is_identity
             FROM sys.columns c
             JOIN sys.tables t ON c.object_id = t.object_id
             LEFT JOIN ( 
@@ -166,11 +180,12 @@ export class ColumnsComponent extends BaseComponent {
                             scale: row['NUMERIC_SCALE'],
                             nullable: (row['IS_NULLABLE'] == "YES"),
                             colDefault: row['COLUMN_DEFAULT'],
-                            include: (row['COLUMN_DEFAULT'] == null),
+                            include: (row['COLUMN_DEFAULT'] == null && row['is_identity'] != 1),
                             fkConstraintID: row['fk_constraint_id'],
                             fkTable: row['fk_table_name'],
                             fkColumn: row['fk_column_name'],
-                            fkSchema: row['fk_schema_name']
+                            fkSchema: row['fk_schema_name'],
+                            isIdentity: (row["is_identity"] == 1)
                         });
                         if (cf.fkConstraintID) {
                             cf.plugIn.push(new gen.FKGenerator());
@@ -222,7 +237,7 @@ export class ColumnsComponent extends BaseComponent {
                         columnDefs[tblId].push(cf);
                     });
 
-                    console.log("table columns");
+                    console.log("table columns after");
                     console.log(this.getGlobal().columnDefs);
                 });
             }

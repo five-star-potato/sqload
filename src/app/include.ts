@@ -19,7 +19,10 @@ export class ColumnDef {
     fkTable: string;
     fkColumn: string;    
     fkSchema: string;
+    isIdentity: boolean = false;
     plugIn: DataGenerator[] = []; // DataGenerator sometimes requires much configuration... save the change in case the user switch generator types by mistakes
+    variable: string; // placeholder for SQL variable names
+    
 
     public constructor(
         fields?: {
@@ -35,6 +38,7 @@ export class ColumnDef {
             fkTable?: string;
             fkColumn?: string; 
             fkSchema?: string;  
+            isIdentity?: boolean;
         }) 
     {
         if (fields) Object.assign(this, fields);
