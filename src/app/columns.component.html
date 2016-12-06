@@ -35,7 +35,7 @@
                         </thead>
                         <tbody>
                             <tr [class.info]="activeColDef.name == c.name" *ngFor="let c of columns; let x = index" (click)="setActiveColumn(c)">
-                                <td><input type="checkbox" [(ngModel)]="toggleInclude(c)"></td>
+                                <td><input type="checkbox" [(ngModel)]="c.include"></td>
                                 <td>{{x + 1}}</td>
                                 <td>{{c.name}}</td>
                                 <td>{{getTypeDesc(c)}}</td>

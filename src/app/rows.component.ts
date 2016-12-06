@@ -32,8 +32,8 @@ import * as gen from './generator/generators.component';
             </div>
             
             <div class="flexbox-item footer">
-                <a (click)="back()" class="btn btn-lg btn-info">Back</a>
-                <a (click)="next()" class="btn btn-lg btn-primary">Next</a>
+                <button style="margin-top:30px" class='btn btn-primary nav-btn' (click)="back()">Back</button>
+                <button style="margin-top:30px" class='btn btn-primary nav-btn' (click)="next()">Next</button>
             </div>
         </div>
     `,

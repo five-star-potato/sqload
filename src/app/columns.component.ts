@@ -53,13 +53,6 @@ export class ColumnsComponent extends BaseComponent implements AfterViewInit {
     private setActiveColumn(c: ColumnDef) {
         this.activeColDef = c;
     }
-    private toggleInclude(c: ColumnDef):boolean {
-        if (c.isIdentity)
-            return false;
-        
-        c.include = !c.include;
-        return c.include;
-    }
     private getTypeDesc(cf: ColumnDef): string {
         return fnGetDataTypeDesc(cf);
     }
@@ -159,7 +152,7 @@ export class ColumnsComponent extends BaseComponent implements AfterViewInit {
                 JOIN sys.columns fk_rc ON fk_rt.object_id = fk_rc.object_id AND fk_rc.column_id = fkc.referenced_column_id
             ) ON t.object_id = fk.parent_object_id AND c.column_id = fkc.parent_column_id
             JOIN INFORMATION_SCHEMA.COLUMNS ic ON t.name = ic.TABLE_NAME AND c.name = ic.COLUMN_NAME AND SCHEMA_NAME(t.schema_id) = ic.TABLE_SCHEMA
-            WHERE c.object_id in (${tblIds.join()}) AND c.is_computed <> 1
+            WHERE c.object_id in (${tblIds.join()}) AND c.is_computed <> 1 AND c.is_identity <> 1
             order by ic.TABLE_SCHEMA, ic.TABLE_NAME, c.column_id`;
         let dataSet = this.getSQLFn()(sql,
             (err, res) => {
