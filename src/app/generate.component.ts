@@ -98,7 +98,7 @@ export class GenerateComponent extends BaseComponent {
                             vals.push(cf.plugIn[0].generate());
                             vals.push(`');\nSELECT TOP 1 ${cf.variable} = value FROM ${tmpTbl};\nDELETE ${tmpTbl};`);
                         }
-                        else {
+                        else if (!cf.fkConstraintID) {
                             vals.push(`SET ${cf.variable} = '${cf.plugIn[0].generate()}';`);
                         }
                     }

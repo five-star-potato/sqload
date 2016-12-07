@@ -156,7 +156,8 @@ export class ListItemGenerator implements DataGenerator {
             this.items = items;
     }
     generate(): String {
-        return this.items[Math.floor(Math.random() * this.items.length)];
+        let nonEmpty = this.items.filter(i => i.length > 0);
+        return nonEmpty[Math.floor(Math.random() * nonEmpty.length)];
     }
 }
 

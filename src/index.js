@@ -100,6 +100,7 @@ function execSQL(sqlStmt, callback) {
 }
 
 function init() {
+
     global.fnExecSQL = execSQL;
     global.fnSaveOutput = saveOutputFile;
     global.fnOpenProject = openProjectFile;
