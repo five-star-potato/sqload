@@ -4,29 +4,38 @@ var app = electron.app;
 var BrowserWindow = electron.BrowserWindow;
 var ipcMain = require('electron').ipcRenderer;
 
-function openProjectFile(callback) {
+function openProjectFile() {
     var btns = ['OK'];
     const {dialog} = require('electron')
 
-    dialog.showOpenDialog(function (fileNames) {
-        // fileNames is an array that contains all the selected
-        if (fileNames === undefined){
-            console.log("No file selected");
-        }
-        else {
-            readFile(fileNames[0], callback);
-        }
+    return new Promise((resolve, reject) => {
+        dialog.showOpenDialog(filenames => {
+            // fileNames is an array that contains all the selected
+            if (filenames === undefined){
+                reject("No file selected");
+            }
+            else {
+                resolve(filenames[0]);
+            }
+        });
+    })
+    .then(filename => {
+        return readFile(filename);
+    })
+    .catch(err => {
+        console.log(err);
     });
 
-    function readFile(filePath, cb){
-        fs.readFile(filePath, 'utf-8', function (err, data) {
-            if(err){
-                alert("An error ocurred reading the file :" + err.message);
-                return;
-            }
-            // Change how to handle the file content
-            cb(filePath, data);
-            return data;
+    function readFile(filename) {
+        return new Promise(function(resolve, reject) {
+            fs.readFile(filename, 'utf-8', function (err, data) {
+                if (err) {
+                    console.log('rejecting');
+                    reject(err);
+                }
+                else
+                    resolve({ filename: filename, data: data }); 
+            });
         });
     }
 }
@@ -35,20 +44,36 @@ function saveOutputFile(content) {
     var btns = ['OK'];
     const {dialog} = require('electron')
 
-    dialog.showSaveDialog(function (fileName) {
-        if (fileName === undefined){
-            console.log("You didn't save the file");
-            return;
-        }
-        // fileName is a string that contains the path and filename created in the save file dialog.  
-        fs.writeFile(fileName, content, function (err) {
-            if(err){
-                dialog.showMessageBox({ type: 'error', title:"Save Output", buttons: btns, message: "An error ocurred creating the file "+ err.message });
-                return;
+    return new Promise((resolve, reject) => {
+        dialog.showSaveDialog(filename => {
+            if (filename === undefined){
+                reject("You didn't save the file");
             }
-            dialog.showMessageBox({ type: 'info', title:"Save Output", buttons: btns, message: "The file has been succesfully saved" });
+            else {
+                resolve(filename);
+            }
         });
-    }); 
+    })   
+    .then(filename => {
+        return writeFile(filename, content);        
+    })
+    .catch(err => {
+        console.log(err);
+    });
+
+    function writeFile(filename, content) {
+        return new Promise((resolve, reject) => {
+            // fileName is a string that contains the path and filename created in the save file dialog.  
+            fs.writeFile(filename, content, err => {
+                if(err){
+                    dialog.showMessageBox({ type: 'error', title:"Save Output", buttons: btns, message: "An error ocurred creating the file "+ err.message });
+                    reject(err);
+                }
+                dialog.showMessageBox({ type: 'info', title:"Save Output", buttons: btns, message: "The file has been succesfully saved" });
+                resolve("success");
+            });
+        });
+    }
 }
 
 function execSQL(sqlStmt, callback) {

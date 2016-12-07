@@ -49,31 +49,36 @@ export class HomeComponent extends BaseComponent {
     }
 
     private openProject() {
-        let projData = this.getOpenProjectFn()((filePath, projectData) => {
-            // fix the loaded project file. Make sure its in zone.run, otherwise all databinding will file when you hit tables or columns page.
-            this.ngZone.run(() => {
-                let project: any = this.getGlobal();
-                let data = JSON.parse(projectData, this.reviver);
-                document.getElementById("projectTitle").innerHTML = filePath;
+        this.getOpenProjectFn()()
+            .then(result => {
+                // fix the loaded project file. Make sure its in zone.run, otherwise all databinding will file when you hit tables or columns page.
+                this.ngZone.run(() => {
+                    let project: any = this.getGlobal();
+                    let data = JSON.parse(result.data, this.reviver);
+                    document.getElementById("projectTitle").innerHTML = result.filename;
 
-                project.selectedTables = data.selectedTables;
-                data.selectedTables.forEach(t => {
-                    let cols = data.columnDefs[t.id];
-                    for (let i = cols.length - 1; i >= 0; i--) {
-                        let c = cols[i];
-                        let realColDef: ColumnDef = Object.assign({}, c);
-                        cols[i] = realColDef;  
-                        if (c.plugIn.length > 0) {
-                            let obj = c.plugIn[0];
-                            let realPlug: any = new gen[obj.__name__]();
-                            Object.assign(realPlug, obj);
-                            realColDef.plugIn.splice(0, 1, realPlug);
+                    project.selectedTables = data.selectedTables;
+                    data.selectedTables.forEach(t => {
+                        let cols = data.columnDefs[t.id];
+                        for (let i = cols.length - 1; i >= 0; i--) {
+                            let c = cols[i];
+                            let realColDef: ColumnDef = Object.assign({}, c);
+                            cols[i] = realColDef;  
+                            if (c.plugIn.length > 0) {
+                                let obj = c.plugIn[0];
+                                let realPlug: any = new gen[obj.__name__]();
+                                Object.assign(realPlug, obj);
+                                realColDef.plugIn.splice(0, 1, realPlug);
+                            }
                         }
-                    }
-                    project.columnDefs[t.id] = cols;
+                        project.columnDefs[t.id] = cols;
+                    });
+                    this.router.navigate(['/connect']);
                 });
-                this.router.navigate(['/connect']);
+            })
+            .catch(err => {
+                console.log(err);
             });
-        });
+
     }
 }
