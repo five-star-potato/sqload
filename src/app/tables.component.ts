@@ -1,8 +1,9 @@
 import { Component, OnInit, NgZone, Pipe } from '@angular/core';
 import { Router } from '@angular/router';
-import { TRON } from './constants';
+import { TRON_GLOBAL, TRON_EVENT } from './constants';
 import { BaseComponent } from './base.component';
 import { OrderBy } from './orderby.component';
+import { WizardStateService } from "./service/wizard-state";
 
 @Component({
     template: `	
@@ -38,8 +39,10 @@ import { OrderBy } from './orderby.component';
             </div>
         </div>
     `,
-    styles: [`
-    `]
+    styleUrls: [
+        './css/host.css'
+    ],
+    providers: [ WizardStateService ]
 })
 export class TablesComponent extends BaseComponent {
     dataSet: any[] = [];
@@ -47,8 +50,8 @@ export class TablesComponent extends BaseComponent {
     selectedOpts: any;
     unselectedOpts: any;
 
-    constructor(router: Router,  ngZone: NgZone) { 
-        super(router, ngZone);
+    constructor(router: Router, ngZone: NgZone, wizardStateService: WizardStateService) {
+        super(router, ngZone, wizardStateService);
     }
     private selectTbls() {
         this.tables.forEach((t) => {

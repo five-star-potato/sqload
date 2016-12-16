@@ -1,37 +1,38 @@
-import { Component, NgZone } from "@angular/core";
+import { Component, NgZone, Output, EventEmitter, OnInit } from "@angular/core";
 import { Router } from '@angular/router';
 import { BaseComponent } from "./base.component";
-import { TRON } from './constants';
+import { TRON_GLOBAL, TRON_EVENT } from './constants';
 import { DataGenerator, ColumnDef, fnGetDataTypeDesc } from './include';
 import * as gen from './generator/generators.component';
+import { WizardStateService } from "./service/wizard-state";
+import { Subscription }   from 'rxjs/Subscription';
 
 @Component({
-    template: `	
-        <div class="flexbox-parent">
-            <div class="flexbox-item header">
-                <h1 style="font-family:Plavsky;opacity:0.5">Welcome</h1>
-            </div>
-            
-            <div class="flexbox-item fill-area content flexbox-item-grow">
-                <div class="fill-area-content flexbox-item-grow">
-                    <br />
-                    <strong>Lorem Ipsum</strong> is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.
-                    <br /><br />      
-                </div>
-            </div>
-            
-            <div class="flexbox-item footer">
-                <a (click)="openProject()" class="btn btn-lg btn-info">Open Project</a>
-                <a (click)="next()" class="btn btn-lg btn-primary">Quick Start</a>
+    template: `
+        <div class="flexbox-item fill-area content flexbox-item-grow">
+            <div class="fill-area-content flexbox-item-grow">
+                <h1 style="font-family:Plavsky;opacity:0.5">Greetings</h1>
+                <br />
+                <strong>Lorem Ipsum</strong> is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.
+                <br /><br />      
             </div>
         </div>
+        
+        <div class="flexbox-item footer">
+            <a (click)="openProject()" class="btn btn-lg btn-info">Open Project</a>
+            <a (click)="next()" class="btn btn-lg btn-primary">Quick Start</a>
+        </div>
     `,
-    styles: [`
-    `]
+    styleUrls: [
+        './css/host.css'
+    ]
 })
-export class HomeComponent extends BaseComponent {
-    constructor(router: Router, ngZone: NgZone) {
-        super(router, ngZone);
+export class HomeComponent extends BaseComponent implements OnInit {
+      
+    constructor(router: Router, ngZone: NgZone, wizardStateService: WizardStateService) {
+        super(router, ngZone, wizardStateService);
+    }
+    ngOnInit() {
     }
 
     private reviver(key, value):Date | string  {
@@ -42,7 +43,9 @@ export class HomeComponent extends BaseComponent {
         return value;
     }
 
-    back() { }
+    back() {
+        this.router.navigate(['/home']);
+     }
     next() {
         document.getElementById("projectTitle").innerHTML = "[New Project]";
         this.router.navigate(['/connect']);
@@ -73,6 +76,7 @@ export class HomeComponent extends BaseComponent {
                         }
                         project.columnDefs[t.id] = cols;
                     });
+                    this.wizardStateService.projectChange({ type: TRON_EVENT.projectOpened });
                     this.router.navigate(['/connect']);
                 });
             })

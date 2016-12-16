@@ -1,9 +1,10 @@
 import { Component, OnInit, NgZone } from '@angular/core';
 import { Router } from '@angular/router';
-import { TRON } from './constants';
+import { TRON_GLOBAL, TRON_EVENT } from './constants';
 import { BaseComponent } from './base.component';
 import { ColumnDef, fnGetDataTypeDesc, fnOnlyUnique, fnStringifyNoCircular } from './include';
 import { IntegerGenerator, TextGenerator, DateGenerator, UUIDGenerator, CustomSqlGenerator, CustomValueGenerator, FKGenerator } from './generator/generators.component';
+import { WizardStateService } from "./service/wizard-state";
 
 @Component({
     template: `	
@@ -26,12 +27,14 @@ import { IntegerGenerator, TextGenerator, DateGenerator, UUIDGenerator, CustomSq
             </div>
         </div>
     `,
-    styles: [`
-    `]
+    styleUrls: [
+        './css/host.css'
+    ],
+    providers: [ WizardStateService ]
 })
 export class GenerateComponent extends BaseComponent {
-    constructor(router: Router,  ngZone: NgZone) { 
-        super(router, ngZone);
+    constructor(router: Router, ngZone: NgZone, wizardStateService: WizardStateService) {
+        super(router, ngZone, wizardStateService);
     }
     private cleanUnusedPlugin() {
         var tbls = this.getGlobal().selectedTables;
@@ -131,7 +134,7 @@ export class GenerateComponent extends BaseComponent {
                 //console.log(str);
             }
         });
-        this.getSaveOutputFn()(stmts.join('\n'));
+        this.getSaveOutputFn()("sql", stmts.join('\n'));
     }
     back() {
         this.router.navigate(['/columns']);
@@ -143,7 +146,7 @@ export class GenerateComponent extends BaseComponent {
     private saveProject() {
         this.cleanUnusedPlugin();
         let projectContent = fnStringifyNoCircular(this.getGlobal());
-        this.getSaveOutputFn()(projectContent);
+        this.getSaveOutputFn()("project", projectContent);
     }
     ngOnInit() {
     }

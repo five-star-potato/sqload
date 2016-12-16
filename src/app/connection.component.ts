@@ -1,7 +1,8 @@
 import { Component, OnInit, NgZone } from '@angular/core';
 import { Router } from '@angular/router';
-import { TRON } from "./constants";
+import { TRON_GLOBAL, TRON_EVENT } from "./constants";
 import { BaseComponent } from './base.component';
+import { WizardStateService } from "./service/wizard-state";
 
 @Component({
   template: `
@@ -31,13 +32,15 @@ import { BaseComponent } from './base.component';
     </div>
 
     <div class="flexbox-item footer">
+      <button class='btn btn-primary nav-btn' (click)="back()">Back</button>
       <button class='btn btn-primary nav-btn' (click)="next()">Connect</button>
     </div>
   </div>
-
     `,
-  styles: [`
-    `]
+  styleUrls: [
+    './css/host.css'
+  ],
+  providers: [WizardStateService]
 })
 export class ConnectionComponent extends BaseComponent implements OnInit {
   serverName: string;
@@ -46,10 +49,12 @@ export class ConnectionComponent extends BaseComponent implements OnInit {
   databaseName: string;
   dataSet: any[] = [];
 
-  constructor(router: Router, ngZone: NgZone) {
-    super(router, ngZone);
+  constructor(router: Router, ngZone: NgZone, wizardStateService: WizardStateService) {
+    super(router, ngZone, wizardStateService);
   }
-  back() { }
+  back() { 
+    this.router.navigate(['/home']);
+  }
   next() {
     this.getGlobal().connection.serverName = this.serverName;
     this.getGlobal().connection.databaseName = this.databaseName;

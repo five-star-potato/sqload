@@ -1,9 +1,10 @@
 import { Component, OnInit, NgZone, TemplateRef, ViewChild, AfterViewInit } from '@angular/core';
 import { Router } from '@angular/router';
-import { TRON } from './constants';
+import { TRON_GLOBAL, TRON_EVENT } from './constants';
 import { DataGenerator, ColumnDef, fnGetDataTypeDesc } from './include';
 import { BaseComponent } from './base.component';
 import * as gen from './generator/generators.component';
+import { WizardStateService } from "./service/wizard-state";
 
 @Component({
     templateUrl: "./columns.component.html",
@@ -17,7 +18,11 @@ import * as gen from './generator/generators.component';
     .table-condensed>thead>tr>th, .table-condensed>tbody>tr>th, .table-condensed>tfoot>tr>th, .table-condensed>thead>tr>td, .table-condensed>tbody>tr>td, .table-condensed>tfoot>tr>td{
         padding: 5px;
     }
-    `]
+    `],
+    styleUrls: [
+        './css/host.css'
+    ],
+    providers: [ WizardStateService ]
 })
 export class ColumnsComponent extends BaseComponent implements AfterViewInit {
     @ViewChild('IntegerTemplate') integerTemplate: TemplateRef<any>;
@@ -35,10 +40,10 @@ export class ColumnsComponent extends BaseComponent implements AfterViewInit {
     columns: ColumnDef[] = [];
     activeTableId: number;
     activeColDef: ColumnDef = new ColumnDef();
-    constructor(router: Router, ngZone: NgZone) {
-        super(router, ngZone);
-    }
 
+    constructor(router: Router, ngZone: NgZone, wizardStateService: WizardStateService) {
+        super(router, ngZone, wizardStateService);
+    }
     back() {
         this.router.navigate(['/tables']);
     }

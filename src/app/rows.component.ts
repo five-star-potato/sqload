@@ -1,9 +1,10 @@
 import { Component, NgZone } from "@angular/core";
 import { Router } from '@angular/router';
 import { BaseComponent } from "./base.component";
-import { TRON } from './constants';
+import { TRON_GLOBAL, TRON_EVENT } from './constants';
 import { DataGenerator, ColumnDef, fnGetDataTypeDesc } from './include';
 import * as gen from './generator/generators.component';
+import { WizardStateService } from "./service/wizard-state";
 
 @Component({
     template: `	
@@ -37,14 +38,16 @@ import * as gen from './generator/generators.component';
             </div>
         </div>
     `,
-    styles: [`
-    `]
+    styleUrls: [
+        './css/host.css'
+    ],
+    providers: [ WizardStateService ]
 })
 export class RowsComponent extends BaseComponent {
     tables: any[] = [];
 
-    constructor(router: Router, ngZone: NgZone) {
-        super(router, ngZone);
+    constructor(router: Router, ngZone: NgZone, wizardStateService: WizardStateService) {
+        super(router, ngZone, wizardStateService);
     }
 
     private moveUp(index: number) {
