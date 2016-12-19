@@ -1,5 +1,6 @@
 import { NgModule, ModuleWithProviders }      from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
+import { FormsModule }   from '@angular/forms';
 import { AppComponent }  from './app.component';
 import { ConnectionComponent }  from './connection.component';
 import { HomeComponent }  from './home.component';
@@ -7,7 +8,6 @@ import { ColumnsComponent }  from './columns.component';
 import { GenerateComponent }  from './generate.component';
 import { TablesComponent }  from './tables.component';
 import { RowsComponent }  from './rows.component';
-import { FormsModule }   from '@angular/forms';
 import { RouterModule, Routes } from '@angular/router';
 import { selectedObjectsPipe } from './pipes.component';
 import { OrderBy } from './orderby.component';

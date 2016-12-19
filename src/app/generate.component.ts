@@ -29,8 +29,8 @@ import { WizardStateService } from "./service/wizard-state";
     `,
     styleUrls: [
         './css/host.css'
-    ],
-    providers: [ WizardStateService ]
+    ]
+    // providers: [ WizardStateService ]
 })
 export class GenerateComponent extends BaseComponent {
     constructor(router: Router, ngZone: NgZone, wizardStateService: WizardStateService) {

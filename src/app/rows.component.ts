@@ -40,8 +40,8 @@ import { WizardStateService } from "./service/wizard-state";
     `,
     styleUrls: [
         './css/host.css'
-    ],
-    providers: [ WizardStateService ]
+    ]
+    //providers: [ WizardStateService ]
 })
 export class RowsComponent extends BaseComponent {
     tables: any[] = [];
@@ -64,6 +64,7 @@ export class RowsComponent extends BaseComponent {
         this.router.navigate(['/columns']);
     }
     next() {
+        this.wizardStateService.projectChange({ type: TRON_EVENT.refresh });
         this.router.navigate(['/generate']);
     }
     ngOnInit() {

@@ -21,8 +21,8 @@ import { WizardStateService } from "./service/wizard-state";
     `],
     styleUrls: [
         './css/host.css'
-    ],
-    providers: [ WizardStateService ]
+    ]
+    // providers: [ WizardStateService ] -- this will create another instance
 })
 export class ColumnsComponent extends BaseComponent implements AfterViewInit {
     @ViewChild('IntegerTemplate') integerTemplate: TemplateRef<any>;
@@ -48,7 +48,7 @@ export class ColumnsComponent extends BaseComponent implements AfterViewInit {
         this.router.navigate(['/tables']);
     }
     next() {
-        //this.getGlobal().columnDefs = this.columns; 
+        this.wizardStateService.projectChange({ type: TRON_EVENT.refresh });
         this.router.navigate(['/rows']);
     }
     private setActiveTable(objId: number) {

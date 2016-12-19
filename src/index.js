@@ -137,22 +137,31 @@ function execSQL(sqlStmt, callback) {
     }
 }
 
-function init() {
-
-    global.fnExecSQL = execSQL;
-    global.fnSaveOutput = saveOutputFile;
-    global.fnOpenProject = openProjectFile;
+function newProject() {
     global.project = {
         filePath: '',
         connection: {
+            serverName: '',
+            databaseName: '',
+            userName: '',
+            password: ''
+            /*
             serverName: '127.0.0.1',
             databaseName: 'AdventureWorks2014',
             userName: 'sa',
             password: "LongLive1"
+            */
         },
         selectedTables: [],
         columnDefs: {}
     }
+}
+function init() {
+    global.fnExecSQL = execSQL;
+    global.fnSaveOutput = saveOutputFile;
+    global.fnOpenProject = openProjectFile;
+    global.fnNewProject = newProject;
+    newProject();
 }
 app.on('ready', _ => {
     init();

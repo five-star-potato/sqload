@@ -7,7 +7,6 @@
     "package": "electron-packager . --platform=win32 --arch=x64",
     "build": "rimraf gendat-win32-x64 dist && webpack --progress",
     "rimraf": "rimraf",
-    "postinstall": "typings install",
     "typings": "typings"
   },
   "devDependencies": {

@@ -41,8 +41,8 @@ import { WizardStateService } from "./service/wizard-state";
     `,
     styleUrls: [
         './css/host.css'
-    ],
-    providers: [ WizardStateService ]
+    ]
+    // providers: [ WizardStateService ] -- this will create another instance
 })
 export class TablesComponent extends BaseComponent {
     dataSet: any[] = [];
@@ -84,8 +84,7 @@ export class TablesComponent extends BaseComponent {
         }); 
          
         this.getGlobal().selectedTables = tbls;
-        console.log("connect from tables");
-        console.log(this.getGlobal().columnDefs); 
+        this.wizardStateService.projectChange({ type: TRON_EVENT.refresh });
         this.router.navigate(['/columns']);
     }
     ngOnInit() {

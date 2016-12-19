@@ -6,41 +6,42 @@ import { WizardStateService } from "./service/wizard-state";
 
 @Component({
   template: `
-  <div class="flexbox-parent">
-    <div class="flexbox-item header">
+  <form>
+    <div class="flexbox-parent">
+      <div class="flexbox-item header">
         <h3>Connect to your database</h3>
-    </div>
+      </div>
 
-    <div class="flexbox-item fill-area content flexbox-item-grow" style="flex-direction:column">
-      <div class="col-md-8">
+      <div class="flexbox-item fill-area content flexbox-item-grow" style=
+      "flex-direction:column">
+        <div class="col-md-8">
           <div class="form-group">
-            <label>Server Name</label> <input type="text" [(ngModel)]="serverName" class="form-control" placeholder="Server" />
+            <label>Server Name</label> <input type="text" class="form-control" placeholder="Server" />
           </div>
 
           <div class="form-group">
-            <label>User Name</label> <input type="text" [(ngModel)]="databaseName" class="form-control" placeholder="Database Name" />
+            <label>User Name</label> <input type="text" class="form-control" placeholder="Database Name" />
           </div>
 
           <div class="form-group">
-            <label>User Name</label> <input type="text" [(ngModel)]="userName" class="form-control" placeholder="User Name" />
+            <label>User Name</label> <input type="text" class="form-control" placeholder="User Name" />
           </div>
 
           <div class="form-group">
-            <label>Password</label> <input type="password" [(ngModel)]="password" class="form-control" placeholder="Password" />
+            <label>Password</label> <input type="password" class="form-control" placeholder="Password" />
           </div>
         </div>
-    </div>
+      </div>
 
-    <div class="flexbox-item footer">
-      <button class='btn btn-primary nav-btn' (click)="back()">Back</button>
-      <button class='btn btn-primary nav-btn' (click)="next()">Connect</button>
+      <div class="flexbox-item footer">
+        <button class='btn btn-primary nav-btn'>Back</button> <button class='btn btn-primary nav-btn'>Connect</button>
+      </div>
     </div>
-  </div>
+  </form>
     `,
   styleUrls: [
     './css/host.css'
-  ],
-  providers: [WizardStateService]
+  ]
 })
 export class ConnectionComponent extends BaseComponent implements OnInit {
   serverName: string;
@@ -58,8 +59,9 @@ export class ConnectionComponent extends BaseComponent implements OnInit {
   next() {
     this.getGlobal().connection.serverName = this.serverName;
     this.getGlobal().connection.databaseName = this.databaseName;
-    this.getGlobal().connection.userName, this.userName;
+    this.getGlobal().connection.userName = this.userName;
     this.getGlobal().connection.password = this.password;
+    this.wizardStateService.projectChange({ type: TRON_EVENT.refresh });
     this.router.navigate(['/tables']);
   }
   ngOnInit() {

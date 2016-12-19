@@ -31,5 +31,8 @@ export abstract class BaseComponent {
     protected getOpenProjectFn():any {
         return this.remote.getGlobal(TRON_GLOBAL.fnOpenProject);
     }
+    protected getNewProjectFn():any {
+        return this.remote.getGlobal(TRON_GLOBAL.fnNewProject);
+    }
     
 }

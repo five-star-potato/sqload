@@ -47,6 +47,8 @@ export class HomeComponent extends BaseComponent implements OnInit {
         this.router.navigate(['/home']);
      }
     next() {
+        this.getNewProjectFn()();
+        this.wizardStateService.projectChange({ type: TRON_EVENT.refresh });
         document.getElementById("projectTitle").innerHTML = "[New Project]";
         this.router.navigate(['/connect']);
     }
@@ -76,7 +78,7 @@ export class HomeComponent extends BaseComponent implements OnInit {
                         }
                         project.columnDefs[t.id] = cols;
                     });
-                    this.wizardStateService.projectChange({ type: TRON_EVENT.projectOpened });
+                    this.wizardStateService.projectChange({ type: TRON_EVENT.refresh });
                     this.router.navigate(['/connect']);
                 });
             })
