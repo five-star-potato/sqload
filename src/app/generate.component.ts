@@ -56,7 +56,7 @@ export class GenerateComponent extends BaseComponent {
 
         let tables = this.getGlobal().selectedTables;
         let colDefs = this.getGlobal().columnDefs;
-        tables.forEach((tbl:any) => {
+        tables.sort((b, a) => b.sequence - a.sequence).forEach((tbl:any) => {
             let tblId = tbl.id;
             let colArr = colDefs[tblId];
             let colNames: string[] = [];

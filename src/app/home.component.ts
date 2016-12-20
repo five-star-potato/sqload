@@ -61,7 +61,11 @@ export class HomeComponent extends BaseComponent implements OnInit {
                     let project: any = this.getGlobal();
                     let data = JSON.parse(result.data, this.reviver);
                     document.getElementById("projectTitle").innerHTML = result.filename;
-
+                    project.connection.serverName = data.connection.serverName;
+                    project.connection.databaseName = data.connection.databaseName;
+                    project.connection.userName = data.connection.userName;
+                    project.connection.password = data.connection.password;
+                    
                     project.selectedTables = data.selectedTables;
                     data.selectedTables.forEach(t => {
                         let cols = data.columnDefs[t.id];

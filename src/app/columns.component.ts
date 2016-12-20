@@ -25,6 +25,7 @@ import { WizardStateService } from "./service/wizard-state";
     // providers: [ WizardStateService ] -- this will create another instance
 })
 export class ColumnsComponent extends BaseComponent implements AfterViewInit {
+    @ViewChild('SequenceTemplate') sequenceTemplate: TemplateRef<any>;
     @ViewChild('IntegerTemplate') integerTemplate: TemplateRef<any>;
     @ViewChild('TextTemplate') textTemplate: TemplateRef<any>;
     @ViewChild('DateTemplate') dateTemplate: TemplateRef<any>;
@@ -84,6 +85,8 @@ export class ColumnsComponent extends BaseComponent implements AfterViewInit {
     private getTemplate(cf:ColumnDef): TemplateRef<any> {
         if (cf.plugIn.length > 0) {
             switch (cf.plugIn[0].__template__) {
+                case "SequenceTemplate":
+                    return this.sequenceTemplate;
                 case "IntegerTemplate":
                     return this.integerTemplate;
                 case "TextTemplate":

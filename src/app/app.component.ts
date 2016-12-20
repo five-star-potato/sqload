@@ -54,12 +54,12 @@ import { TRON_EVENT } from "./constants"
                                 <li role="presentation" [routerLinkActive]="['active']" [class.disabled]="isLinkDisabled('columns')">
                                     <a routerLink="/columns" data-toggle="tab" aria-controls="step3" role="tab" title="specify the characteristics of each column" *ngIf="!isLinkDisabled('columns')">
                                         <span class="round-tab">
-                                            <i [style.color]="getLinkColor('columns')" class="fa fa-columns" aria-hidden="true"></i>
+                                            <i [style.color]="getLinkColor('columns')" class="fa fa-list-ol" aria-hidden="true"></i>
                                         </span>
                                     </a>
                                     <a aria-controls="step3" role="tab" title="specify the characteristics of each column" *ngIf="isLinkDisabled('columns')">
                                         <span class="round-tab">
-                                            <i [style.color]="getLinkColor('columns')" class="fa fa-columns" aria-hidden="true"></i>
+                                            <i [style.color]="getLinkColor('columns')" class="fa fa-list-ol" aria-hidden="true"></i>
                                         </span>
                                     </a>
                                 </li>
@@ -67,12 +67,12 @@ import { TRON_EVENT } from "./constants"
                                 <li role="presentation" [routerLinkActive]="['active']" [class.disabled]="isLinkDisabled('rows')">
                                     <a routerLink="/rows" data-toggle="tab" aria-controls="complete" role="tab" title="manage number of generated entries" *ngIf="!isLinkDisabled('rows')">
                                         <span class="round-tab">
-                                            <i [style.color]="getLinkColor('rows')" class="fa fa-list-ol" aria-hidden="true"></i>
+                                            <i [style.color]="getLinkColor('rows')" class="fa fa-random" aria-hidden="true"></i>
                                         </span>
                                     </a>
                                     <a aria-controls="complete" role="tab" title="manage number of generated entries" *ngIf="isLinkDisabled('rows')">
                                         <span class="round-tab">
-                                            <i [style.color]="getLinkColor('rows')" class="fa fa-list-ol" aria-hidden="true"></i>
+                                            <i [style.color]="getLinkColor('rows')" class="fa fa-random" aria-hidden="true"></i>
                                         </span>
                                     </a>
                                 </li>
@@ -96,20 +96,19 @@ import { TRON_EVENT } from "./constants"
             </div>
         </div>
         
-        <router-outlet (onEnter)="console.log('Entering');"></router-outlet>
+        <router-outlet></router-outlet>
     </div>
 </div>
     `,
-    styleUrls:  [ './css/wizard.css' ],
-    providers:  [ WizardStateService ]
+    styleUrls:  [ './css/wizard.css' ]
 })
 export class AppComponent implements OnInit {
     private activeLinks:Set<string> = new Set();
     constructor(private router: Router, private wizardStateService: WizardStateService) {
         this.activeLinks.add("home");
         wizardStateService.projectEvent$.subscribe(event => {
-            console.log("AppComonent received event");
-            console.log(event);
+            //console.log("AppComonent received event");
+            //console.log(event);
             if (event.type == TRON_EVENT.activate) {
                 this.activeLinks = event.urls;
             }

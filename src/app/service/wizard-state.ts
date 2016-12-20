@@ -15,14 +15,17 @@ export class WizardStateService {
             console.log("inside connection defined");
             let links:Set<string> = new Set();
             links.add("home"); links.add("connect");
-            if (this.isConnectionReady(proj))
+            if (this.isConnectionReady(proj)) {
                 links.add("tables");
-            if (this.isTableReady(proj)) 
-                links.add("columns");
-            if (this.isColumnReady(proj))
-                links.add("rows");
-            if (this.isRowsReady(proj))
-                links.add("generate");
+                if (this.isTableReady(proj)) {
+                    links.add("columns");
+                    if (this.isColumnReady(proj)) {
+                        links.add("rows");
+                        if (this.isRowsReady(proj))
+                            links.add("generate");
+                    }
+                }
+            }
 
             this.projectEventSource.next({ type: "activate", urls: links });        
         }
@@ -41,7 +44,7 @@ export class WizardStateService {
         return !this.isEmpty(proj.columnDefs);
     }
     private isRowsReady(proj: any):boolean {
-        let ready:boolean = this.isColumnReady(proj);
+        let ready:boolean = true;
         proj.selectedTables.forEach(t => {
             if (t.rowcount == 0)
                 ready = false;
@@ -50,6 +53,7 @@ export class WizardStateService {
     }
     //http://stackoverflow.com/questions/679915/how-do-i-test-for-an-empty-javascript-object
     private isEmpty(obj):boolean {
+        console.log(obj);
         return Object.keys(obj).length === 0;
     }
 }

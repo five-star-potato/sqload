@@ -43,6 +43,7 @@
                                 <td>{{c.nullable}}</td>
                                 <td>
                                     <select class='form-control input-sm' (change)="changeGenerator(c, $event)" [ngModel]="getGeneratorName(c)" [disabled]="!c.include" style="font-size:12px; height:30px">
+                                        <option value='SequenceGenerator'>Sequence Number</option>
                                         <option value='IntegerGenerator'>Random Integer</option>
                                         <option value='TextGenerator'>Random Text</option>
                                         <option value='DateGenerator'>Random Date</option>
@@ -72,6 +73,23 @@
     </div>
 </div>
 
+<template #SequenceTemplate>
+    <div class="form">
+        <div class="form-group">
+            <label for="minField">Lower Bound</label>
+            <input type="text" [(ngModel)]="activeColDef.plugIn[0].min" class="form-control input-sm" id="minField" placeholder="min">
+        </div>
+        <div class="form-group">
+            <label for="maxField">Upper Bound</label>
+            <input type="text" [(ngModel)]="activeColDef.plugIn[0].max" class="form-control input-sm" id="maxField" placeholder="max">
+        </div>
+        <div class="form-group">
+            <label for="incrField">Increment</label>
+            <input type="text" [(ngModel)]="activeColDef.plugIn[0].incr" class="form-control input-sm" id="incrField" placeholder="increment">
+        </div>
+    </div>
+</template>
+
 <template #IntegerTemplate>
     <div class="form">
         <div class="form-group">
@@ -80,7 +98,7 @@
         </div>
         <div class="form-group">
             <label for="maxField">Upper Bound</label>
-            <input type="text" [(ngModel)]="activeColDef.plugIn[0].max" class="form-control input-sm" id="maxField" placeholder="min">
+            <input type="text" [(ngModel)]="activeColDef.plugIn[0].max" class="form-control input-sm" id="maxField" placeholder="max">
         </div>
     </div>
 </template>

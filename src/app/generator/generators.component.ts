@@ -13,6 +13,45 @@ function randomString(length, chars) {
 }
 
 //////////////////// Generators ////////////////////////////////////
+export class SequenceGenerator implements DataGenerator {
+    __name__: string = "SequenceGenerator";
+    __template__: string = "SequenceTemplate";
+    public max: number = 10000;
+    public min: number = 0;
+    public incr: number = 1;
+    public current: number;
+
+    constructor(dataType?: string) {
+        if (dataType) {
+            switch (dataType) {
+                case 'tinyint':
+                    this.max = 255; this.min = 0;
+                    break;
+
+                case 'smallint':
+                    this.max = 32765; this.min = 0;
+                    break;
+
+                case 'bit':
+                    this.max = 1; this.min = 0;
+                    break;
+
+                default:
+                    this.max = 1000000; this.min = 0;
+                    break;
+            }
+        }
+        this.current = this.min;
+    }
+    generate(): Number {
+        let ret = this.current;
+        this.current += this.incr;
+        if (this.current > this.max) 
+            this.current = this.min;
+        return ret;
+    }
+    /* distribution? */
+}
 
 export class IntegerGenerator implements DataGenerator {
     __name__: string = "IntegerGenerator";
