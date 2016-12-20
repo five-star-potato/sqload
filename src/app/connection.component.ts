@@ -34,9 +34,9 @@ import { WizardStateService } from "./service/wizard-state";
       </div>
 
       <div class="flexbox-item footer">
-          <button class='btn btn-primary nav-btn' (click)="back()">Back</button> 
+          <!-- <button class='btn btn-primary nav-btn' (click)="back()">Back</button> -->
           <button type="submit" [disabled]="!connectForm.form.valid" class='btn btn-primary nav-btn'>Connect</button>
-      </div>
+        </div>
   </form>
     `,
   styleUrls: [
@@ -67,7 +67,14 @@ export class ConnectionComponent extends BaseComponent implements OnInit, AfterV
     super(router, ngZone, wizardStateService);
   }
   back() {
-    this.router.navigate(['/home']);
+    // Crashing chromium once a project is opened
+    /*
+[18392:1220/000832:ERROR:gles2_cmd_decoder.cc(15300)] [.DisplayCompositor-0000015CE6B08440]GL ERROR :GL_INVALID_OPERATION : glCreateAndConsumeTextureCHROMIUM: invalid mailbox name
+[18392:1220/000832:ERROR:gles2_cmd_decoder.cc(8605)] [.DisplayCompositor-0000015CE6B08440]RENDER WARNING: texture bound to texture unit 0 is not renderable. It maybe non-power-of-2 and have incompatible texture filtering.
+[18392:1220/000832:ERROR:gles2_cmd_decoder.cc(15300)] [.DisplayCompositor-0000015CE6B08440]GL ERROR :GL_INVALID_OPERATION : glCreateAndConsumeTextureCHROMIUM: invalid mailbox name
+[18392:1220/000832:ERROR:gles2_cmd_decoder.cc(8605)] [.DisplayCompositor-0000015CE6B08440]RENDER WARNING: texture bound to texture unit 0 is not renderable. It maybe non-power-of-2 and have incompatible texture filtering.
+    */
+    //this.router.navigate(['/home']);
   }
   next() {
     /*

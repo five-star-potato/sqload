@@ -137,7 +137,7 @@ export class GenerateComponent extends BaseComponent {
         this.getSaveOutputFn()("sql", stmts.join('\n'));
     }
     back() {
-        this.router.navigate(['/columns']);
+        this.router.navigate(['/rows']);
     }
 
     next() {
