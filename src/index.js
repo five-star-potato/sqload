@@ -68,12 +68,12 @@ function saveOutputFile(fileType, content) {
             }
         });
     })
-        .then(filename => {
-            return writeFile(filename, content);
-        })
-        .catch(err => {
-            console.log(err);
-        });
+    .then(filename => {
+        return writeFile(filename, content);
+    })
+    .catch(err => {
+        console.log(err);
+    });
 
     function writeFile(filename, content) {
         return new Promise((resolve, reject) => {
@@ -82,7 +82,7 @@ function saveOutputFile(fileType, content) {
                 if (err) {
                     dialog.showMessageBox({ type: 'error', title: "Save Output", buttons: btns, message: "An error ocurred creating the file " + err.message });
                     reject(err);
-                }dialog.showMessageBox({ type: 'info', title: "Save Output", buttons: btns, message: "The file has been succesfully saved" });
+                } dialog.showMessageBox({ type: 'info', title: "Save Output", buttons: btns, message: "The file has been succesfully saved" });
                 resolve("success");
             });
         });

@@ -8,6 +8,7 @@ import { WizardStateService } from "./service/wizard-state";
 
 interface ProgressData {
     name: string;
+    targetRows: number;
     percent: number;
 }
 
@@ -24,23 +25,25 @@ interface ProgressData {
                         <p>Overall Progress</p>
                         <div class="progress">
                             <div class="progress-bar progress-bar-striped active" role="progressbar"
-                            aria-valuenow="40" aria-valuemin="0" aria-valuemax="100" style="width:40%">
-                                40%
+                            aria-valuenow="40" aria-valuemin="0" aria-valuemax="100" [style.width]="overallProgress + '%'">
+                                {{ overallProgress }}%
                             </div>
                         </div>
                         <table class="table" >
                             <thead>
                                 <tr>
                                     <th>Table</th>
+                                    <th>Target # of Rows</th>
                                     <th>Progress</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr *ngFor="let p of progress">
                                     <td>{{p.name}}</td>
+                                    <td>{{p.targetRows.toLocaleString()}}</td>
                                     <td>
                                         <div class="progress">
-                                        <div class="progress-bar progress-bar-warning" role="progressbar" [style.width]="p.percent.toString() + '%'">
+                                        <div class="progress-bar progress-bar-warning" role="progressbar" [style.width]="p.percent + '%'">
                                             {{ p.percent }}%
                                         </div>
                                         </div>                          
@@ -69,7 +72,10 @@ export class GenerateComponent extends BaseComponent {
     tables:any[];
     colDefs:any;
     progress:ProgressData[] = [];
-    
+    overallProgress:number = 0;
+    totalRowCnt:number = 0;
+    runningRowCnt:number = 0;
+
     constructor(router: Router, ngZone: NgZone, wizardStateService: WizardStateService) {
         super(router, ngZone, wizardStateService);
     }
@@ -89,56 +95,66 @@ export class GenerateComponent extends BaseComponent {
     }
     private generateDataForRow(colArr:any[], fkConstraints:Set<number>, colNames:string[], variables: string[], tbl:any, tblProgress:any, tblCnt:number, rowCnt:number) {
         let vals: string[] = [];
-        colArr.forEach((cf:ColumnDef) => {
-            if (cf.include) {
-                if (cf.plugIn[0] instanceof CustomSqlGenerator) {
-                    let tmpTbl = cf.variable.replace('@', '@T_');
-                    vals.push(`INSERT INTO ${tmpTbl}(value) EXEC(N'`);
-                    vals.push(cf.plugIn[0].generate());
-                    vals.push(`');\nSELECT TOP 1 ${cf.variable} = value FROM ${tmpTbl};\nDELETE ${tmpTbl};`);
-                }
-                else if (!cf.fkConstraintID) {
-                    vals.push(`SET ${cf.variable} = '${cf.plugIn[0].generate()}';`);
-                }
-            }
-        });
-
-        // Processing all the FK constraints per row
-        let fkSql: string = "";
-        if (fkConstraints.size > 0) {
-            // processing FK assignments
-            fkSql = "SELECT TOP 1 ";
-            fkConstraints.forEach((constraintId) => {
-                let refTable: string;
-                let colAssign: string[] = [];
-                colArr.forEach((cf:ColumnDef) => {
-                    if (cf.fkConstraintID == constraintId) {
-                        refTable = `${cf.fkSchema}.${cf.fkTable}`;
-                        colAssign.push(`@${cf.name} = ${cf.fkColumn}`);
+        let k = 0;
+        let incr = Math.round(tbl.rowcount / 20);
+        // Don't "setTimeout" every row. How about every XXX rows. Does it improve performance?
+        while (k < incr && (rowCnt + k) < tbl.rowcount) {
+            colArr.forEach((cf:ColumnDef) => {
+                if (cf.include) {
+                    if (cf.plugIn[0] instanceof CustomSqlGenerator) {
+                        let tmpTbl = cf.variable.replace('@', '@T_');
+                        vals.push(`INSERT INTO ${tmpTbl}(value) EXEC(N'`);
+                        vals.push(cf.plugIn[0].generate());
+                        vals.push(`');\nSELECT TOP 1 ${cf.variable} = value FROM ${tmpTbl};\nDELETE ${tmpTbl};`);
                     }
-                });
-                fkSql += colAssign.join();
-                fkSql += ` FROM ${refTable} ORDER BY NEWID();\n`; 
+                    else if (!cf.fkConstraintID) {
+                        vals.push(`SET ${cf.variable} = '${cf.plugIn[0].generate()}';`);
+                    }
+                }
             });
-        }
-        let str:string = "";
-        str += vals.join('\n') + '\n';
-        str += fkSql;
-        str += `INSERT INTO ${tbl.name}(${colNames.join()}) VALUES(${variables.join()});`;
-        //console.log(str);
-        this.stmts.push(str);
-        tblProgress.percent = Math.round(rowCnt * 100 / tbl.rowcount);
 
-        rowCnt++;
+            // Processing all the FK constraints per row
+            let fkSql: string = "";
+            if (fkConstraints.size > 0) {
+                // processing FK assignments
+                fkSql = "SELECT TOP 1 ";
+                fkConstraints.forEach((constraintId) => {
+                    let refTable: string;
+                    let colAssign: string[] = [];
+                    colArr.forEach((cf:ColumnDef) => {
+                        if (cf.fkConstraintID == constraintId) {
+                            refTable = `${cf.fkSchema}.${cf.fkTable}`;
+                            colAssign.push(`@${cf.name} = ${cf.fkColumn}`);
+                        }
+                    });
+                    fkSql += colAssign.join();
+                    fkSql += ` FROM ${refTable} ORDER BY NEWID();\n`; 
+                });
+            }
+            let str:string = "";
+            str += vals.join('\n') + '\n';
+            str += fkSql;
+            str += `INSERT INTO ${tbl.name}(${colNames.join()}) VALUES(${variables.join()});`;
+            //console.log(str);
+            this.stmts.push(str);
+        
+            k++;
+        }
+        rowCnt += k;
+        this.runningRowCnt += k;
+        tblProgress.percent = Math.round(rowCnt * 100 / tbl.rowcount);
         if (rowCnt < tbl.rowcount) {
-            setTimeout(this.generateDataForRow.bind(this, colArr, fkConstraints, colNames, variables, tbl, tblProgress, tblCnt, rowCnt), 0);
+            this.overallProgress = Math.ceil(this.runningRowCnt * 100 / this.totalRowCnt);
+            console.log("overall progress: " + this.overallProgress.toString());
+            setTimeout(this.generateDataForRow.bind(this, colArr, fkConstraints, colNames, variables, tbl, tblProgress, tblCnt, rowCnt), 100);
         }
         else {
             tblCnt++;
             if (tblCnt < this.tables.length) {
-                setTimeout(this.generateDataForTable.bind(this, tblCnt), 0);
+                setTimeout(this.generateDataForTable.bind(this, tblCnt), 50);
             }
             else {
+                this.overallProgress = 100;
                 this.getSaveOutputFn()("sql", this.stmts.join('\n'));
             }
         }
@@ -151,7 +167,7 @@ export class GenerateComponent extends BaseComponent {
         let variables: string[] = [];
         let fkConstraints: Set<number> = new Set<number>();
 
-        let tblProgress:ProgressData = { name: tbl.name, percent: 0.0 }; 
+        let tblProgress:ProgressData = { name: tbl.name, targetRows: parseInt(tbl.rowcount), percent: 0.0 }; 
         this.progress.push(tblProgress);
 
         // generate declare varialbles
@@ -180,11 +196,15 @@ export class GenerateComponent extends BaseComponent {
         });
 
         // generate [rowcount] number INSERTS for each table
-        setTimeout(this.generateDataForRow.bind(this, colArr, fkConstraints, colNames, variables, tbl, tblProgress, 0, tblCnt == this.tables.length), 0);
+        setTimeout(this.generateDataForRow.bind(this, colArr, fkConstraints, colNames, variables, tbl, tblProgress, tblCnt, 0), 0);
     }
     private generateData() {
         this.cleanUnusedPlugin();
         this.stmts = [];
+        this.progress = [];
+        this.tables.forEach(t =>{
+            this.totalRowCnt += parseInt(t.rowcount);
+        });
         this.tables.sort((b, a) => b.sequence - a.sequence);
         setTimeout(this.generateDataForTable.bind(this, 0), 0);
     }
