@@ -125,7 +125,8 @@ export class GenerateComponent extends BaseComponent {
                     colArr.forEach((cf:ColumnDef) => {
                         if (cf.fkConstraintID == constraintId) {
                             refTable = `${cf.fkSchema}.${cf.fkTable}`;
-                            colAssign.push(`@${cf.name} = ${cf.fkColumn}`);
+                            // can't correlate to "variables"" ...
+                            colAssign.push(`@${tblCnt}$${cf.name} = ${cf.fkColumn}`);
                         }
                     });
                     fkSql += colAssign.join();
