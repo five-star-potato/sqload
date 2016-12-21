@@ -24,7 +24,8 @@
     "script-loader": "^0.7.0",
     "style-loader": "^0.13.1",
     "ts-loader": "^1.2.2",
-    "typescript": "^2.0.10",
+    "tslib": "^1.2.0",
+    "typescript": "^2.1.4",
     "typings": "^2.0.0",
     "webpack": "^1.13.3"
   },

@@ -77,14 +77,24 @@ function saveOutputFile(fileType, content) {
 
     function writeFile(filename, content) {
         return new Promise((resolve, reject) => {
-            // fileName is a string that contains the path and filename created in the save file dialog.  
-            fs.writeFile(filename, content, err => {
-                if (err) {
-                    dialog.showMessageBox({ type: 'error', title: "Save Output", buttons: btns, message: "An error ocurred creating the file " + err.message });
-                    reject(err);
-                } dialog.showMessageBox({ type: 'info', title: "Save Output", buttons: btns, message: "The file has been succesfully saved" });
-                resolve("success");
-            });
+            if (Array.isArray(content)) { // content is storing an array-  most likely rows of SQL commands
+                var fstream = fs.createWriteStream(filename);
+                fstream.on('error', err => { reject(err); });
+                content.forEach(line => { 
+                    fstream.write(line + '\n'); }
+                );
+                fstream.end();
+            }
+            else {
+                // fileName is a string that contains the path and filename created in the save file dialog.  
+                fs.writeFile(filename, content, err => {
+                    if (err) {
+                        dialog.showMessageBox({ type: 'error', title: "Save Output", buttons: btns, message: "An error ocurred creating the file " + err.message });
+                        reject(err);
+                    } dialog.showMessageBox({ type: 'info', title: "Save Output", buttons: btns, message: "The file has been succesfully saved" });
+                    resolve("success");
+                });
+            }
         });
     }
 }

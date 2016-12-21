@@ -97,6 +97,7 @@ export class GenerateComponent extends BaseComponent {
         let vals: string[] = [];
         let k = 0;
         let incr = Math.round(tbl.rowcount / 20);
+        if (incr < 100) incr = 100;
         // Don't "setTimeout" every row. How about every XXX rows. Does it improve performance?
         while (k < incr && (rowCnt + k) < tbl.rowcount) {
             colArr.forEach((cf:ColumnDef) => {
@@ -137,7 +138,7 @@ export class GenerateComponent extends BaseComponent {
             str += `INSERT INTO ${tbl.name}(${colNames.join()}) VALUES(${variables.join()});`;
             //console.log(str);
             this.stmts.push(str);
-        
+            vals.length = 0;
             k++;
         }
         rowCnt += k;
@@ -174,10 +175,10 @@ export class GenerateComponent extends BaseComponent {
         colArr.forEach((cf:ColumnDef) => {
             if (cf.include) {
                 let varRoot = `${this.getCleanColName(cf.name)}`;
-                cf.variable = '@' + varRoot;
+                cf.variable = `@${tblCnt}$` + varRoot;
                 this.stmts.push(`DECLARE ${cf.variable} ${fnGetDataTypeDesc(cf)};`);
-                this.stmts.push(`DECLARE @T_${varRoot} TABLE ( value ${fnGetDataTypeDesc(cf)} );`); // not all columns need this; so far only the ones that use CustomSqlGenerator needs it
-                colNames.push(cf.name);
+                this.stmts.push(`DECLARE @T_${tblCnt}$${varRoot} TABLE ( value ${fnGetDataTypeDesc(cf)} );`); // not all columns need this; so far only the ones that use CustomSqlGenerator needs it
+                colNames.push(`[${cf.name}]`);
                 variables.push(cf.variable);
 
                 if (cf.plugIn.length == 0 && !cf.fkConstraintID) {
@@ -211,7 +212,6 @@ export class GenerateComponent extends BaseComponent {
     back() {
         this.router.navigate(['/rows']);
     }
-
     next() {
         this.generateData();
     }
