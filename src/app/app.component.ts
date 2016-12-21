@@ -107,8 +107,6 @@ export class AppComponent implements OnInit {
     constructor(private router: Router, private wizardStateService: WizardStateService) {
         this.activeLinks.add("home");
         wizardStateService.projectEvent$.subscribe(event => {
-            //console.log("AppComonent received event");
-            //console.log(event);
             if (event.type == TRON_EVENT.activate) {
                 this.activeLinks = event.urls;
             }

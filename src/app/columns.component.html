@@ -216,5 +216,20 @@
         </div>
     </div>
 </template>
+<template #AddressTemplate>
+    <div class="form">
+        <div class="form-group">
+            <label>Sample address data</label>
+            <label>Filter By</label>
+
+            <table class="table">
+                <tr>
+                    <td>#1</td>
+                    <input type="text" [(ngModel)]="activeColDef.plugIn[0].items[0]" class="form-control input-sm">
+                </tr>
+            </table>
+        </div>
+    </div>
+</template>
 <template #DefaultTemplate>
 </template>

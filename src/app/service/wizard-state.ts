@@ -12,7 +12,6 @@ export class WizardStateService {
     projectChange(event: any) {
         let proj = electron.remote.getGlobal(TRON_GLOBAL.project);
         if (event.type == TRON_EVENT.refresh) {
-            console.log("inside connection defined");
             let links:Set<string> = new Set();
             links.add("home"); links.add("connect");
             if (this.isConnectionReady(proj)) {
@@ -53,7 +52,6 @@ export class WizardStateService {
     }
     //http://stackoverflow.com/questions/679915/how-do-i-test-for-an-empty-javascript-object
     private isEmpty(obj):boolean {
-        console.log(obj);
         return Object.keys(obj).length === 0;
     }
 }

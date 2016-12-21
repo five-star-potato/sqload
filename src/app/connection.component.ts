@@ -99,8 +99,6 @@ export class ConnectionComponent extends BaseComponent implements OnInit, AfterV
     this.databaseName = this.getGlobal().connection.databaseName;
     this.userName = this.getGlobal().connection.userName;
     this.password = this.getGlobal().connection.password;
-    console.log("columns defs::");
-    console.log(this.getGlobal().columnDefs);
     */
   }
 }

@@ -79,8 +79,6 @@ export class ColumnsComponent extends BaseComponent implements AfterViewInit {
         else {
             cf.plugIn.unshift(new gen[genName]())
         }
-        console.log("select change");
-        console.log(evt);
     }
     private getTemplate(cf:ColumnDef): TemplateRef<any> {
         if (cf.plugIn.length > 0) {
@@ -121,7 +119,6 @@ export class ColumnsComponent extends BaseComponent implements AfterViewInit {
         // If a table Id exists in both selectedTAbles and columnDefs, we don't need to reload column info from DB; take it off from tblIds
         this.tables = this.getGlobal().selectedTables;
         let columnDefs = this.getGlobal().columnDefs;
-        //console.log("active table: " + this.tables[0].id);
         //this.setActiveTable(this.tables[0].id);
         //if (columnDefs[this.activeTableId])
         //    this.setActiveColumn(columnDefs[this.activeTableId][0]);
@@ -237,9 +234,6 @@ export class ColumnsComponent extends BaseComponent implements AfterViewInit {
                             cf.include = false;
                         columnDefs[tblId].push(cf);
                     });
-
-                    console.log("table columns after");
-                    console.log(this.getGlobal().columnDefs);
                 });
             }
         );

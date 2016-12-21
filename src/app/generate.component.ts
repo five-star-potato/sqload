@@ -6,6 +6,11 @@ import { ColumnDef, fnGetDataTypeDesc, fnOnlyUnique, fnStringifyNoCircular } fro
 import { IntegerGenerator, TextGenerator, DateGenerator, UUIDGenerator, CustomSqlGenerator, CustomValueGenerator, FKGenerator } from './generator/generators.component';
 import { WizardStateService } from "./service/wizard-state";
 
+interface ProgressData {
+    name: string;
+    percent: number;
+}
+
 @Component({
     template: `	
         <div class="flexbox-parent">
@@ -15,7 +20,34 @@ import { WizardStateService } from "./service/wizard-state";
             
             <div class="flexbox-item fill-area content flexbox-item-grow">
                 <div class="fill-area-content flexbox-item-grow" style="display:flex; flex-direction:row; padding: 5px">
-                    <div style="display:flex; flex-direction:column">
+                    <div style="display:flex; flex-direction:column; width:100%">
+                        <p>Overall Progress</p>
+                        <div class="progress">
+                            <div class="progress-bar progress-bar-striped active" role="progressbar"
+                            aria-valuenow="40" aria-valuemin="0" aria-valuemax="100" style="width:40%">
+                                40%
+                            </div>
+                        </div>
+                        <table class="table" >
+                            <thead>
+                                <tr>
+                                    <th>Table</th>
+                                    <th>Progress</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr *ngFor="let p of progress">
+                                    <td>{{p.name}}</td>
+                                    <td>
+                                        <div class="progress">
+                                        <div class="progress-bar progress-bar-warning" role="progressbar" [style.width]="p.percent.toString() + '%'">
+                                            {{ p.percent }}%
+                                        </div>
+                                        </div>                          
+                                   </td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
@@ -33,6 +65,11 @@ import { WizardStateService } from "./service/wizard-state";
     // providers: [ WizardStateService ]
 })
 export class GenerateComponent extends BaseComponent {
+    stmts: string[] = [];
+    tables:any[];
+    colDefs:any;
+    progress:ProgressData[] = [];
+    
     constructor(router: Router, ngZone: NgZone, wizardStateService: WizardStateService) {
         super(router, ngZone, wizardStateService);
     }
@@ -50,91 +87,106 @@ export class GenerateComponent extends BaseComponent {
     private getCleanColName(colName: string) {
         return colName.replace(/[\$ #@]/g,'_');
     }
-    private generateData() {
-        let stmts: string[] = [];
-        this.cleanUnusedPlugin();
-
-        let tables = this.getGlobal().selectedTables;
-        let colDefs = this.getGlobal().columnDefs;
-        tables.sort((b, a) => b.sequence - a.sequence).forEach((tbl:any) => {
-            let tblId = tbl.id;
-            let colArr = colDefs[tblId];
-            let colNames: string[] = [];
-            let variables: string[] = [];
-            let vals: string[] = [];
-            let fkConstraints: number[] = [];
-
-            // generate declare varialbles
-            colArr.forEach((cf:ColumnDef) => {
-                if (cf.include) {
-                    let varRoot = `${this.getCleanColName(cf.name)}`;
-                    cf.variable = '@' + varRoot;
-                    stmts.push(`DECLARE ${cf.variable} ${fnGetDataTypeDesc(cf)};`);
-                    stmts.push(`DECLARE @T_${varRoot} TABLE ( value ${fnGetDataTypeDesc(cf)} );`); // not all columns need this; so far only the ones that use CustomSqlGenerator needs it
-                    colNames.push(cf.name);
-                    variables.push(cf.variable);
-
-                    if (cf.plugIn.length == 0 && !cf.fkConstraintID) {
-                        console.log("Missing plugin and FK: " + cf.name);
-                    }
-                    else if (cf.plugIn.length > 0) {
-                        // FK generation is different from other generator
-                        if (cf.plugIn[0] instanceof FKGenerator) {
-                            if (cf.fkConstraintID > 0) {
-                                // get the unique set of fk constraints; sometimes FK can have multiple columns. They must be set to point to the same entry in the referenced table
-                                if (!fkConstraints.includes(cf.fkConstraintID))
-                                    fkConstraints.push(cf.fkConstraintID);
-                            }
-                        }    
-                    }                
+    private generateDataForRow(colArr:any[], fkConstraints:Set<number>, colNames:string[], variables: string[], tbl:any, tblProgress:any, tblCnt:number, rowCnt:number) {
+        let vals: string[] = [];
+        colArr.forEach((cf:ColumnDef) => {
+            if (cf.include) {
+                if (cf.plugIn[0] instanceof CustomSqlGenerator) {
+                    let tmpTbl = cf.variable.replace('@', '@T_');
+                    vals.push(`INSERT INTO ${tmpTbl}(value) EXEC(N'`);
+                    vals.push(cf.plugIn[0].generate());
+                    vals.push(`');\nSELECT TOP 1 ${cf.variable} = value FROM ${tmpTbl};\nDELETE ${tmpTbl};`);
                 }
-            });
-
-            // generate [rowcount] number INSERTS for each table
-            for (let i:number = 0; i < tbl.rowcount; i++) {
-                vals = [];
-                colArr.forEach((cf:ColumnDef) => {
-                    if (cf.include) {
-                        if (cf.plugIn[0] instanceof CustomSqlGenerator) {
-                            let tmpTbl = cf.variable.replace('@', '@T_');
-                            vals.push(`INSERT INTO ${tmpTbl}(value) EXEC(N'`);
-                            vals.push(cf.plugIn[0].generate());
-                            vals.push(`');\nSELECT TOP 1 ${cf.variable} = value FROM ${tmpTbl};\nDELETE ${tmpTbl};`);
-                        }
-                        else if (!cf.fkConstraintID) {
-                            vals.push(`SET ${cf.variable} = '${cf.plugIn[0].generate()}';`);
-                        }
-                    }
-                });
-
-                // Processing all the FK constraints per row
-                let fkSql: string = "";
-                if (fkConstraints.length > 0) {
-                    // processing FK assignments
-                    fkSql = "SELECT TOP 1 ";
-                    fkConstraints.forEach((constraintId) => {
-                        let refTable: string;
-                        let colAssign: string[] = [];
-                        colArr.forEach((cf:ColumnDef) => {
-                            if (cf.fkConstraintID == constraintId) {
-                                refTable = `${cf.fkSchema}.${cf.fkTable}`;
-                                colAssign.push(`@${cf.name} = ${cf.fkColumn}`);
-                            }
-                        });
-                        fkSql += colAssign.join();
-                        fkSql += ` FROM ${refTable} ORDER BY NEWID();\n`; 
-                    });
+                else if (!cf.fkConstraintID) {
+                    vals.push(`SET ${cf.variable} = '${cf.plugIn[0].generate()}';`);
                 }
-                
-                let str:string = "";
-                str += vals.join('\n') + '\n';
-                str += fkSql;
-                str += `INSERT INTO ${tbl.name}(${colNames.join()}) VALUES(${variables.join()});`;
-                stmts.push(str);
-                //console.log(str);
             }
         });
-        this.getSaveOutputFn()("sql", stmts.join('\n'));
+
+        // Processing all the FK constraints per row
+        let fkSql: string = "";
+        if (fkConstraints.size > 0) {
+            // processing FK assignments
+            fkSql = "SELECT TOP 1 ";
+            fkConstraints.forEach((constraintId) => {
+                let refTable: string;
+                let colAssign: string[] = [];
+                colArr.forEach((cf:ColumnDef) => {
+                    if (cf.fkConstraintID == constraintId) {
+                        refTable = `${cf.fkSchema}.${cf.fkTable}`;
+                        colAssign.push(`@${cf.name} = ${cf.fkColumn}`);
+                    }
+                });
+                fkSql += colAssign.join();
+                fkSql += ` FROM ${refTable} ORDER BY NEWID();\n`; 
+            });
+        }
+        let str:string = "";
+        str += vals.join('\n') + '\n';
+        str += fkSql;
+        str += `INSERT INTO ${tbl.name}(${colNames.join()}) VALUES(${variables.join()});`;
+        //console.log(str);
+        this.stmts.push(str);
+        tblProgress.percent = Math.round(rowCnt * 100 / tbl.rowcount);
+
+        rowCnt++;
+        if (rowCnt < tbl.rowcount) {
+            setTimeout(this.generateDataForRow.bind(this, colArr, fkConstraints, colNames, variables, tbl, tblProgress, tblCnt, rowCnt), 0);
+        }
+        else {
+            tblCnt++;
+            if (tblCnt < this.tables.length) {
+                setTimeout(this.generateDataForTable.bind(this, tblCnt), 0);
+            }
+            else {
+                this.getSaveOutputFn()("sql", this.stmts.join('\n'));
+            }
+        }
+    }
+    private generateDataForTable(tblCnt:number) {
+        let tbl:any = this.tables[tblCnt];
+        let tblId = tbl.id;
+        let colArr = this.colDefs[tblId];
+        let colNames: string[] = [];
+        let variables: string[] = [];
+        let fkConstraints: Set<number> = new Set<number>();
+
+        let tblProgress:ProgressData = { name: tbl.name, percent: 0.0 }; 
+        this.progress.push(tblProgress);
+
+        // generate declare varialbles
+        colArr.forEach((cf:ColumnDef) => {
+            if (cf.include) {
+                let varRoot = `${this.getCleanColName(cf.name)}`;
+                cf.variable = '@' + varRoot;
+                this.stmts.push(`DECLARE ${cf.variable} ${fnGetDataTypeDesc(cf)};`);
+                this.stmts.push(`DECLARE @T_${varRoot} TABLE ( value ${fnGetDataTypeDesc(cf)} );`); // not all columns need this; so far only the ones that use CustomSqlGenerator needs it
+                colNames.push(cf.name);
+                variables.push(cf.variable);
+
+                if (cf.plugIn.length == 0 && !cf.fkConstraintID) {
+                    console.log("Missing plugin and FK: " + cf.name);
+                }
+                else if (cf.plugIn.length > 0) {
+                    // FK generation is different from other generator
+                    if (cf.plugIn[0] instanceof FKGenerator) {
+                        if (cf.fkConstraintID > 0) {
+                            // get the unique set of fk constraints; sometimes FK can have multiple columns. These columns must be set to point to the same entry in the referenced table
+                            fkConstraints.add(cf.fkConstraintID);
+                        }
+                    }    
+                }                
+            }
+        });
+
+        // generate [rowcount] number INSERTS for each table
+        setTimeout(this.generateDataForRow.bind(this, colArr, fkConstraints, colNames, variables, tbl, tblProgress, 0, tblCnt == this.tables.length), 0);
+    }
+    private generateData() {
+        this.cleanUnusedPlugin();
+        this.stmts = [];
+        this.tables.sort((b, a) => b.sequence - a.sequence);
+        setTimeout(this.generateDataForTable.bind(this, 0), 0);
     }
     back() {
         this.router.navigate(['/rows']);
@@ -149,5 +201,7 @@ export class GenerateComponent extends BaseComponent {
         this.getSaveOutputFn()("project", projectContent);
     }
     ngOnInit() {
+        this.tables = this.getGlobal().selectedTables;
+        this.colDefs = this.getGlobal().columnDefs;
     }
 }
