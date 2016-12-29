@@ -14,7 +14,8 @@ import { Subscription }   from 'rxjs/Subscription';
             <div class="fill-area-content flexbox-item-grow">
                 <h1 style="font-family:Plavsky;opacity:0.5">Greetings</h1>
                 <br />
-                <strong>Lorem Ipsum</strong> is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.
+                <strong>Gendat</strong> is test data generation tool built for SQL Server. We have been using SQL Server 2016 for testing, but it should work for SQL Server 2012 as well. Our goal is to 
+                allow flexible and <i>realistic</i> test data generation. The tool includes various <a href="#">data generators</a> to provide the flexibility of generating data of different shapes. 
                 <br /><br />      
             </div>
         </div>
