@@ -5,6 +5,8 @@ import { BaseComponent } from './base.component';
 import { ColumnDef, fnGetDataTypeDesc, fnOnlyUnique, fnStringifyNoCircular } from './include';
 import { IntegerGenerator, TextGenerator, DateGenerator, UUIDGenerator, CustomSqlGenerator, CustomValueGenerator, FKGenerator } from './generator/generators.component';
 import { WizardStateService } from "./service/wizard-state";
+import { DataService } from "./service/data-ws";
+import { Address } from "./service/address";
 
 interface ProgressData {
     name: string;
@@ -65,7 +67,6 @@ interface ProgressData {
     styleUrls: [
         './css/host.css'
     ]
-    // providers: [ WizardStateService ]
 })
 export class GenerateComponent extends BaseComponent {
     stmts: string[] = [];
@@ -76,8 +77,8 @@ export class GenerateComponent extends BaseComponent {
     totalRowCnt:number = 0;
     runningRowCnt:number = 0;
 
-    constructor(router: Router, ngZone: NgZone, wizardStateService: WizardStateService) {
-        super(router, ngZone, wizardStateService);
+    constructor(router: Router, ngZone: NgZone, wizardStateService: WizardStateService, dataService: DataService) {
+        super(router, ngZone, wizardStateService, dataService);
     }
     private cleanUnusedPlugin() {
         var tbls = this.getGlobal().selectedTables;
@@ -148,6 +149,7 @@ export class GenerateComponent extends BaseComponent {
         if (rowCnt < tbl.rowcount) {
             this.overallProgress = Math.ceil(this.runningRowCnt * 100 / this.totalRowCnt);
             console.log("overall progress: " + this.overallProgress.toString());
+            this.getWriteSqlToTempFn()(this.stmts);
             setTimeout(this.generateDataForRow.bind(this, colArr, fkConstraints, colNames, variables, tbl, tblProgress, tblCnt, rowCnt), 100);
         }
         else {
@@ -157,7 +159,8 @@ export class GenerateComponent extends BaseComponent {
             }
             else {
                 this.overallProgress = 100;
-                this.getSaveOutputFn()("sql", this.stmts.join('\n'));
+                this.getWriteSqlToTempFn()(this.stmts);
+                this.getSaveSqlFileFn()();
             }
         }
     }
@@ -201,6 +204,7 @@ export class GenerateComponent extends BaseComponent {
         setTimeout(this.generateDataForRow.bind(this, colArr, fkConstraints, colNames, variables, tbl, tblProgress, tblCnt, 0), 0);
     }
     private generateData() {
+        this.getRemoveSqlTemp()();
         this.cleanUnusedPlugin();
         this.stmts = [];
         this.progress = [];
@@ -217,9 +221,20 @@ export class GenerateComponent extends BaseComponent {
         this.generateData();
     }
     private saveProject() {
+        let addrs: Address[];
+        this.dataService.getAddresses('on', 'ca').then(
+            data => {
+                    addrs = data;
+                    console.log(addrs[0].id);
+                    console.log(addrs[0].street);
+                    console.log(addrs[0].city);
+            },
+            err => console.log(err)
+        );
+
         this.cleanUnusedPlugin();
         let projectContent = fnStringifyNoCircular(this.getGlobal());
-        this.getSaveOutputFn()("project", projectContent);
+        this.getSaveProjectFn()(projectContent);
     }
     ngOnInit() {
         this.tables = this.getGlobal().selectedTables;

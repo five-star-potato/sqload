@@ -4,6 +4,7 @@ import { TRON_GLOBAL, TRON_EVENT } from './constants';
 import { BaseComponent } from './base.component';
 import { OrderBy } from './orderby.component';
 import { WizardStateService } from "./service/wizard-state";
+import { DataService } from "./service/data-ws";
 
 @Component({
     template: `	
@@ -50,8 +51,8 @@ export class TablesComponent extends BaseComponent {
     selectedOpts: any;
     unselectedOpts: any;
 
-    constructor(router: Router, ngZone: NgZone, wizardStateService: WizardStateService) {
-        super(router, ngZone, wizardStateService);
+    constructor(router: Router, ngZone: NgZone, wizardStateService: WizardStateService, dataService: DataService) {
+        super(router, ngZone, wizardStateService, dataService);
     }
     private selectTbls() {
         this.tables.forEach((t) => {

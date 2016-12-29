@@ -5,6 +5,7 @@ import { TRON_GLOBAL, TRON_EVENT } from './constants';
 import { DataGenerator, ColumnDef, fnGetDataTypeDesc } from './include';
 import * as gen from './generator/generators.component';
 import { WizardStateService } from "./service/wizard-state";
+import { DataService } from "./service/data-ws";
 
 @Component({
     template: `	
@@ -46,8 +47,8 @@ import { WizardStateService } from "./service/wizard-state";
 export class RowsComponent extends BaseComponent {
     tables: any[] = [];
 
-    constructor(router: Router, ngZone: NgZone, wizardStateService: WizardStateService) {
-        super(router, ngZone, wizardStateService);
+    constructor(router: Router, ngZone: NgZone, wizardStateService: WizardStateService, dataService: DataService) {
+        super(router, ngZone, wizardStateService, dataService);
     }
 
     private moveUp(index: number) {

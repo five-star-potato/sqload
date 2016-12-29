@@ -1,4 +1,5 @@
-import { NgModule, ModuleWithProviders }      from '@angular/core';
+import { NgModule, ModuleWithProviders } from '@angular/core';
+import { HttpModule } from '@angular/http';
 import { BrowserModule } from '@angular/platform-browser';
 import { FormsModule }   from '@angular/forms';
 import { AppComponent }  from './app.component';
@@ -12,6 +13,8 @@ import { RouterModule, Routes } from '@angular/router';
 import { selectedObjectsPipe } from './pipes.component';
 import { OrderBy } from './orderby.component';
 import { WizardStateService } from "./service/wizard-state";
+import { DataService } from "./service/data-ws";
+import { SampleAddressConfigComponent } from "./sample-address-config.component";
 
 const appRoutes: Routes = [
   // don't do: { path: 'home', component: HomeComponent },
@@ -26,9 +29,9 @@ const appRoutes: Routes = [
 ];
 
 @NgModule({
-  imports:      [ BrowserModule, FormsModule, RouterModule.forRoot(appRoutes) ],
-  declarations: [ AppComponent, ConnectionComponent, HomeComponent, TablesComponent, ColumnsComponent, RowsComponent, GenerateComponent, selectedObjectsPipe, OrderBy ],
-  providers:    [ WizardStateService ],
+  imports:      [ BrowserModule, FormsModule, RouterModule.forRoot(appRoutes), HttpModule ],
+  declarations: [ AppComponent, ConnectionComponent, HomeComponent, TablesComponent, ColumnsComponent, RowsComponent, GenerateComponent, selectedObjectsPipe, OrderBy, SampleAddressConfigComponent ],
+  providers:    [ WizardStateService, DataService ],
   bootstrap:    [ AppComponent ]
 })
 export class AppModule { 

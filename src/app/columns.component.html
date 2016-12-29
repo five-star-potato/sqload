@@ -42,7 +42,8 @@
                                 <td>{{c.colDefault}}</td>
                                 <td>{{c.nullable}}</td>
                                 <td>
-                                    <select class='form-control input-sm' (change)="changeGenerator(c, $event)" [ngModel]="getGeneratorName(c)" [disabled]="!c.include" style="font-size:12px; height:30px">
+                                    <select class='form-control input-sm' (change)="changeGenerator(c, $event)" [ngModel]="getGeneratorConstructorName(c)" [disabled]="!c.include" style="font-size:12px; height:30px">
+                                        <option value='SampleAddressGenerator'>Sample Address Field(s)</option>
                                         <option value='SequenceGenerator'>Sequence Number</option>
                                         <option value='IntegerGenerator'>Random Integer</option>
                                         <option value='TextGenerator'>Random Text</option>
@@ -61,8 +62,14 @@
                     </table>
                 </div>
                 <div style="display:flex; flex-direction: column; flex-grow: 1; overflow-y: auto; overflow-x: hidden; margin-left:10px; padding-right: 10px" >
-                    <legend>Data Generation Settings</legend>
-                    <template [ngTemplateOutlet]="getTemplate(activeColDef)" [ngOutletContext]="{ $implicit: activeColDef }"></template>
+                    <div [hidden]="!hideTemplateDiv()">
+                        <legend>Sample Address Field Settings</legend>
+                        <sample-address-configurator></sample-address-configurator>
+                    </div>
+                    <div [hidden]="hideTemplateDiv()">
+                        <legend>Data Generation Settings</legend>
+                        <template [ngTemplateOutlet]="getTemplate(activeColDef)" [ngOutletContext]="{ $implicit: activeColDef }"></template>
+                    </div>
                 </div>
             </div>
         </div>

@@ -211,5 +211,20 @@ export class FKGenerator implements DataGenerator {
     }
 }
 
+// just for the same of completeness; not really used
+export class SampleAddressGenerator implements DataGenerator {
+    __name__: string = "SampleAddressGenerator";
+    __template__: string = "";
+    public fieldDescription:string;
+
+    constructor() { }
+
+    generate(): String {
+        return this.fieldDescription;
+    }
+}
+
+
+
 
 

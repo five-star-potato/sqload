@@ -3,6 +3,7 @@ var fs = require('fs');
 var app = electron.app;
 var BrowserWindow = electron.BrowserWindow;
 var ipcMain = require('electron').ipcRenderer;
+var tmpFile = "__TMP.SQL";
 
 function openProjectFile() {
     var btns = ['OK'];
@@ -44,16 +45,53 @@ function openProjectFile() {
     }
 }
 
-function saveOutputFile(fileType, content) {
+function removeSqlTemp() {
+    if (fs.existsSync(tmpFile)) {
+        fs.unlinkSync(tmpFile);
+    }
+}
+
+function writeSqlToTemp(content) {
+    // assume content is any array
+    var fstream = fs.createWriteStream(tmpFile,{'flags': 'a'});
+    fstream.on('error', err => { reject(err); });
+    content.forEach(line => { 
+        fstream.write(line + '\n'); }
+    );
+    fstream.end();
+}
+function saveSqlFile() {
     var btns = ['OK'];
     const {dialog} = require('electron')
-    var filter;
-    if (fileType == "sql") {
-        filter = { name: 'data', extensions: ['sql'] }
-    }
-    else if (fileType == "project") {
-        filter = { name: 'project', extensions: ['json'] }
-    }
+    var filter = { name: 'data', extensions: ['sql'] }
+
+    return new Promise((resolve, reject) => {
+        dialog.showSaveDialog({
+            filters: [
+                filter
+            ]
+        }, filename => {
+            if (filename === undefined) {
+                reject("You didn't save the file");
+            }
+            else {
+                resolve(filename);
+            }
+        });
+    })
+    .then(filename => {
+        return fs.renameSync(tmpFile, filename);
+    })
+    .catch(err => {
+        console.log(err);
+    });
+}
+
+function saveProjectFile(content) {
+    var btns = ['OK'];
+    const {dialog} = require('electron')
+    var filter = { name: 'project', extensions: ['json'] }
+
     return new Promise((resolve, reject) => {
         dialog.showSaveDialog({
             filters: [
@@ -77,24 +115,14 @@ function saveOutputFile(fileType, content) {
 
     function writeFile(filename, content) {
         return new Promise((resolve, reject) => {
-            if (Array.isArray(content)) { // content is storing an array-  most likely rows of SQL commands
-                var fstream = fs.createWriteStream(filename);
-                fstream.on('error', err => { reject(err); });
-                content.forEach(line => { 
-                    fstream.write(line + '\n'); }
-                );
-                fstream.end();
-            }
-            else {
-                // fileName is a string that contains the path and filename created in the save file dialog.  
-                fs.writeFile(filename, content, err => {
-                    if (err) {
-                        dialog.showMessageBox({ type: 'error', title: "Save Output", buttons: btns, message: "An error ocurred creating the file " + err.message });
-                        reject(err);
-                    } dialog.showMessageBox({ type: 'info', title: "Save Output", buttons: btns, message: "The file has been succesfully saved" });
-                    resolve("success");
-                });
-            }
+            // fileName is a string that contains the path and filename created in the save file dialog.  
+            fs.writeFile(filename, content, err => {
+                if (err) {
+                    dialog.showMessageBox({ type: 'error', title: "Save Output", buttons: btns, message: "An error ocurred creating the file " + err.message });
+                    reject(err);
+                } dialog.showMessageBox({ type: 'info', title: "Save Output", buttons: btns, message: "The file has been succesfully saved" });
+                resolve("success");
+            });
         });
     }
 }
@@ -168,8 +196,11 @@ function newProject() {
 }
 function init() {
     global.fnExecSQL = execSQL;
-    global.fnSaveOutput = saveOutputFile;
+    global.fnSaveProject = saveProjectFile;
     global.fnOpenProject = openProjectFile;
+    global.fnWriteSqlToTemp = writeSqlToTemp;
+    global.fnSaveSqlFile = saveSqlFile;
+    global.fnRemoveSqlTemp = removeSqlTemp;
     global.fnNewProject = newProject;
     newProject();
 }

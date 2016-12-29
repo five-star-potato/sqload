@@ -2,6 +2,7 @@ import { NgZone } from '@angular/core';
 import { Router } from '@angular/router';
 import { TRON_GLOBAL, TRON_EVENT } from './constants';
 import { WizardStateService } from "./service/wizard-state";
+import { DataService } from "./service/data-ws";
 
 declare var electron: any;
 
@@ -10,12 +11,14 @@ export abstract class BaseComponent {
     protected ngZone: NgZone;
     protected remote: any;
     protected wizardStateService: WizardStateService;
+    protected dataService: DataService;
 
-    constructor(router: Router, ngZone: NgZone, wizardStateService: WizardStateService) { 
+    constructor(router: Router, ngZone: NgZone, wizardStateService: WizardStateService, dataService: DataService) { 
         this.router = router;
         this.ngZone = ngZone;
         this.remote = electron.remote;
         this.wizardStateService = wizardStateService;
+        this.dataService = dataService;
    }
     abstract back(): void;
     abstract next(): void;
@@ -25,8 +28,8 @@ export abstract class BaseComponent {
     protected getSQLFn():any {
         return this.remote.getGlobal(TRON_GLOBAL.fnExecSQL);
     }
-    protected getSaveOutputFn():any {
-        return this.remote.getGlobal(TRON_GLOBAL.fnSaveOutput);
+    protected getSaveProjectFn():any {
+        return this.remote.getGlobal(TRON_GLOBAL.fnSaveProject);
     }
     protected getOpenProjectFn():any {
         return this.remote.getGlobal(TRON_GLOBAL.fnOpenProject);
@@ -34,5 +37,13 @@ export abstract class BaseComponent {
     protected getNewProjectFn():any {
         return this.remote.getGlobal(TRON_GLOBAL.fnNewProject);
     }
-    
+    protected getSaveSqlFileFn():any {
+        return this.remote.getGlobal(TRON_GLOBAL.fnSaveSqlFile);
+    }
+    protected getWriteSqlToTempFn():any {
+        return this.remote.getGlobal(TRON_GLOBAL.fnWriteSqlToTemp);
+    }
+    protected getRemoveSqlTemp():any {
+        return this.remote.getGlobal(TRON_GLOBAL.fnRemoveSqlTemp);
+    }
 }

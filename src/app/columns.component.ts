@@ -5,6 +5,7 @@ import { DataGenerator, ColumnDef, fnGetDataTypeDesc } from './include';
 import { BaseComponent } from './base.component';
 import * as gen from './generator/generators.component';
 import { WizardStateService } from "./service/wizard-state";
+import { DataService } from "./service/data-ws";
 
 @Component({
     templateUrl: "./columns.component.html",
@@ -22,7 +23,6 @@ import { WizardStateService } from "./service/wizard-state";
     styleUrls: [
         './css/host.css'
     ]
-    // providers: [ WizardStateService ] -- this will create another instance
 })
 export class ColumnsComponent extends BaseComponent implements AfterViewInit {
     @ViewChild('SequenceTemplate') sequenceTemplate: TemplateRef<any>;
@@ -42,8 +42,8 @@ export class ColumnsComponent extends BaseComponent implements AfterViewInit {
     activeTableId: number;
     activeColDef: ColumnDef = new ColumnDef();
 
-    constructor(router: Router, ngZone: NgZone, wizardStateService: WizardStateService) {
-        super(router, ngZone, wizardStateService);
+    constructor(router: Router, ngZone: NgZone, wizardStateService: WizardStateService, dataService: DataService) {
+        super(router, ngZone, wizardStateService, dataService);
     }
     back() {
         this.router.navigate(['/tables']);
@@ -62,9 +62,17 @@ export class ColumnsComponent extends BaseComponent implements AfterViewInit {
     private getTypeDesc(cf: ColumnDef): string {
         return fnGetDataTypeDesc(cf);
     }
+    private hideTemplateDiv():boolean {
+        if (this.activeColDef && this.activeColDef.plugIn.length > 0) {
+            if (this.activeColDef.plugIn[0].constructor.name == "SampleAddressGenerator")
+                return true;
+        }
+        return false;
+    }
     private changeGenerator(cf: ColumnDef, evt: any) {
-        var genName = evt.target.
-        value;
+        var genName = evt.target.value;
+        // Check to see if the "newly" selected generator was previously selected; if so, reuse it; don't want to erase whatever the user has configed before.
+        // At the data generation step, we will cleanup unused generators (i.e. not at position 0)
         let i = 0;
         while (i < cf.plugIn.length) {
             if (cf.plugIn[i].constructor.name == genName)
@@ -107,7 +115,8 @@ export class ColumnsComponent extends BaseComponent implements AfterViewInit {
         }
         return this.defaultTemplate;
     }
-    private getGeneratorName(cf: ColumnDef) {
+    // the name of the constructor will match the <select> value
+    private getGeneratorConstructorName(cf: ColumnDef) {
         return cf.plugIn.length > 0 ? cf.plugIn[0].constructor.name : '';
     }
     ngAfterViewInit() {

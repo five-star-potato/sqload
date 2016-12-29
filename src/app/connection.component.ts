@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { TRON_GLOBAL, TRON_EVENT } from "./constants";
 import { BaseComponent } from './base.component';
 import { WizardStateService } from "./service/wizard-state";
+import { DataService } from "./service/data-ws";
 
 @Component({
   template: `
@@ -63,8 +64,8 @@ export class ConnectionComponent extends BaseComponent implements OnInit, AfterV
 */
   dataSet: any[] = [];
 
-  constructor(router: Router, ngZone: NgZone, wizardStateService: WizardStateService) {
-    super(router, ngZone, wizardStateService);
+  constructor(router: Router, ngZone: NgZone, wizardStateService: WizardStateService, dataService: DataService) {
+      super(router, ngZone, wizardStateService, dataService);
   }
   back() {
     // Crashing chromium once a project is opened
