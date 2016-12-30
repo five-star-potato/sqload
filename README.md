@@ -18,7 +18,7 @@ Gendat is written in Electron with Angular 2. The project is in perpetual beta s
 
 - Webpack module loader
 
-- JQuery (currently using 1.12.4)
+- JQuery (currently using 3.1.1)
 
 - Bootstrap (currently using 3.3.7)
 
