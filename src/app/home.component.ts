@@ -77,7 +77,7 @@ export class HomeComponent extends BaseComponent implements OnInit {
                             cols[i] = realColDef;  
                             if (c.plugIn.length > 0) {
                                 let obj = c.plugIn[0];
-                                let realPlug: any = new gen[obj.__name__]();
+                                let realPlug: any = new gen[obj.__name__](); // all the components within the module "gen" is accessible through [] indexer.
                                 Object.assign(realPlug, obj);
                                 realColDef.plugIn.splice(0, 1, realPlug);
                             }

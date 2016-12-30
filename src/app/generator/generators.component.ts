@@ -13,15 +13,14 @@ function randomString(length, chars) {
 }
 
 //////////////////// Generators ////////////////////////////////////
-export class SequenceGenerator implements DataGenerator {
-    __name__: string = "SequenceGenerator";
-    __template__: string = "SequenceTemplate";
+export class SequenceGenerator extends DataGenerator {
     public max: number = 10000;
     public min: number = 0;
     public incr: number = 1;
     public current: number;
 
     constructor(dataType?: string) {
+        super("SequenceGenerator");
         if (dataType) {
             switch (dataType) {
                 case 'tinyint':
@@ -53,13 +52,12 @@ export class SequenceGenerator implements DataGenerator {
     /* distribution? */
 }
 
-export class IntegerGenerator implements DataGenerator {
-    __name__: string = "IntegerGenerator";
-    __template__: string = "IntegerTemplate";
+export class IntegerGenerator extends DataGenerator {
     public max: number = 100;
     public min: number = 0;
 
     constructor(dataType?: string) {
+        super("IntegerGenerator");
         if (dataType) {
             switch (dataType) {
                 case 'tinyint':
@@ -86,12 +84,11 @@ export class IntegerGenerator implements DataGenerator {
     /* distribution? */
 }
 
-export class TextGenerator implements DataGenerator {
-    __name__: string = "TextGenerator";
-    __template__: string = "TextTemplate";
+export class TextGenerator extends DataGenerator {
     public maxLength: number = 5;
 
     constructor(maxLength?: number) {
+        super("TextGenerator");
         this.maxLength = maxLength;
     }
     generate(): String {
@@ -99,13 +96,12 @@ export class TextGenerator implements DataGenerator {
     }
 }
 
-export class DateGenerator implements DataGenerator {
-    __name__: string = "DateGenerator";
-    __template__: string = "DateTemplate";
+export class DateGenerator extends DataGenerator {
     public max: string = "2000-01-01";
     public min: string = "2020-12-31";
 
     constructor(max?: string, min?: string) {
+        super("DateGenerator");
         if (max)
             this.max = max;
         if (min)
@@ -123,13 +119,12 @@ export class DateGenerator implements DataGenerator {
     }
 }
 
-export class DateTimeGenerator implements DataGenerator {
-    __name__: string = "DateTimeGenerator";
-    __template__: string = "DateTimeTemplate";
+export class DateTimeGenerator extends DataGenerator {
     public max: Date = new Date(1970, 1, 1);
     public min: Date = new Date(2000, 1, 1);
 
     constructor(max?: Date, min?: Date) {
+        super("DateTimeGenerator");
         if (max)
             this.max = max;
         if (min)
@@ -142,12 +137,11 @@ export class DateTimeGenerator implements DataGenerator {
     }
 }
 
-export class CustomValueGenerator implements DataGenerator {
-    __name__: string = "CustomValueGenerator";
-    __template__: string = "CustomValueTemplate";
-    public value: string;
+export class CustomValueGenerator extends DataGenerator {
+   public value: string;
 
     constructor(value?: string) {
+        super("CustomValueGenerator");
         if (value)
             this.value = value;
     }
@@ -156,13 +150,11 @@ export class CustomValueGenerator implements DataGenerator {
     }
 }
 
-export class CustomSqlGenerator implements DataGenerator {
-    __name__: string = "CustomSqlGenerator";
-    __template__: string = "CustomSqlTemplate";
+export class CustomSqlGenerator extends DataGenerator {
     public sql: string;
 
-    constructor()
     constructor(sql?: string) {
+        super("CustomSqlGenerator");
         if (sql)
             this.sql = sql;
     }
@@ -171,11 +163,10 @@ export class CustomSqlGenerator implements DataGenerator {
     }
 }
 
-export class UUIDGenerator implements DataGenerator {
-    __name__: string = "UUIDGenerator";
-    __template__: string = "UUIDTemplate";
-    constructor() { }
-
+export class UUIDGenerator extends DataGenerator {
+    constructor() { 
+        super("UUIDGenerator");        
+    }
     generate(): String {
         return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
             var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
@@ -184,13 +175,10 @@ export class UUIDGenerator implements DataGenerator {
     }
 }
 
-export class ListItemGenerator implements DataGenerator {
-    __name__: string = "ListItemGenerator";
-    __template__: string = "ListItemTemplate";
+export class ListItemGenerator extends DataGenerator {
     public items: string[] = ["", "", "", "", "", "", "", "", "", ""];
-
-    constructor()
     constructor(items?: string[]) {
+        super("ListItemGenerator");
         if (items)
             this.items = items;
     }
@@ -201,26 +189,26 @@ export class ListItemGenerator implements DataGenerator {
 }
 
 // just for the same of completeness
-export class FKGenerator implements DataGenerator {
-    __name__: string = "FKGenerator";
-    __template__: string = "FKTemplate";
-    constructor() { }
-
+export class FKGenerator extends DataGenerator {
+    constructor() { 
+        super("FKGenerator");
+    }
     generate(): String {
         return "FK";
     }
 }
 
 // just for the same of completeness; not really used
-export class SampleAddressGenerator implements DataGenerator {
-    __name__: string = "SampleAddressGenerator";
-    __template__: string = "";
-    public fieldDescription:string;
-
-    constructor() { }
-
+export class SampleAddressGenerator extends DataGenerator {
+    public region:string = "bc";
+    public country:string = "ca";
+    public fieldSpec:string;
+    
+    constructor() {
+        super("SampleAddressGenerator");
+    }
     generate(): String {
-        return this.fieldDescription;
+        return this.fieldSpec;
     }
 }
 

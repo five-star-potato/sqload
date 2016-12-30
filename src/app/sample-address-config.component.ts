@@ -1,4 +1,5 @@
-import { Component, OnInit } from "@angular/core";
+import { Component, OnInit, Input } from "@angular/core";
+import { SampleAddressGenerator } from './generator/generators.component';
 
 @Component({
     selector: 'sample-address-configurator',
@@ -8,11 +9,11 @@ import { Component, OnInit } from "@angular/core";
             <div class="form">
                 <div class="form-group">
                     <label for="regionField">Region (leave blank for random region)</label>
-                    <input type="text" [(ngModel)]="activeColDef.plugIn[0].min" class="form-control input-sm" id="regionField" placeholder="Comma separated state or province">
+                    <input type="text" [(ngModel)]="generator.region" class="form-control input-sm" id="regionField" placeholder="Comma separated state or province">
                 </div>
                 <div class="form-group">
-                    <label for="maxField">Upper Bound</label>
-                    <input type="text" [(ngModel)]="activeColDef.plugIn[0].max" class="form-control input-sm" id="maxField" placeholder="max">
+                    <label for="countryField">Upper Bound</label>
+                    <input type="text" [(ngModel)]="generator.country" class="form-control input-sm" id="countryField" placeholder="country">
                 </div>
             </div>
         
@@ -20,5 +21,6 @@ import { Component, OnInit } from "@angular/core";
     `
 })
 export class SampleAddressConfigComponent {
+    @Input() generator: SampleAddressGenerator;
 
 }

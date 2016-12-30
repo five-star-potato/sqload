@@ -179,16 +179,16 @@ function newProject() {
     global.project = {
         filePath: '',
         connection: {
+            /*
             serverName: '',
             databaseName: '',
             userName: '',
             password: ''
-            /*
-            serverName: '127.0.0.1',
+            */
+            serverName: 'DELL',
             databaseName: 'AdventureWorks2014',
             userName: 'sa',
             password: "LongLive1"
-            */
         },
         selectedTables: [],
         columnDefs: {}

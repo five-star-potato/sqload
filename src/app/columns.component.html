@@ -64,7 +64,7 @@
                 <div style="display:flex; flex-direction: column; flex-grow: 1; overflow-y: auto; overflow-x: hidden; margin-left:10px; padding-right: 10px" >
                     <div [hidden]="!hideTemplateDiv()">
                         <legend>Sample Address Field Settings</legend>
-                        <sample-address-configurator></sample-address-configurator>
+                        <sample-address-configurator [generator]="sampleAddressGenerator"></sample-address-configurator>
                     </div>
                     <div [hidden]="hideTemplateDiv()">
                         <legend>Data Generation Settings</legend>

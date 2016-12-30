@@ -41,6 +41,7 @@ export class ColumnsComponent extends BaseComponent implements AfterViewInit {
     columns: ColumnDef[] = [];
     activeTableId: number;
     activeColDef: ColumnDef = new ColumnDef();
+    sampleAddressGenerator: gen.SampleAddressGenerator = new gen.SampleAddressGenerator(); 
 
     constructor(router: Router, ngZone: NgZone, wizardStateService: WizardStateService, dataService: DataService) {
         super(router, ngZone, wizardStateService, dataService);
@@ -90,7 +91,7 @@ export class ColumnsComponent extends BaseComponent implements AfterViewInit {
     }
     private getTemplate(cf:ColumnDef): TemplateRef<any> {
         if (cf.plugIn.length > 0) {
-            switch (cf.plugIn[0].__template__) {
+            switch (cf.plugIn[0].templateName) {
                 case "SequenceTemplate":
                     return this.sequenceTemplate;
                 case "IntegerTemplate":

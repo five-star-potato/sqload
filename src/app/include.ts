@@ -1,9 +1,15 @@
 import { TemplateRef } from '@angular/core';
 
-export interface DataGenerator {
-    __name__:string;
-    __template__:string;
-    generate():any;
+export abstract class DataGenerator {
+    __name__:string;    // when serializing the object into JSON string, the name of the subtypes (like ListItemGenerator) will be lost. __name__ helps deserialize it back.
+    get templateName(): string {
+        // if the generator is named "DateTimeGenerator", the template is named "DateTimeTemplate"
+        return this.__name__.replace(/Generator$/, "Template");
+    }
+    constructor(name:string) {
+        this.__name__ = name;
+    }
+    abstract generate():any;
 }
 
 export class ColumnDef {
