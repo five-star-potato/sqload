@@ -6,9 +6,17 @@ declare var electron: any;
 
 @Injectable()
 export class WizardStateService {
+    private spinningEventSource = new Subject<any>();
     private projectEventSource = new Subject<any>();
     projectEvent$ = this.projectEventSource.asObservable();
+    spinningEvent$ = this.spinningEventSource.asObservable();
 
+    showSpinning(url: string) {
+        this.spinningEventSource.next(url);
+    }
+    hideSpinning() {
+        this.spinningEventSource.next("");
+    }
     projectChange(event: any) {
         let proj = electron.remote.getGlobal(TRON_GLOBAL.project);
         if (event.type == TRON_EVENT.refresh) {

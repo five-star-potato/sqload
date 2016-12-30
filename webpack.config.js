@@ -42,6 +42,7 @@ module.exports = {
             { from: 'node_modules/bootstrap/dist/js/bootstrap.min.js'},
             */
             { from: 'src/css', to: "css"},
+            { from: 'src/img', to: "img"},
             { from: 'node_modules/bootstrap/dist/fonts', to: "fonts" },
             { from: 'src/fonts/Plavsky.otf', to: "fonts" },
             { from: 'src/fonts/NeoGen.ttf', to: "fonts" },

@@ -161,6 +161,7 @@ export class GenerateComponent extends BaseComponent {
                 this.overallProgress = 100;
                 this.getWriteSqlToTempFn()(this.stmts);
                 this.getSaveSqlFileFn()();
+                this.wizardStateService.hideSpinning();
             }
         }
     }
@@ -218,6 +219,7 @@ export class GenerateComponent extends BaseComponent {
         this.router.navigate(['/rows']);
     }
     next() {
+        this.wizardStateService.showSpinning("generate");
         this.generateData();
     }
     private saveProject() {

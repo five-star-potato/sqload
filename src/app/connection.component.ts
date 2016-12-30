@@ -72,9 +72,9 @@ export class ConnectionComponent extends BaseComponent implements OnInit, AfterV
     //this.router.navigate(['/home']);
   }
   next() {
+    this.wizardStateService.showSpinning('connect');
     this.getVerifyConnFn()(
       (err, res) => {
-        console.log(err);
         this.ngZone.run(() => {
           if (err)
             this.getMsgBoxFn()("Database Connection Error", err.toString());
@@ -83,6 +83,7 @@ export class ConnectionComponent extends BaseComponent implements OnInit, AfterV
             this.wizardStateService.projectChange({ type: TRON_EVENT.refresh });
             this.router.navigate(['/tables']);
           }
+          this.wizardStateService.hideSpinning();
         })
       });
   }
