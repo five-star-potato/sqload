@@ -1,5 +1,6 @@
 var electron = require('electron');
 var fs = require('fs');
+var db = require('./db');
 var app = electron.app;
 var BrowserWindow = electron.BrowserWindow;
 var ipcMain = require('electron').ipcRenderer;
@@ -7,7 +8,7 @@ var tmpFile = "__TMP.SQL";
 
 function openProjectFile() {
     var btns = ['OK'];
-    const {dialog} = require('electron')
+    const {dialog} = require('electron');
 
     return new Promise((resolve, reject) => {
         dialog.showOpenDialog({
@@ -127,54 +128,6 @@ function saveProjectFile(content) {
     }
 }
 
-function execSQL(sqlStmt, callback) {
-    var Connection = require('tedious').Connection;
-    var config = {
-        userName: global.project.connection.userName,
-        password: global.project.connection.password,
-        server: global.project.connection.serverName,
-        // If you are on Microsoft Azure, you need this:  
-        options: { encrypt: true, database: global.project.connection.databaseName }
-    };
-    var connection = new Connection(config);
-    connection.on('connect', function (err) {
-        // If no error, then good to proceed.  
-        console.log("connection error: ");
-        console.log(err);
-        executeStatement(sqlStmt);
-    });
-
-    var Request = require('tedious').Request;
-    var TYPES = require('tedious').TYPES;
-
-    function executeStatement(sqlStmt) {
-        var newData = [];
-        var dataSet = [];
-        request = new Request(sqlStmt, function (err, rowCount) {
-            if (err) {
-                console.log(err);
-            }
-            else {
-                if (rowCount < 1) {
-                    callback(null, false);
-                }
-                else {
-                    callback(null, newData);
-                }
-            }
-        });
-
-        request.on('row', function (row) {
-            dataSet = {};
-            row.forEach(function (column) {
-                dataSet[column.metadata.colName] = column.value;
-            });
-            newData.push(dataSet);
-        });
-        connection.execSql(request);
-    }
-}
-
 function newProject() {
     global.project = {
         filePath: '',
@@ -188,20 +141,28 @@ function newProject() {
             serverName: 'DELL',
             databaseName: 'AdventureWorks2014',
             userName: 'sa',
-            password: "LongLive1"
+            password: "LongLive1",
+            verified: false
         },
         selectedTables: [],
         columnDefs: {}
     }
 }
+
+function messageBox(title, msg) {
+    const {dialog} = require('electron');
+    dialog.showErrorBox(title, msg);
+}
 function init() {
-    global.fnExecSQL = execSQL;
+    global.fnExecSQL = db.execSQL;
+    global.fnVerifyConnection = db.verifyConnection;
     global.fnSaveProject = saveProjectFile;
     global.fnOpenProject = openProjectFile;
     global.fnWriteSqlToTemp = writeSqlToTemp;
     global.fnSaveSqlFile = saveSqlFile;
     global.fnRemoveSqlTemp = removeSqlTemp;
     global.fnNewProject = newProject;
+    global.fnMsgBox = messageBox;
     newProject();
 }
 app.on('ready', _ => {

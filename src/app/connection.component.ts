@@ -14,22 +14,22 @@ import { DataService } from "./service/data-ws";
         <div class="col-md-8" style="margin-left:-15px">
           <div class="form-group">
             <label for="serverName">Server Name</label> 
-            <input type="text" [(ngModel)]="this.getGlobal().connection.serverName" ngControl="serverName" name="serverName" id="serverName" required class="form-control" placeholder="Server" />
+            <input type="text" (ngModelChange)="this.getGlobal().connection.serverName = $event; resetConnectionVerified()" [ngModel]="this.getGlobal().connection.serverName" ngControl="serverName" name="serverName" id="serverName" required class="form-control" placeholder="Server" />
           </div>
 
           <div class="form-group">
             <label for="databaseName">Database Name</label> 
-            <input type="text" [(ngModel)]="this.getGlobal().connection.databaseName" ngControl="databaseName" name="databaseName" id="databaseName" required class="form-control" placeholder="Database Name" />
+            <input type="text" (ngModelChange)="this.getGlobal().connection.databaseName = $event; resetConnectionVerified()" [ngModel]="this.getGlobal().connection.databaseName" ngControl="databaseName" name="databaseName" id="databaseName" required class="form-control" placeholder="Database Name" />
           </div>
 
           <div class="form-group">
             <label for="userName">User Name</label> 
-            <input type="text" [(ngModel)]="this.getGlobal().connection.userName" ngControl="userName" name="userName" id="userName" required class="form-control" placeholder="User Name" />
+            <input type="text" (ngModelChange)="this.getGlobal().connection.userName = $event; resetConnectionVerified()" [ngModel]="this.getGlobal().connection.userName" ngControl="userName" name="userName" id="userName" required class="form-control" placeholder="User Name" />
           </div>
 
           <div class="form-group">
             <label for="password">Password</label> 
-            <input type="password" [(ngModel)]="this.getGlobal().connection.password" ngControl="password" name="password" id="password" required class="form-control" placeholder="Password" />
+            <input type="password" (ngModelChange)="this.getGlobal().connection.password = $event; resetConnectionVerified()" [ngModel]="this.getGlobal().connection.password" ngControl="password" name="password" id="password" required class="form-control" placeholder="Password" />
           </div>
         </div>
       </div>
@@ -56,16 +56,10 @@ import { DataService } from "./service/data-ws";
 })
 export class ConnectionComponent extends BaseComponent implements OnInit, AfterViewInit {
   @ViewChild('connectForm') form;
-/*
-  serverName: string;
-  userName: string;
-  password: string;
-  databaseName: string;
-*/
   dataSet: any[] = [];
 
   constructor(router: Router, ngZone: NgZone, wizardStateService: WizardStateService, dataService: DataService) {
-      super(router, ngZone, wizardStateService, dataService);
+    super(router, ngZone, wizardStateService, dataService);
   }
   back() {
     // Crashing chromium once a project is opened
@@ -78,20 +72,32 @@ export class ConnectionComponent extends BaseComponent implements OnInit, AfterV
     //this.router.navigate(['/home']);
   }
   next() {
-    /*
-    this.getGlobal().connection.serverName = this.serverName;
-    this.getGlobal().connection.databaseName = this.databaseName;
-    this.getGlobal().connection.userName = this.userName;
-    this.getGlobal().connection.password = this.password;
-    this.wizardStateService.projectChange({ type: TRON_EVENT.refresh });
-    */
-    this.router.navigate(['/tables']);
+    this.getVerifyConnFn()(
+      (err, res) => {
+        console.log(err);
+        this.ngZone.run(() => {
+          if (err)
+            this.getMsgBoxFn()("Database Connection Error", err.toString());
+          else {
+            this.getGlobal().connection.verified = true;
+            this.wizardStateService.projectChange({ type: TRON_EVENT.refresh });
+            this.router.navigate(['/tables']);
+          }
+        })
+      });
   }
   ngAfterViewInit() {
-    this.form.control.valueChanges
-      .subscribe(values => { 
+    /* Not good - this subscription method is called even when the form is being destroyed */
+    /* this.form.control.valueChanges
+      .subscribe(values => {
+        this.getGlobal().connection.verified = false;
         this.wizardStateService.projectChange({ type: TRON_EVENT.refresh });
-       });
+      });
+    */
+  }
+  resetConnectionVerified() {
+      this.getGlobal().connection.verified = false;
+      this.wizardStateService.projectChange({ type: TRON_EVENT.refresh });
   }
   ngOnInit() {
     //electron.ipcRenderer.send("message");

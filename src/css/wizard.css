@@ -62,7 +62,7 @@ span.round-tab i{
 span.round-tab:hover {
     color: #333;
     border: 2px solid #999;
-    background-color: #A6DAF7
+    background-color: wheat;
 }
 
 .wizard .nav-tabs > li {
@@ -100,9 +100,9 @@ span.round-tab:hover {
     padding: 0;
 }
 
-    .wizard .nav-tabs > li a:hover {
-        background: transparent;
-    }
+.wizard .nav-tabs > li a:hover {
+    background: transparent;
+}
 
 .wizard .tab-pane {
     position: relative;

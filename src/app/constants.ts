@@ -1,5 +1,6 @@
 export class TRON_GLOBAL {
     public static get fnExecSQL():string { return "fnExecSQL"; }
+    public static get fnVerifyConnection():string { return "fnVerifyConnection"; }
     public static get project():string { return "project"; }
     public static get fnSaveProject():string { return "fnSaveProject"; }
     public static get fnOpenProject():string { return "fnOpenProject"; }
@@ -7,6 +8,7 @@ export class TRON_GLOBAL {
     public static get fnSaveSqlFile():string { return "fnSaveSqlFile"; }
     public static get fnWriteSqlToTemp():string { return "fnWriteSqlToTemp"; }
     public static get fnRemoveSqlTemp():string { return "fnRemoveSqlTemp"; }
+    public static get fnMsgBox():string { return "fnMsgBox"; }
 } 
 
 export class TRON_EVENT {

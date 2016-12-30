@@ -34,7 +34,8 @@ export class WizardStateService {
         return (proj.connection.serverName && 
                 proj.connection.databaseName && 
                 proj.connection.userName && 
-                proj.connection.password);
+                proj.connection.password &&
+                proj.connection.verified);
     }
     private isTableReady(proj: any):boolean {
         return (proj.selectedTables.length > 0);

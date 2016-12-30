@@ -58,22 +58,24 @@ export class TablesComponent extends BaseComponent {
         this.tables.forEach((t) => {
             if (this.selectedOpts.includes(t.id))
                 t.selected = true;
-        })
+        });
+        this.updateGlobalTablesSelection();
     }
     private unselectTbls(sel) {
         this.tables.forEach((t) => {
             if (this.unselectedOpts.includes(t.id))
                 t.selected = false;
-        })
+        });
+        this.updateGlobalTablesSelection();
     }
     back() {
         this.router.navigate(['/connect']);
     }
-    next() {
+    updateGlobalTablesSelection() {
         var tbls = [];
         tbls.length = 0;
-        let seq:number = Math.max.apply(Math, 
-            this.getGlobal().selectedTables.map(function(t) { return t.sequence; })) | 0; // arbitarily starts with 10. If table is brand now, seq is null
+        let seq: number = Math.max.apply(Math,
+            this.getGlobal().selectedTables.map(function (t) { return t.sequence; })) | 0;
         this.tables.forEach((t) => {
             if (t.selected) {
                 tbls.push(t);
@@ -82,10 +84,11 @@ export class TablesComponent extends BaseComponent {
                     t.sequence = seq;
                 }
             }
-        }); 
-         
+        });
         this.getGlobal().selectedTables = tbls;
         this.wizardStateService.projectChange({ type: TRON_EVENT.refresh });
+    }
+    next() {
         this.router.navigate(['/columns']);
     }
     ngOnInit() {
@@ -94,10 +97,10 @@ export class TablesComponent extends BaseComponent {
         let dataSet = this.getSQLFn()("SELECT object_id, SCHEMA_NAME(schema_id) [Schema], OBJECT_NAME(object_id) [Table] FROM sys.tables ORDER BY 2, 3",
             (err, res) => {
                 this.ngZone.run(() => {
-                    let i:number = 0;
+                    let i: number = 0;
                     res.forEach((row) => {
-                        let tblName = `${row["Schema"]}.${row["Table"]}`; 
-                        let sel:any = tbls.filter((t) => { // was this table already selected?
+                        let tblName = `${row["Schema"]}.${row["Table"]}`;
+                        let sel: any = tbls.filter((t) => { // was this table already selected?
                             return t.name == tblName;
                         });
 

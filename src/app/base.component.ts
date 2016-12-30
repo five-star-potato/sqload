@@ -28,6 +28,9 @@ export abstract class BaseComponent {
     protected getSQLFn():any {
         return this.remote.getGlobal(TRON_GLOBAL.fnExecSQL);
     }
+    protected getVerifyConnFn():any {
+        return this.remote.getGlobal(TRON_GLOBAL.fnVerifyConnection);
+    }
     protected getSaveProjectFn():any {
         return this.remote.getGlobal(TRON_GLOBAL.fnSaveProject);
     }
@@ -45,5 +48,8 @@ export abstract class BaseComponent {
     }
     protected getRemoveSqlTemp():any {
         return this.remote.getGlobal(TRON_GLOBAL.fnRemoveSqlTemp);
+    }
+    protected getMsgBoxFn():any {
+        return this.remote.getGlobal(TRON_GLOBAL.fnMsgBox);
     }
 }
