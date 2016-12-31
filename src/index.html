@@ -8,7 +8,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 	<meta http-equiv="x-ua-compatible" content="ie=edge">
 
-	<title>Angular 2 Starter</title>
+	<title>Test Data Generation Tool for SQL Server</title>
 	<link rel="stylesheet" href="css/bootstrap.min.css">
 	<script>
     	var electron = require('electron');
@@ -95,18 +95,21 @@
 		min-width:100px;
 	}
 	.watermark {
+		color: #bbb;
 		position:absolute; 
 		right: 20px;
 		font-family: Plavsky;
 		opacity: 0.2;
 		z-index: -999;
 	}
-	h4.projectTitle {
+	div.projectTitle {
+		border-radius: 2px;
+		padding: 5px 8px;
 		position: fixed;
-		right: 70px;
+		right: 80px;
 		top: 5px;
 		/*font-family: Aileron; */
-		opacity: 0.3;
+		box-shadow: 2px 2px 5px #aaa;
 	}
 
 	/* Ribbon */
@@ -159,14 +162,32 @@
   border-bottom: 3px solid transparent;
   border-top: 3px solid 	#FFA500;
 }
-	</style>	
+
+.projectGradient {
+	color: #fff;
+	background: rgba(147,206,222,1);
+	background: -moz-linear-gradient(top, rgba(147,206,222,1) 0%, rgba(117,189,209,1) 41%, rgba(73,165,191,1) 100%);
+	background: -webkit-gradient(left top, left bottom, color-stop(0%, rgba(147,206,222,1)), color-stop(41%, rgba(117,189,209,1)), color-stop(100%, rgba(73,165,191,1)));
+	background: -webkit-linear-gradient(top, rgba(147,206,222,1) 0%, rgba(117,189,209,1) 41%, rgba(73,165,191,1) 100%);
+	background: -o-linear-gradient(top, rgba(147,206,222,1) 0%, rgba(117,189,209,1) 41%, rgba(73,165,191,1) 100%);
+	background: -ms-linear-gradient(top, rgba(147,206,222,1) 0%, rgba(117,189,209,1) 41%, rgba(73,165,191,1) 100%);
+	background: linear-gradient(to bottom, rgba(147,206,222,1) 0%, rgba(117,189,209,1) 41%, rgba(73,165,191,1) 100%);
+	filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#93cede', endColorstr='#49a5bf', GradientType=0 );
+}
+
+legend {
+	margin-bottom: 5px;
+}
+</style>	
 
 </head>
 <body>
 	<div class="box">
 	<div class="ribbon"><span>beta</span></div>
 
-	<h4 class="projectTitle" id="projectTitle"></h4>
+	<div class="projectTitle projectGradient" style="display:none" id="divProjectTitle">
+		<span id="projectTitle"></span>
+	</div>
 	<h1 class="watermark" style="bottom: 35px">SQL Server 2016</h1>
 	<h1 class="watermark" style="bottom: 4px">Test Data Generation Tool</h1>
 	<!--<h6 class="watermark" style="bottom: 5px">copyright (c) <span id="copyrightYear"></span></h6> -->

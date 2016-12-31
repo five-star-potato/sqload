@@ -52,6 +52,7 @@ export class HomeComponent extends BaseComponent implements OnInit {
         this.getNewProjectFn()();
         this.wizardStateService.projectChange({ type: TRON_EVENT.refresh });
         document.getElementById("projectTitle").innerHTML = "[New Project]";
+        document.getElementById("divProjectTitle").style.display = "";
         this.router.navigate(['/connect']);
     }
 
@@ -67,6 +68,7 @@ export class HomeComponent extends BaseComponent implements OnInit {
                     project.connection.databaseName = data.connection.databaseName;
                     project.connection.userName = data.connection.userName;
                     project.connection.password = data.connection.password;
+                    project.connection.verified = data.connection.verified;
                     
                     project.selectedTables = data.selectedTables;
                     data.selectedTables.forEach(t => {
@@ -85,6 +87,7 @@ export class HomeComponent extends BaseComponent implements OnInit {
                         project.columnDefs[t.id] = cols;
                     });
                     this.wizardStateService.projectChange({ type: TRON_EVENT.refresh });
+                    document.getElementById("divProjectTitle").style.display = "";
                     this.router.navigate(['/connect']);
                 });
             })

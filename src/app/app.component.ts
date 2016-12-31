@@ -126,6 +126,6 @@ export class AppComponent implements OnInit {
     private getLinkColor(url:string):string {
         if (this.isLinkDisabled(url)) 
             return '#eeeeee'
-        return '#00cc99';        
+        return '#33cccc';        
     }
 }

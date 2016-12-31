@@ -226,10 +226,10 @@ export class GenerateComponent extends BaseComponent {
         let addrs: Address[];
         this.dataService.getAddresses('on', 'ca').then(
             data => {
-                    addrs = data;
-                    console.log(addrs[0].id);
-                    console.log(addrs[0].street);
-                    console.log(addrs[0].city);
+                addrs = data;
+                console.log(addrs[0].id);
+                console.log(addrs[0].street);
+                console.log(addrs[0].city);
             },
             err => console.log(err)
         );

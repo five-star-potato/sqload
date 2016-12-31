@@ -41,7 +41,8 @@ export class ColumnsComponent extends BaseComponent implements AfterViewInit {
     columns: ColumnDef[] = [];
     activeTableId: number;
     activeColDef: ColumnDef = new ColumnDef();
-    sampleAddressGenerator: gen.SampleAddressGenerator = new gen.SampleAddressGenerator(); 
+    // this is just to make initial binding working
+    dummyAddressGenerator: gen.SampleAddressGenerator = new gen.SampleAddressGenerator(); 
 
     constructor(router: Router, ngZone: NgZone, wizardStateService: WizardStateService, dataService: DataService) {
         super(router, ngZone, wizardStateService, dataService);

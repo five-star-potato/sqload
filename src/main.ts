@@ -2,7 +2,6 @@ declare var require:(moduleId:string) => any;
 require('jquery');
 require('bootstrap');
 
-import "core-js";
 import "reflect-metadata";
 import "zone.js/dist/zone";
 import { platformBrowserDynamic } from '@angular/platform-browser-dynamic';

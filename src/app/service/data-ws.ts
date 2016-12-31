@@ -2,6 +2,8 @@ import { Injectable } from '@angular/core';
 import { Headers, Http } from '@angular/http';
 import 'rxjs/add/operator/toPromise';
 import { Address } from './address';
+declare var require:(moduleId:string) => any;
+var appConf = require('../../app.conf');
 
 @Injectable()
 export class DataService {
@@ -9,7 +11,7 @@ export class DataService {
     constructor(private http: Http) { }
 
     getAddresses(region:string, country:string): Promise<Address[]> {
-        return this.http.get(`http://localhost:8081/address?region=${region}&country=${country}&rc=10`)
+        return this.http.get(`${appConf.dataService.url}/address?region=${region}&country=${country}&rc=10`)
             .toPromise()
             .then(response => response.json() as Address[])
             .catch(this.handleError);
