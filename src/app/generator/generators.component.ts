@@ -200,8 +200,8 @@ export class FKGenerator extends DataGenerator {
 
 // just for the same of completeness; not really used
 export class SampleAddressGenerator extends DataGenerator {
-    public region:string = "bc";
-    public country:string = "ca";
+    public region:string;
+    public country:string;
     public fieldSpec:string;
     
     constructor() {

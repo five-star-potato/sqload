@@ -64,7 +64,14 @@ export class ColumnsComponent extends BaseComponent implements AfterViewInit {
     private getTypeDesc(cf: ColumnDef): string {
         return fnGetDataTypeDesc(cf);
     }
-    private hideTemplateDiv():boolean {
+    private showTemplateDiv():boolean {
+        if (this.activeColDef && this.activeColDef.plugIn.length > 0) {
+            if (this.activeColDef.plugIn[0].constructor.name != "SampleAddressGenerator")
+                return true;
+        }
+        return false;
+    }
+    private showSampleAddressDiv():boolean {
         if (this.activeColDef && this.activeColDef.plugIn.length > 0) {
             if (this.activeColDef.plugIn[0].constructor.name == "SampleAddressGenerator")
                 return true;

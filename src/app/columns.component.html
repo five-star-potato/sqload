@@ -61,12 +61,12 @@
                         </tbody>
                     </table>
                 </div>
-                <div style="display:flex; flex-direction: column; flex-grow: 1; overflow-y: auto; overflow-x: hidden; margin-left:10px; padding-right: 10px" >
-                    <div [hidden]="!hideTemplateDiv()">
+                <div style="width: 30%; display:flex; flex-direction: column; flex-grow: 1; overflow-y: auto; overflow-x: hidden; margin-left:10px; padding-right: 10px" >
+                    <div *ngIf="showSampleAddressDiv()">
                         <legend>Sample Address Field Settings</legend>
-                        <sample-address-configurator [generator]="dummyAddressGenerator"></sample-address-configurator>
+                        <sample-address-configurator></sample-address-configurator>
                     </div>
-                    <div [hidden]="hideTemplateDiv()">
+                    <div *ngIf="showTemplateDiv()">
                         <legend>Data Generation Settings</legend>
                         <template [ngTemplateOutlet]="getTemplate(activeColDef)" [ngOutletContext]="{ $implicit: activeColDef }"></template>
                     </div>
