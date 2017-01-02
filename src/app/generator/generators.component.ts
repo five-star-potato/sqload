@@ -97,8 +97,8 @@ export class TextGenerator extends DataGenerator {
 }
 
 export class DateGenerator extends DataGenerator {
-    public max: string = "2000-01-01";
-    public min: string = "2020-12-31";
+    public min: string = "2000-01-01";
+    public max: string = "2020-12-31";
 
     constructor(max?: string, min?: string) {
         super("DateGenerator");
@@ -111,19 +111,26 @@ export class DateGenerator extends DataGenerator {
         // parse the string date back to date
         let d1 = this.min.split("-").map(Number);
         let minDate = new Date(d1[0], d1[1] - 1, d1[2]);
-        let d2 = this.min.split("-").map(Number);
+        let d2 = this.max.split("-").map(Number);
         let maxDate = new Date(d2[0], d2[1] - 1, d2[2]);
         
         let dt = new Date(minDate.getTime() + Math.random() * (maxDate.getTime() - minDate.getTime()));
+        dt.setHours(0,0,0,0);
         return dt.getFullYear() + '-' + (dt.getMonth() + 1) + "-" + dt.getDate();
     }
 }
 
 export class DateTimeGenerator extends DataGenerator {
-    public max: Date = new Date(1970, 1, 1);
-    public min: Date = new Date(2000, 1, 1);
+    // <input type=datetime-local> doesn't seem to be able to map to javascript Date() object during serialization
+    public min: string = "2000-01-01T00:00:00";
+    public max: string = "2020-12-31T00:00:00";
 
-    constructor(max?: Date, min?: Date) {
+    private parseISODateTime(dt:string) {
+        let m:Number[] = dt.match(/^(\d+)-(\d+)-(\d+)T(\d+):(\d+)/).map(Number);
+        return new Date(m[1] as number, (m[2] as number) -1, m[3] as number, m[4] as number, m[5] as number);
+    }
+
+    constructor(max?: string, min?: string) {
         super("DateTimeGenerator");
         if (max)
             this.max = max;
@@ -131,7 +138,9 @@ export class DateTimeGenerator extends DataGenerator {
             this.min = min;
     }
     generate(): string {
-        let dt = new Date(this.min.getTime() + Math.random() * (this.max.getTime() - this.min.getTime()));
+        let minDt = this.parseISODateTime(this.min);
+        let maxDt = this.parseISODateTime(this.max);
+        let dt = new Date(minDt.getTime() + Math.random() * (maxDt.getTime() - minDt.getTime()));
         return dt.getFullYear() + '-' + (dt.getMonth() + 1) + "-" + dt.getDate() + " " +
             dt.getHours() + ":" + dt.getMinutes() + ":" + dt.getSeconds() + ":" + dt.getMilliseconds();
     }
