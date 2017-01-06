@@ -1,11 +1,12 @@
 import { Component, OnInit, NgZone, TemplateRef, ViewChild, AfterViewInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { TRON_GLOBAL, TRON_EVENT } from './constants';
-import { DataGenerator, ColumnDef, fnGetDataTypeDesc } from './include';
+import { DataGenerator, fnGetDataTypeDesc } from './include';
 import { BaseComponent } from './base.component';
 import * as gen from './generator/generators.component';
 import { WizardStateService } from "./service/wizard-state";
 import { SampleDataService } from "./service/sample-data";
+import { ProjectService, ColumnDef } from "./service/project";
 
 @Component({
     templateUrl: "./columns.component.html",
@@ -44,8 +45,8 @@ export class ColumnsComponent extends BaseComponent implements AfterViewInit {
     // this is just to make initial binding working
     dummyAddressGenerator: gen.SampleAddressGenerator = new gen.SampleAddressGenerator(); 
 
-    constructor(router: Router, ngZone: NgZone, wizardStateService: WizardStateService, dataService: SampleDataService) {
-        super(router, ngZone, wizardStateService, dataService);
+    constructor(router: Router, ngZone: NgZone, wizardStateService: WizardStateService, dataService: SampleDataService, projectService: ProjectService) {
+        super(router, ngZone, wizardStateService, dataService, projectService);
     }
     back() {
         this.router.navigate(['/tables']);
@@ -56,7 +57,7 @@ export class ColumnsComponent extends BaseComponent implements AfterViewInit {
     }
     private setActiveTable(objId: number) {
         this.activeTableId = objId;
-        this.columns = this.getGlobal().columnDefs[objId];
+        this.columns = this.projectService.columnDefs[objId];
     }
     private setActiveColumn(c: ColumnDef) {
         this.activeColDef = c;
@@ -135,8 +136,8 @@ export class ColumnsComponent extends BaseComponent implements AfterViewInit {
         // when moving back and forth among pages, we need to maintain states; 
         // If columnDefs.length, the user is revisiting this page - clear the table entries that are no longer valid.
         // If a table Id exists in both selectedTAbles and columnDefs, we don't need to reload column info from DB; take it off from tblIds
-        this.tables = this.getGlobal().selectedTables;
-        let columnDefs = this.getGlobal().columnDefs;
+        this.tables = this.projectService.selectedTables;
+        let columnDefs = this.projectService.columnDefs;
         //this.setActiveTable(this.tables[0].id);
         //if (columnDefs[this.activeTableId])
         //    this.setActiveColumn(columnDefs[this.activeTableId][0]);
@@ -177,7 +178,7 @@ export class ColumnsComponent extends BaseComponent implements AfterViewInit {
             JOIN INFORMATION_SCHEMA.COLUMNS ic ON t.name = ic.TABLE_NAME AND c.name = ic.COLUMN_NAME AND SCHEMA_NAME(t.schema_id) = ic.TABLE_SCHEMA
             WHERE c.object_id in (${tblIds.join()}) AND c.is_computed <> 1 AND c.is_identity <> 1
             order by ic.TABLE_SCHEMA, ic.TABLE_NAME, c.column_id`;
-        let dataSet = this.getSQLFn()(sql,
+        let dataSet = this.getSQLFn()(this.projectService.connection, sql,
             (err, res) => {
                 this.ngZone.run(() => {
                     let i: number = 0;

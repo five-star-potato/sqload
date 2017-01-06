@@ -2,10 +2,11 @@ import { Component, NgZone, Output, EventEmitter, OnInit } from "@angular/core";
 import { Router } from '@angular/router';
 import { BaseComponent } from "./base.component";
 import { TRON_GLOBAL, TRON_EVENT } from './constants';
-import { DataGenerator, ColumnDef, fnGetDataTypeDesc } from './include';
+import { DataGenerator, fnGetDataTypeDesc } from './include';
 import * as gen from './generator/generators.component';
 import { WizardStateService } from "./service/wizard-state";
 import { SampleDataService } from "./service/sample-data";
+import { ColumnDef, TableDef, ProjectService } from "./service/project";
 import { Subscription }   from 'rxjs/Subscription';
 
 @Component({
@@ -30,13 +31,10 @@ import { Subscription }   from 'rxjs/Subscription';
     ]
 })
 export class HomeComponent extends BaseComponent implements OnInit {
-      
-    constructor(router: Router, ngZone: NgZone, wizardStateService: WizardStateService, dataService: SampleDataService) {
-        super(router, ngZone, wizardStateService, dataService);
+    constructor(router: Router, ngZone: NgZone, wizardStateService: WizardStateService, dataService: SampleDataService, projectService: ProjectService) {
+        super(router, ngZone, wizardStateService, dataService, projectService);
     }
-    ngOnInit() {
-    }
-
+    ngOnInit() {}
     private reviver(key, value):Date | string  {
         let dateFormat = new RegExp(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
         if (typeof value == 'string' && dateFormat.test(value)) {
@@ -44,12 +42,11 @@ export class HomeComponent extends BaseComponent implements OnInit {
         }
         return value;
     }
-
     back() {
         this.router.navigate(['/home']);
      }
     next() {
-        this.getNewProjectFn()();
+        this.projectService.createNewProject();
         this.wizardStateService.projectChange({ type: TRON_EVENT.refresh });
         document.getElementById("projectTitle").innerHTML = "[New Project]";
         document.getElementById("divProjectTitle").style.display = "";
@@ -61,8 +58,9 @@ export class HomeComponent extends BaseComponent implements OnInit {
             .then(result => {
                 // fix the loaded project file. Make sure its in zone.run, otherwise all databinding will file when you hit tables or columns page.
                 this.ngZone.run(() => {
-                    let project: any = this.getGlobal();
-                    let data = JSON.parse(result.data, this.reviver);
+                    let project: any = this.projectService.project;
+                    let fileData = JSON.parse(result.data, this.reviver);
+                    let data = fileData.project;
                     document.getElementById("projectTitle").innerHTML = result.filename;
                     project.connection.serverName = data.connection.serverName;
                     project.connection.databaseName = data.connection.databaseName;

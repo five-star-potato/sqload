@@ -14,6 +14,7 @@ import { selectedObjectsPipe } from './pipes.component';
 import { OrderBy } from './orderby.component';
 import { WizardStateService } from "./service/wizard-state";
 import { SampleDataService } from "./service/sample-data";
+import { ProjectService } from "./service/project";
 import { SampleAddressConfigComponent } from "./sample-address-config.component";
 
 const appRoutes: Routes = [
@@ -31,7 +32,7 @@ const appRoutes: Routes = [
 @NgModule({
   imports:      [ BrowserModule, FormsModule, RouterModule.forRoot(appRoutes), HttpModule ],
   declarations: [ AppComponent, ConnectionComponent, HomeComponent, TablesComponent, ColumnsComponent, RowsComponent, GenerateComponent, selectedObjectsPipe, OrderBy, SampleAddressConfigComponent ],
-  providers:    [ WizardStateService, SampleDataService ],
+  providers:    [ WizardStateService, SampleDataService, ProjectService ],
   bootstrap:    [ AppComponent ]
 })
 export class AppModule { 

@@ -5,6 +5,7 @@ import { BaseComponent } from './base.component';
 import { OrderBy } from './orderby.component';
 import { WizardStateService } from "./service/wizard-state";
 import { SampleDataService } from "./service/sample-data";
+import { ColumnDef, TableDef, ProjectService } from "./service/project";
 
 @Component({
     template: `	
@@ -46,13 +47,12 @@ import { SampleDataService } from "./service/sample-data";
     // providers: [ WizardStateService ] -- this will create another instance
 })
 export class TablesComponent extends BaseComponent {
-    dataSet: any[] = [];
-    tables: any[] = [];
+    tables: TableDef[] = [];
     selectedOpts: any;
     unselectedOpts: any;
 
-    constructor(router: Router, ngZone: NgZone, wizardStateService: WizardStateService, dataService: SampleDataService) {
-        super(router, ngZone, wizardStateService, dataService);
+    constructor(router: Router, ngZone: NgZone, wizardStateService: WizardStateService, dataService: SampleDataService, projectService: ProjectService) {
+        super(router, ngZone, wizardStateService, dataService, projectService);
     }
     private selectTbls() {
         this.tables.forEach((t) => {
@@ -75,7 +75,7 @@ export class TablesComponent extends BaseComponent {
         var tbls = [];
         tbls.length = 0;
         let seq: number = Math.max.apply(Math,
-            this.getGlobal().selectedTables.map(function (t) { return t.sequence; })) | 0;
+            this.projectService.selectedTables.map(function (t) { return t.sequence; })) | 0;
         this.tables.forEach((t) => {
             if (t.selected) {
                 tbls.push(t);
@@ -85,16 +85,16 @@ export class TablesComponent extends BaseComponent {
                 }
             }
         });
-        this.getGlobal().selectedTables = tbls;
+        this.projectService.selectedTables = tbls;
         this.wizardStateService.projectChange({ type: TRON_EVENT.refresh });
     }
     next() {
         this.router.navigate(['/columns']);
     }
     ngOnInit() {
-        let tbls = this.getGlobal().selectedTables;
+        let tbls = this.projectService.selectedTables;
         //electron.ipcRenderer.send("message");
-        let dataSet = this.getSQLFn()("SELECT object_id, SCHEMA_NAME(schema_id) [Schema], OBJECT_NAME(object_id) [Table] FROM sys.tables ORDER BY 2, 3",
+        let dataSet = this.getSQLFn()(this.projectService.connection, "SELECT object_id, SCHEMA_NAME(schema_id) [Schema], OBJECT_NAME(object_id) [Table] FROM sys.tables ORDER BY 2, 3",
             (err, res) => {
                 this.ngZone.run(() => {
                     let i: number = 0;
@@ -123,7 +123,6 @@ export class TablesComponent extends BaseComponent {
                             });
                         }
                     });
-                    this.dataSet = res;
                 });
             }
         );

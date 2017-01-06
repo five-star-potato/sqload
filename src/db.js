@@ -1,13 +1,13 @@
 var tedious = require('tedious');
 
-var verifyConnection = function(callback) {
+var verifyConnection = function(connection, callback) {
     var Connection = require('tedious').Connection;
     var config = {
-        userName: global.project.connection.userName,
-        password: global.project.connection.password,
-        server: global.project.connection.serverName,
+        userName: connection.userName,
+        password: connection.password,
+        server: connection.serverName,
         // If you are on Microsoft Azure, you need this:  
-        options: { encrypt: true, database: global.project.connection.databaseName }
+        options: { encrypt: true, database: connection.databaseName }
     };
     var connection = new Connection(config);
     connection.on('connect', function (err) {
@@ -15,14 +15,14 @@ var verifyConnection = function(callback) {
     });
     
 }
-var execSQL = function(sqlStmt, callback) {
+var execSQL = function(connection, sqlStmt, callback) {
     var Connection = require('tedious').Connection;
     var config = {
-        userName: global.project.connection.userName,
-        password: global.project.connection.password,
-        server: global.project.connection.serverName,
+        userName: connection.userName,
+        password: connection.password,
+        server: connection.serverName,
         // If you are on Microsoft Azure, you need this:  
-        options: { encrypt: true, database: global.project.connection.databaseName }
+        options: { encrypt: true, database: connection.databaseName }
     };
     var connection = new Connection(config);
     connection.on('connect', function (err) {

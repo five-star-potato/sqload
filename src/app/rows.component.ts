@@ -2,10 +2,11 @@ import { Component, NgZone } from "@angular/core";
 import { Router } from '@angular/router';
 import { BaseComponent } from "./base.component";
 import { TRON_GLOBAL, TRON_EVENT } from './constants';
-import { DataGenerator, ColumnDef, fnGetDataTypeDesc } from './include';
+import { DataGenerator, fnGetDataTypeDesc } from './include';
 import * as gen from './generator/generators.component';
 import { WizardStateService } from "./service/wizard-state";
 import { SampleDataService } from "./service/sample-data";
+import { ColumnDef, TableDef, ProjectService } from "./service/project";
 
 @Component({
     template: `	
@@ -47,8 +48,8 @@ import { SampleDataService } from "./service/sample-data";
 export class RowsComponent extends BaseComponent {
     tables: any[] = [];
 
-    constructor(router: Router, ngZone: NgZone, wizardStateService: WizardStateService, dataService: SampleDataService) {
-        super(router, ngZone, wizardStateService, dataService);
+    constructor(router: Router, ngZone: NgZone, wizardStateService: WizardStateService, dataService: SampleDataService, projectService: ProjectService) {
+        super(router, ngZone, wizardStateService, dataService, projectService);
     }
 
     private moveUp(index: number) {
@@ -69,6 +70,6 @@ export class RowsComponent extends BaseComponent {
         this.router.navigate(['/generate']);
     }
     ngOnInit() {
-        this.tables = this.getGlobal().selectedTables;
+        this.tables = this.projectService.selectedTables;
     }    
 }

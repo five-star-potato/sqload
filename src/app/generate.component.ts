@@ -2,10 +2,11 @@ import { Component, OnInit, NgZone } from '@angular/core';
 import { Router } from '@angular/router';
 import { TRON_GLOBAL, TRON_EVENT } from './constants';
 import { BaseComponent } from './base.component';
-import { ColumnDef, fnGetDataTypeDesc, fnOnlyUnique, fnStringifyNoCircular } from './include';
+import { fnGetDataTypeDesc, fnOnlyUnique, fnStringifyNoCircular } from './include';
 import { SampleAddressGenerator, IntegerGenerator, TextGenerator, DateGenerator, UUIDGenerator, CustomSqlGenerator, CustomValueGenerator, FKGenerator } from './generator/generators.component';
 import { WizardStateService } from "./service/wizard-state";
 import { SampleDataService } from "./service/sample-data";
+import { ColumnDef, TableDef, ProjectService } from "./service/project";
 import { Address } from "./service/address";
 
 interface ProgressData {
@@ -78,14 +79,14 @@ export class GenerateComponent extends BaseComponent {
     runningRowCnt:number = 0;
     sampleAdresses = {}; // the assoc array will be { key:  region-country }, values:[] }
 
-    constructor(router: Router, ngZone: NgZone, wizardStateService: WizardStateService, dataService: SampleDataService) {
-        super(router, ngZone, wizardStateService, dataService);
+    constructor(router: Router, ngZone: NgZone, wizardStateService: WizardStateService, dataService: SampleDataService, projectService: ProjectService) {
+        super(router, ngZone, wizardStateService, dataService, projectService);
     }
     private cleanUnusedPlugin() {
-        var tbls = this.getGlobal().selectedTables;
+        var tbls = this.projectService.selectedTables;
         tbls.forEach(t => {
             // trim unused plugin; cf.plugins is a list of plugins; only the first one is used. The rest are for users to undo changes only
-            this.getGlobal().columnDefs[t.id].forEach((cf:ColumnDef) => {
+            this.projectService.columnDefs[t.id].forEach((cf:ColumnDef) => {
                 if (cf.plugIn.length > 1) {
                     cf.plugIn.splice(1);
                 }
@@ -277,11 +278,11 @@ export class GenerateComponent extends BaseComponent {
         );
 
         this.cleanUnusedPlugin();
-        let projectContent = fnStringifyNoCircular(this.getGlobal());
+        let projectContent = fnStringifyNoCircular(this.projectService);
         this.getSaveProjectFn()(projectContent);
     }
     ngOnInit() {
-        this.tables = this.getGlobal().selectedTables;
-        this.colDefs = this.getGlobal().columnDefs;
+        this.tables = this.projectService.selectedTables;
+        this.colDefs = this.projectService.columnDefs;
     }
 }

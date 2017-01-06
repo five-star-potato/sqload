@@ -1,8 +1,7 @@
 import { Injectable } from "@angular/core";
 import { Subject } from 'rxjs/Subject';
 import { TRON_GLOBAL, TRON_EVENT } from '../constants';
-
-declare var electron: any;
+import { ProjectStruct, ProjectService, ConnectionConfig, TableDef, ColumnDef } from './project';
 
 @Injectable()
 export class WizardStateService {
@@ -11,6 +10,8 @@ export class WizardStateService {
     projectEvent$ = this.projectEventSource.asObservable();
     spinningEvent$ = this.spinningEventSource.asObservable();
 
+    constructor(private projectService: ProjectService) {}
+
     showSpinning(url: string) {
         this.spinningEventSource.next(url);
     }
@@ -18,7 +19,7 @@ export class WizardStateService {
         this.spinningEventSource.next("");
     }
     projectChange(event: any) {
-        let proj = electron.remote.getGlobal(TRON_GLOBAL.project);
+        let proj = this.projectService.project;
         if (event.type == TRON_EVENT.refresh) {
             let links:Set<string> = new Set();
             links.add("home"); links.add("connect");

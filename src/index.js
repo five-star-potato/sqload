@@ -127,28 +127,6 @@ function saveProjectFile(content) {
         });
     }
 }
-
-function newProject() {
-    global.project = {
-        filePath: '',
-        connection: {
-            /*
-            serverName: '',
-            databaseName: '',
-            userName: '',
-            password: ''
-            */
-            serverName: 'DELL',
-            databaseName: 'AdventureWorks2014',
-            userName: 'sa',
-            password: "LongLive1",
-            verified: false
-        },
-        selectedTables: [],
-        columnDefs: {}
-    }
-}
-
 function messageBox(title, msg) {
     const {dialog} = require('electron');
     dialog.showErrorBox(title, msg);
@@ -161,9 +139,7 @@ function init() {
     global.fnWriteSqlToTemp = writeSqlToTemp;
     global.fnSaveSqlFile = saveSqlFile;
     global.fnRemoveSqlTemp = removeSqlTemp;
-    global.fnNewProject = newProject;
     global.fnMsgBox = messageBox;
-    newProject();
 }
 app.on('ready', _ => {
     init();
