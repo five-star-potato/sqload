@@ -3,7 +3,7 @@ import { Router } from '@angular/router';
 import { TRON_GLOBAL, TRON_EVENT } from "./constants";
 import { BaseComponent } from './base.component';
 import { WizardStateService } from "./service/wizard-state";
-import { DataService } from "./service/data-ws";
+import { SampleDataService } from "./service/sample-data";
 
 @Component({
   template: `
@@ -58,7 +58,7 @@ export class ConnectionComponent extends BaseComponent implements OnInit, AfterV
   @ViewChild('connectForm') form;
   dataSet: any[] = [];
 
-  constructor(router: Router, ngZone: NgZone, wizardStateService: WizardStateService, dataService: DataService) {
+  constructor(router: Router, ngZone: NgZone, wizardStateService: WizardStateService, dataService: SampleDataService) {
     super(router, ngZone, wizardStateService, dataService);
   }
   back() {

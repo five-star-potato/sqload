@@ -3,9 +3,9 @@ import { Router } from '@angular/router';
 import { TRON_GLOBAL, TRON_EVENT } from './constants';
 import { BaseComponent } from './base.component';
 import { ColumnDef, fnGetDataTypeDesc, fnOnlyUnique, fnStringifyNoCircular } from './include';
-import { IntegerGenerator, TextGenerator, DateGenerator, UUIDGenerator, CustomSqlGenerator, CustomValueGenerator, FKGenerator } from './generator/generators.component';
+import { SampleAddressGenerator, IntegerGenerator, TextGenerator, DateGenerator, UUIDGenerator, CustomSqlGenerator, CustomValueGenerator, FKGenerator } from './generator/generators.component';
 import { WizardStateService } from "./service/wizard-state";
-import { DataService } from "./service/data-ws";
+import { SampleDataService } from "./service/sample-data";
 import { Address } from "./service/address";
 
 interface ProgressData {
@@ -76,8 +76,9 @@ export class GenerateComponent extends BaseComponent {
     overallProgress:number = 0;
     totalRowCnt:number = 0;
     runningRowCnt:number = 0;
+    sampleAdresses = {}; // the assoc array will be { key:  region-country }, values:[] }
 
-    constructor(router: Router, ngZone: NgZone, wizardStateService: WizardStateService, dataService: DataService) {
+    constructor(router: Router, ngZone: NgZone, wizardStateService: WizardStateService, dataService: SampleDataService) {
         super(router, ngZone, wizardStateService, dataService);
     }
     private cleanUnusedPlugin() {
@@ -108,6 +109,16 @@ export class GenerateComponent extends BaseComponent {
                         vals.push(`INSERT INTO ${tmpTbl}(value) EXEC(N'`);
                         vals.push(cf.plugIn[0].generate());
                         vals.push(`');\nSELECT TOP 1 ${cf.variable} = value FROM ${tmpTbl};\nDELETE ${tmpTbl};`);
+                    }
+                    else if (cf.plugIn[0] instanceof SampleAddressGenerator) {
+                        let key = (cf.plugIn[0] as SampleAddressGenerator).key;
+                        let field = (cf.plugIn[0] as SampleAddressGenerator).fieldSpec;
+                        let addr = this.sampleAdresses[key].pop();
+                        if (addr) {
+                            let expandedField = field.replace('@city', addr.city);
+                            let addrVal = eval(expandedField);
+                            vals.push(`SET ${cf.variable} = '${addrVal}';`);    
+                        }
                     }
                     else if (!cf.fkConstraintID) {
                         vals.push(`SET ${cf.variable} = '${cf.plugIn[0].generate()}';`);
@@ -204,15 +215,43 @@ export class GenerateComponent extends BaseComponent {
         // generate [rowcount] number INSERTS for each table
         setTimeout(this.generateDataForRow.bind(this, colArr, fkConstraints, colNames, variables, tbl, tblProgress, tblCnt, 0), 0);
     }
-    private generateData() {
+    private async getSampleAddresses() {
+        console.log('entering getSampleAddress');
+        for (let s in this.sampleAdresses) {
+            let key:string[] = s.split('-');
+            let arr = await this.dataService.getAddresses(key[0], key[1]);
+            this.sampleAdresses[s] = arr;
+            console.log('getting address data');
+        }
+    }
+ 
+    private async generateData() {
         this.getRemoveSqlTemp()();
         this.cleanUnusedPlugin();
         this.stmts = [];
         this.progress = [];
         this.tables.forEach(t =>{
+            let colArr = this.colDefs[t.id];
+            colArr.forEach((cf:ColumnDef) => {
+                if (cf.include) {
+                    if (cf.plugIn.length > 0) {
+                        // FK generation is different from other generator
+                        if (cf.plugIn[0] instanceof SampleAddressGenerator) {
+                            let sg:SampleAddressGenerator = cf.plugIn[0] as SampleAddressGenerator;
+                            if (!(sg.key in this.sampleAdresses)) {
+                                this.sampleAdresses[sg.key] = {};
+                            }
+                        }
+                    }                
+                }
+            });
+        });
+        this.tables.forEach(t =>{
             this.totalRowCnt += parseInt(t.rowcount);
         });
         this.tables.sort((b, a) => b.sequence - a.sequence);
+        await this.getSampleAddresses();
+        console.log('left getSampleAddress');
         setTimeout(this.generateDataForTable.bind(this, 0), 0);
     }
     back() {
@@ -222,7 +261,10 @@ export class GenerateComponent extends BaseComponent {
         this.wizardStateService.showSpinning("generate");
         this.generateData();
     }
-    private saveProject() {
+    private async saveProject() {
+        let somePromises = [1, 2, 3, 4, 5].map(n => Promise.resolve(n));
+        let resolvedPromises = await Promise.all(somePromises);
+                
         let addrs: Address[];
         this.dataService.getAddresses('on', 'ca').then(
             data => {

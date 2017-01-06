@@ -219,6 +219,9 @@ export class SampleAddressGenerator extends DataGenerator {
     generate(): String {
         return this.fieldSpec;
     }
+    get key():string {
+        return (this.region || "") + "-" + (this.country || "");
+    }
 }
 
 

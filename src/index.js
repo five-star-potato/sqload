@@ -25,12 +25,12 @@ function openProjectFile() {
             }
         });
     })
-        .then(filename => {
-            return readFile(filename);
-        })
-        .catch(err => {
-            console.log(err);
-        });
+    .then(filename => {
+        return readFile(filename);
+    })
+    .catch(err => {
+        console.log(err);
+    });
 
     function readFile(filename) {
         return new Promise(function (resolve, reject) {

@@ -67,7 +67,7 @@
                         <sample-address-configurator></sample-address-configurator>
                     </div>
                     <div *ngIf="showTemplateDiv()">
-                        <legend>Data Generation Settings</legend>
+                        <legend>[{{activeColDef.name}}] - Data Generation Settings</legend>
                         <template [ngTemplateOutlet]="getTemplate(activeColDef)" [ngOutletContext]="{ $implicit: activeColDef }"></template>
                     </div>
                 </div>

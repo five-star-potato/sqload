@@ -6,7 +6,7 @@ declare var require:(moduleId:string) => any;
 var appConf = require('../../app.conf');
 
 @Injectable()
-export class DataService {
+export class SampleDataService {
     private headers = new Headers({ 'Content-Type': 'application/json' });
     constructor(private http: Http) { }
 
