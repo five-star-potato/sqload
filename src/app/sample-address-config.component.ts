@@ -8,12 +8,13 @@ import { ColumnsComponent } from "./columns.component";
         <div>
         <p>* if there are multiple columns in this table that use sample address fields,<br> they will point to the same sample address record. </p>
         <h5>Address Filters</h5>
+            <div *ngIf="!parent.isFirstColumnUsingAddress()" class="well well-sm">You can only set the filtering criteria in the first column that uses address</div>
             <div class="form">
-                <div class="form-group">
+                <div class="form-group" *ngIf="parent.isFirstColumnUsingAddress()">
                     <label for="regionField">Region (leave blank for random region)</label>
                     <input type="text" [(ngModel)]="parent.activeColDef.plugIn[0].region" class="form-control input-sm" id="regionField" placeholder="Comma separated state or province">
                 </div>
-                <div class="form-group">
+                <div class="form-group" *ngIf="parent.isFirstColumnUsingAddress()">
                     <label for="countryField">Country (leave blank for random country)</label>
                     <input type="text" [(ngModel)]="parent.activeColDef.plugIn[0].country" class="form-control input-sm" id="countryField" placeholder="country">
                 </div>

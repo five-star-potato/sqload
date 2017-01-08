@@ -18,7 +18,7 @@ import { TRON_EVENT } from "./constants"
                                 <li role="presentation" [routerLinkActive]="['active']">
                                     <a routerLink="/home" data-toggle="tab" aria-controls="step1" role="tab" title="Greetings">
                                         <span class="round-tab">
-                                            <i [style.color]="getLinkColor('home')" class="fa fa-hand-spock-o" aria-hidden="true"></i>
+                                            <i [style.color]="getLinkColor('home')" class="fa fa-hand-spock-o" aria-hidden="true" style="vertical-align:5%"></i>
                                         </span>
                                     </a>
                                 </li>
@@ -27,13 +27,13 @@ import { TRON_EVENT } from "./constants"
                                     <!-- link is enabled -->
                                     <a routerLink="/connect" data-toggle="tab" aria-controls="step2" role="tab" title="connect to a database" *ngIf="!isLinkDisabled('connect')">
                                         <span class="round-tab" [class.round-tab-loading]="urlLoading=='connect'">
-                                            <i [style.color]="getLinkColor('connect')" class="fa fa-database" aria-hidden="true"></i>
+                                            <i [style.color]="getLinkColor('connect')" class="fa fa-database" aria-hidden="true" style="vertical-align:5%"></i>
                                         </span>
                                     </a>
                                     <!-- for disabled link -->
                                     <a aria-controls="step2" role="tab" title="connect to a database" *ngIf="isLinkDisabled('connect')">
                                         <span class="round-tab">
-                                            <i [style.color]="getLinkColor('connect')" class="fa fa-database" aria-hidden="true"></i>
+                                            <i [style.color]="getLinkColor('connect')" class="fa fa-database" aria-hidden="true" style="vertical-align:5%"></i>
                                         </span>
                                     </a>
                                 </li>
@@ -41,12 +41,12 @@ import { TRON_EVENT } from "./constants"
                                 <li role="presentation" [routerLinkActive]="['active']" [class.disabled]="isLinkDisabled('tables')">
                                     <a routerLink="/tables" data-toggle="tab" aria-controls="step3" role="tab" title="select one or more tables" *ngIf="!isLinkDisabled('tables')">
                                         <span class="round-tab" [class.round-tab-loading]="urlLoading=='tables'">
-                                            <i [style.color]="getLinkColor('tables')" class="fa fa-table" aria-hidden="true"></i>
+                                            <i [style.color]="getLinkColor('tables')" class="fa fa-table" aria-hidden="true" style="vertical-align:5%"></i>
                                         </span>
                                     </a>
                                     <a aria-controls="step3" role="tab" title="select one or more tables" *ngIf="isLinkDisabled('tables')">
                                         <span class="round-tab">
-                                            <i [style.color]="getLinkColor('tables')" class="fa fa-table" aria-hidden="true"></i>
+                                            <i [style.color]="getLinkColor('tables')" class="fa fa-table" aria-hidden="true" style="vertical-align:5%"></i>
                                         </span>
                                     </a>
                                 </li>
@@ -54,12 +54,12 @@ import { TRON_EVENT } from "./constants"
                                 <li role="presentation" [routerLinkActive]="['active']" [class.disabled]="isLinkDisabled('columns')">
                                     <a routerLink="/columns" data-toggle="tab" aria-controls="step3" role="tab" title="specify the characteristics of each column" *ngIf="!isLinkDisabled('columns')">
                                         <span class="round-tab" [class.round-tab-loading]="urlLoading=='columns'">
-                                            <i [style.color]="getLinkColor('columns')" class="fa fa-list-ol" aria-hidden="true"></i>
+                                            <i [style.color]="getLinkColor('columns')" class="fa fa-list-ol" aria-hidden="true" style="vertical-align:5%"></i>
                                         </span>
                                     </a>
                                     <a aria-controls="step3" role="tab" title="specify the characteristics of each column" *ngIf="isLinkDisabled('columns')">
                                         <span class="round-tab">
-                                            <i [style.color]="getLinkColor('columns')" class="fa fa-list-ol" aria-hidden="true"></i>
+                                            <i [style.color]="getLinkColor('columns')" class="fa fa-list-ol" aria-hidden="true" style="vertical-align:5%"></i>
                                         </span>
                                     </a>
                                 </li>
@@ -67,12 +67,12 @@ import { TRON_EVENT } from "./constants"
                                 <li role="presentation" [routerLinkActive]="['active']" [class.disabled]="isLinkDisabled('rows')">
                                     <a routerLink="/rows" data-toggle="tab" aria-controls="complete" role="tab" title="manage number of generated entries" *ngIf="!isLinkDisabled('rows')">
                                         <span class="round-tab" [class.round-tab-loading]="urlLoading=='rows'">
-                                            <i [style.color]="getLinkColor('rows')" class="fa fa-random" aria-hidden="true"></i>
+                                            <i [style.color]="getLinkColor('rows')" class="fa fa-random" aria-hidden="true" style="vertical-align:5%"></i>
                                         </span>
                                     </a>
                                     <a aria-controls="complete" role="tab" title="manage number of generated entries" *ngIf="isLinkDisabled('rows')">
                                         <span class="round-tab">
-                                            <i [style.color]="getLinkColor('rows')" class="fa fa-random" aria-hidden="true"></i>
+                                            <i [style.color]="getLinkColor('rows')" class="fa fa-random" aria-hidden="true" style="vertical-align:5%"></i>
                                         </span>
                                     </a>
                                 </li>
@@ -80,12 +80,12 @@ import { TRON_EVENT } from "./constants"
                                 <li role="presentation" [routerLinkActive]="['active']" [class.disabled]="isLinkDisabled('generate')">
                                     <a routerLink="/generate" data-toggle="tab" aria-controls="complete" role="tab" title="Generate" *ngIf="!isLinkDisabled('generate')">
                                         <span class="round-tab" [class.round-tab-loading]="urlLoading=='generate'">
-                                            <i [style.color]="getLinkColor('generate')" class="fa fa-bolt" aria-hidden="true"></i>
+                                            <i [style.color]="getLinkColor('generate')" class="fa fa-bolt" aria-hidden="true" style="vertical-align:5%"></i>
                                         </span>
                                     </a>
                                     <a aria-controls="complete" role="tab" title="Generate" *ngIf="isLinkDisabled('generate')">
                                         <span class="round-tab">
-                                            <i [style.color]="getLinkColor('generate')" class="fa fa-bolt" aria-hidden="true"></i>
+                                            <i [style.color]="getLinkColor('generate')" class="fa fa-bolt" aria-hidden="true" style="vertical-align:5%"></i>
                                         </span>
                                     </a>
                                 </li>

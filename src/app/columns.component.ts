@@ -55,6 +55,15 @@ export class ColumnsComponent extends BaseComponent implements AfterViewInit {
         this.wizardStateService.projectChange({ type: TRON_EVENT.refresh });
         this.router.navigate(['/rows']);
     }
+    isFirstColumnUsingAddress():boolean {
+        for (let cf of this.columns) {
+            if (cf.plugIn.length > 0) {
+                if (cf.plugIn[0] instanceof gen.SampleAddressGenerator) {
+                    return (cf.name == this.activeColDef.name);
+                }
+            }
+        }
+    }
     private setActiveTable(objId: number) {
         this.activeTableId = objId;
         this.columns = this.projectService.columnDefs[objId];

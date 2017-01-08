@@ -25,7 +25,7 @@ interface ProgressData {
             <div class="flexbox-item fill-area content flexbox-item-grow">
                 <div class="fill-area-content flexbox-item-grow" style="display:flex; flex-direction:row; padding: 5px">
                     <div style="display:flex; flex-direction:column; width:100%">
-                        <p>Overall Progress</p>
+                        <p>Overall Progress <span class="blink_me progress_msg">{{progressMsg}}</span></p>
                         <div class="progress">
                             <div class="progress-bar progress-bar-striped active" role="progressbar"
                             aria-valuenow="40" aria-valuemin="0" aria-valuemax="100" [style.width]="overallProgress + '%'">
@@ -67,6 +67,21 @@ interface ProgressData {
     `,
     styleUrls: [
         './css/host.css'
+    ],
+    styles: [
+        `
+            .progress_msg {
+                float:right;
+                /* margin-left: 20px; */
+            }
+            .blink_me {
+                animation: blinker 1s linear infinite;
+            }
+
+            @keyframes blinker {  
+                50% { opacity: 0; }
+            }        
+        `
     ]
 })
 export class GenerateComponent extends BaseComponent {
@@ -78,6 +93,7 @@ export class GenerateComponent extends BaseComponent {
     totalRowCnt:number = 0;
     runningRowCnt:number = 0;
     sampleAdresses = {}; // the assoc array will be { key:  region-country }, values:[] }
+    progressMsg:string = "";
 
     constructor(router: Router, ngZone: NgZone, wizardStateService: WizardStateService, dataService: SampleDataService, projectService: ProjectService) {
         super(router, ngZone, wizardStateService, dataService, projectService);
@@ -96,14 +112,28 @@ export class GenerateComponent extends BaseComponent {
     private getCleanColName(colName: string) {
         return colName.replace(/[\$ #@]/g,'_');
     }
-    private generateDataForRow(colArr:any[], fkConstraints:Set<number>, colNames:string[], variables: string[], tbl:any, tblProgress:any, tblCnt:number, rowCnt:number) {
+    private substituteAddressField(field:string, addr:any):string {
+        var tmp:string = field;
+        tmp = field.replace('@id', addr.id)
+                    .replace('@num', addr.num)
+                    .replace('@unit', addr.unit)
+                    .replace('@street', addr.street)
+                    .replace('@city', addr.city)
+                    .replace('@region', addr.region)
+                    .replace('@district', addr.district)
+                    .replace('@country', addr.country)
+                    .replace('@postcode', addr.postcode);
+        return `'${tmp}'`;
+    }
+    private async generateDataForRow(colArr:ColumnDef[], fkConstraints:Set<number>, colNames:string[], variables: string[], tbl:any, tblProgress:any, tblCnt:number, rowCnt:number) {
         let vals: string[] = [];
         let k = 0;
         let incr = Math.round(tbl.rowcount / 20);
         if (incr < 100) incr = 100;
         // Don't "setTimeout" every row. How about every XXX rows. Does it improve performance?
         while (k < incr && (rowCnt + k) < tbl.rowcount) {
-            colArr.forEach((cf:ColumnDef) => {
+            let addressData:any = null;
+            for (let cf of colArr) {
                 if (cf.include) {
                     if (cf.plugIn[0] instanceof CustomSqlGenerator) {
                         let tmpTbl = cf.variable.replace('@', '@T_');
@@ -111,21 +141,33 @@ export class GenerateComponent extends BaseComponent {
                         vals.push(cf.plugIn[0].generate());
                         vals.push(`');\nSELECT TOP 1 ${cf.variable} = value FROM ${tmpTbl};\nDELETE ${tmpTbl};`);
                     }
+                    // getting data from pre-loaded sampl addresses
                     else if (cf.plugIn[0] instanceof SampleAddressGenerator) {
-                        let key = (cf.plugIn[0] as SampleAddressGenerator).key;
-                        let field = (cf.plugIn[0] as SampleAddressGenerator).fieldSpec;
-                        let addr = this.sampleAdresses[key].pop();
-                        if (addr) {
-                            let expandedField = field.replace('@city', addr.city);
-                            let addrVal = eval(expandedField);
+                        let expandedField: string, addrVal:string, key:string, field:string;
+                        try {
+                            key = (cf.plugIn[0] as SampleAddressGenerator).key;
+                            field = (cf.plugIn[0] as SampleAddressGenerator).fieldSpec;
+                            if (!addressData) {
+                                if (this.sampleAdresses[key].length == 0) {
+                                    console.log("no more addresses");
+                                    await this.getSampleAddresses();
+                                    this.progressMsg = "";
+                                }
+                                addressData = this.sampleAdresses[key].pop();
+                            }
+                            expandedField = this.substituteAddressField(field, addressData);
+                            addrVal = eval(expandedField);
                             vals.push(`SET ${cf.variable} = '${addrVal}';`);    
+                        }
+                        catch(err) {
+                            console.log(expandedField + "-" + err);
                         }
                     }
                     else if (!cf.fkConstraintID) {
                         vals.push(`SET ${cf.variable} = '${cf.plugIn[0].generate()}';`);
                     }
                 }
-            });
+            }
 
             // Processing all the FK constraints per row
             let fkSql: string = "";
@@ -180,7 +222,7 @@ export class GenerateComponent extends BaseComponent {
     private generateDataForTable(tblCnt:number) {
         let tbl:any = this.tables[tblCnt];
         let tblId = tbl.id;
-        let colArr = this.colDefs[tblId];
+        let colArr:ColumnDef[] = this.colDefs[tblId];
         let colNames: string[] = [];
         let variables: string[] = [];
         let fkConstraints: Set<number> = new Set<number>();
@@ -189,7 +231,7 @@ export class GenerateComponent extends BaseComponent {
         this.progress.push(tblProgress);
 
         // generate declare varialbles
-        colArr.forEach((cf:ColumnDef) => {
+        for (let cf of colArr) {
             if (cf.include) {
                 let varRoot = `${this.getCleanColName(cf.name)}`;
                 cf.variable = `@${tblCnt}$` + varRoot;
@@ -211,18 +253,19 @@ export class GenerateComponent extends BaseComponent {
                     }    
                 }                
             }
-        });
+        }
 
         // generate [rowcount] number INSERTS for each table
         setTimeout(this.generateDataForRow.bind(this, colArr, fkConstraints, colNames, variables, tbl, tblProgress, tblCnt, 0), 0);
     }
     private async getSampleAddresses() {
-        console.log('entering getSampleAddress');
+        this.progressMsg = "Fetching sample addresses";
         for (let s in this.sampleAdresses) {
-            let key:string[] = s.split('-');
-            let arr = await this.dataService.getAddresses(key[0], key[1]);
-            this.sampleAdresses[s] = arr;
-            console.log('getting address data');
+            if (this.sampleAdresses[s].length == 0) { // only get addresses when empty
+                let key:string[] = s.split('-');
+                let arr = await this.dataService.getAddresses(key[0], key[1]);
+                this.sampleAdresses[s] = arr;
+            }
         }
     }
  
@@ -240,7 +283,7 @@ export class GenerateComponent extends BaseComponent {
                         if (cf.plugIn[0] instanceof SampleAddressGenerator) {
                             let sg:SampleAddressGenerator = cf.plugIn[0] as SampleAddressGenerator;
                             if (!(sg.key in this.sampleAdresses)) {
-                                this.sampleAdresses[sg.key] = {};
+                                this.sampleAdresses[sg.key] = [];
                             }
                         }
                     }                
@@ -252,6 +295,7 @@ export class GenerateComponent extends BaseComponent {
         });
         this.tables.sort((b, a) => b.sequence - a.sequence);
         await this.getSampleAddresses();
+        this.progressMsg = "";
         console.log('left getSampleAddress');
         setTimeout(this.generateDataForTable.bind(this, 0), 0);
     }
@@ -263,19 +307,10 @@ export class GenerateComponent extends BaseComponent {
         this.generateData();
     }
     private async saveProject() {
+/*
         let somePromises = [1, 2, 3, 4, 5].map(n => Promise.resolve(n));
         let resolvedPromises = await Promise.all(somePromises);
-                
-        let addrs: Address[];
-        this.dataService.getAddresses('on', 'ca').then(
-            data => {
-                addrs = data;
-                console.log(addrs[0].id);
-                console.log(addrs[0].street);
-                console.log(addrs[0].city);
-            },
-            err => console.log(err)
-        );
+*/
 
         this.cleanUnusedPlugin();
         let projectContent = fnStringifyNoCircular(this.projectService);

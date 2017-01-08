@@ -11,7 +11,7 @@ export class SampleDataService {
     constructor(private http: Http) { }
 
     getAddresses(region:string, country:string): Promise<Address[]> {
-        return this.http.get(`${appConf.dataService.url}/address?region=${region}&country=${country}&rc=10`)
+        return this.http.get(`${appConf.dataService.url}/address?region=${region}&country=${country}&rc=10000`)
             .toPromise()
             .then(response => response.json() as Address[])
             .catch(this.handleError);

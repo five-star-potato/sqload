@@ -13,10 +13,9 @@ import { ColumnDef, TableDef, ProjectService } from "./service/project";
             <div class="flexbox-item header">
                 <h3>Choose one or more tables</h3>
             </div>
-            
             <div class="flexbox-item fill-area content flexbox-item-grow">
                 <div class="fill-area-content flexbox-item-grow" style="display:flex; flex-direction:row; padding: 5px">
-                    <div style="display:flex; flex-direction:column">
+                    <div style="display:flex; flex-direction:column; width:45%">
                         <p>Available Tables</p>
                         <select [(ngModel)]="selectedOpts" class="form-control" multiple style="border: 1px solid gray; flex-grow: 1">
                             <option *ngFor="let item of tables | selectedObjects:false " [value]="item.id">{{item.name}}</option>
@@ -26,7 +25,7 @@ import { ColumnDef, TableDef, ProjectService } from "./service/project";
                         <button (click)="selectTbls()"><i class="fa fa-angle-right" aria-hidden="true"></i></button><br>
                         <button (click)="unselectTbls()"><i class="fa fa-angle-left" aria-hidden="true"></i></button>
                     </div>
-                    <div style="display:flex; flex-direction:column; flex-grow: 1">
+                    <div style="display:flex; flex-direction:column; width:45%;">
                         <p>Selected Tables</p>
                         <select [(ngModel)]="unselectedOpts" class="form-control" multiple style="border: 1px solid gray; flex-grow: 1">
                             <option *ngFor="let item of tables | selectedObjects:true " [value]="item.id">{{item.name}}</option>
