@@ -172,6 +172,25 @@ export class CustomSqlGenerator extends DataGenerator {
     }
 }
 
+export class GivenNameGenerator extends DataGenerator {
+    public sql: string;
+    constructor() {
+        super('GivenNameGenerator');
+    }
+    generate(): String {
+        return "";
+    }
+}
+export class SurnameGenerator extends DataGenerator {
+    public sql: string;
+    constructor() {
+        super('SurnameGenerator');
+    }
+    generate(): String {
+        return "";
+    }
+}
+
 export class UUIDGenerator extends DataGenerator {
     constructor() { 
         super("UUIDGenerator");        

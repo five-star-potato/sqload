@@ -37,6 +37,8 @@ export class ColumnsComponent extends BaseComponent implements AfterViewInit {
     @ViewChild('CustomSqlTemplate') sqlTemplate: TemplateRef<any>;
     @ViewChild('CustomValueTemplate') valueTemplate: TemplateRef<any>;
     @ViewChild('ListItemTemplate') listItemTemplate: TemplateRef<any>;
+    @ViewChild('GivenNameTemplate') givenNameTemplate: TemplateRef<any>;
+    @ViewChild('SurnameTemplate') surnameTemplate: TemplateRef<any>;
 
     tables: any[] = [];
     columns: ColumnDef[] = [];
@@ -130,6 +132,10 @@ export class ColumnsComponent extends BaseComponent implements AfterViewInit {
                     return this.fkTemplate;
                 case "ListItemTemplate":
                     return this.listItemTemplate;
+                case "GivenNameTemplate":
+                    return this.givenNameTemplate;
+                case "SurnameTemplate":
+                    return this.surnameTemplate;
             }
         }
         return this.defaultTemplate;

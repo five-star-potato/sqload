@@ -1,10 +1,11 @@
+var shell = require('shelljs');
 var electron = require('electron');
+var appConf = require('./app.conf');
 var fs = require('fs');
 var db = require('./db');
 var app = electron.app;
 var BrowserWindow = electron.BrowserWindow;
 var ipcMain = require('electron').ipcRenderer;
-var tmpFile = "__TMP.SQL";
 
 function openProjectFile() {
     var btns = ['OK'];
@@ -46,12 +47,29 @@ function openProjectFile() {
     }
 }
 
-function removeSqlTemp() {
-    if (fs.existsSync(tmpFile)) {
-        fs.unlinkSync(tmpFile);
-    }
-}
+function writeSqlToFile(connection, prefix, counter, content) {
+    // assume content is any array
+    var dt = new Date();
+    var subDir = dt.toISOString().replace(/\.\d+/,'').replace(/:/g,'');
+    var fileDir = `${appConf.options.sqlOutputDir}/${subDir}`;
 
+    if (!fs.existsSync(fileDir)){
+        shell.mkdir('-p', fileDir);
+    }
+    var sqlFile = `${prefix}_${counter}.sql`;
+    var fstream = fs.createWriteStream(`${fileDir}/${sqlFile}`,{'flags': 'a'});
+    fstream.on('error', err => { reject(err); });
+    content.forEach(line => { 
+        fstream.write(line + '\n'); }
+    );
+    fstream.end();
+
+    fstream = fs.createWriteStream(`${fileDir}/run_sqlcmd.bat`,{'flags': 'a'});
+    fstream.on('error', err => { reject(err); });
+    fstream.write(`sqlcmd -S ${connection.serverName} -d ${connection.databaseName} -U ${connection.userName} -P ${connection.password} -i ${sqlFile}` + '\n');
+    fstream.end();
+}
+/*
 function writeSqlToTemp(content) {
     // assume content is any array
     var fstream = fs.createWriteStream(tmpFile,{'flags': 'a'});
@@ -87,7 +105,7 @@ function saveSqlFile() {
         console.log(err);
     });
 }
-
+*/
 function saveProjectFile(content) {
     var btns = ['OK'];
     const {dialog} = require('electron')
@@ -136,9 +154,7 @@ function init() {
     global.fnVerifyConnection = db.verifyConnection;
     global.fnSaveProject = saveProjectFile;
     global.fnOpenProject = openProjectFile;
-    global.fnWriteSqlToTemp = writeSqlToTemp;
-    global.fnSaveSqlFile = saveSqlFile;
-    global.fnRemoveSqlTemp = removeSqlTemp;
+    global.fnWriteSqlToFile = writeSqlToFile;
     global.fnMsgBox = messageBox;
 }
 app.on('ready', _ => {

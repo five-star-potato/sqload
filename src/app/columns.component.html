@@ -43,18 +43,25 @@
                                 <td>{{c.nullable}}</td>
                                 <td>
                                     <select class='form-control input-sm' (change)="changeGenerator(c, $event)" [ngModel]="getGeneratorConstructorName(c)" [disabled]="!c.include" style="font-size:12px; height:30px">
-                                        <option value='SampleAddressGenerator'>Sample Address Field(s)</option>
-                                        <option value='SequenceGenerator'>Sequence Number</option>
-                                        <option value='IntegerGenerator'>Random Integer</option>
-                                        <option value='TextGenerator'>Random Text</option>
-                                        <option value='DateGenerator'>Random Date</option>
-                                        <option value='DateTimeGenerator'>Random Date &amp; Time</option>
-                                        <option value='UUIDGenerator'>Random UUID</option>
-                                        <option value='ListItemGenerator'>Random Value from a List</option>
-                                        <option value='CustomSqlGenerator'>Custom SQL</option>
-                                        <option value='CustomValueGenerator'>Hardcode Value</option>
-                                        <!-- if there's no FK constraint in this column, don't let user choose FK gen. If they do want to use lookup data, use custom SQL generator instead -->
-                                        <option [disabled]="c.fkConstraintID > 0" value='FKGenerator'>Foreign Key</option>
+                                        <optgroup label="Basic">
+                                            <option value='SequenceGenerator'>Sequence Number</option>
+                                            <option value='IntegerGenerator'>Random Integer</option>
+                                            <option value='TextGenerator'>Random Text</option>
+                                            <option value='DateGenerator'>Random Date</option>
+                                            <option value='DateTimeGenerator'>Random Date &amp; Time</option>
+                                            <option value='UUIDGenerator'>Random UUID</option>
+                                            <option value='ListItemGenerator'>Random Value from a List</option>
+                                            <option value='CustomSqlGenerator'>Custom SQL</option>
+                                            <option value='CustomValueGenerator'>Hardcode Value</option>
+                                             <!-- if there's no FK constraint in this column, don't let user choose FK gen. If they do want to use lookup data, use custom SQL generator instead -->
+                                            <option [disabled]="c.fkConstraintID > 0" value='FKGenerator'>Foreign Key</option>
+                                        </optgroup>
+                                        <optgroup label="Sample Data">
+                                            <option value='SampleAddressGenerator'>Sample Address Fields</option>
+                                            <option value='GivenNameGenerator'>Sample Given Names</option>
+                                            <option value='SurnameGenerator'>Sample Surnames</option>
+                                        </optgroup>
+                                       
                                     </select>
                                 </td>
                             </tr>
@@ -235,6 +242,20 @@
                     <input type="text" [(ngModel)]="activeColDef.plugIn[0].items[0]" class="form-control input-sm">
                 </tr>
             </table>
+        </div>
+    </div>
+</template>
+<template #GivenNameTemplate>
+    <div class="form">
+        <div class="form-group">
+            <label>Sample given names from North America</label>
+        </div>
+    </div>
+</template>
+<template #SurnameTemplate>
+    <div class="form">
+        <div class="form-group">
+            <label>Sample surnames from North America</label>
         </div>
     </div>
 </template>

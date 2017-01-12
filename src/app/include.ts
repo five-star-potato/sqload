@@ -22,10 +22,6 @@ export function fnGetDataTypeDesc(c: ColumnDef) {
     else return c.dataType;
 }
 
-export function fnOnlyUnique(value, index, self) { 
-    return self.indexOf(value) === index;
-}
-
 //http://stackoverflow.com/questions/11616630/json-stringify-avoid-typeerror-converting-circular-structure-to-json
 export function fnStringifyNoCircular(o:any) {
     let cache = [];

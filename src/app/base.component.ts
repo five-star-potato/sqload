@@ -37,14 +37,8 @@ export abstract class BaseComponent {
     protected getOpenProjectFn():any {
         return this.remote.getGlobal(TRON_GLOBAL.fnOpenProject);
     }
-    protected getSaveSqlFileFn():any {
-        return this.remote.getGlobal(TRON_GLOBAL.fnSaveSqlFile);
-    }
-    protected getWriteSqlToTempFn():any {
-        return this.remote.getGlobal(TRON_GLOBAL.fnWriteSqlToTemp);
-    }
-    protected getRemoveSqlTemp():any {
-        return this.remote.getGlobal(TRON_GLOBAL.fnRemoveSqlTemp);
+    protected getWriteSqlToFileFn():any {
+        return this.remote.getGlobal(TRON_GLOBAL.fnWriteSqlToFile);
     }
     protected getMsgBoxFn():any {
         return this.remote.getGlobal(TRON_GLOBAL.fnMsgBox);

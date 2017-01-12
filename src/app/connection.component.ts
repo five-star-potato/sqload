@@ -38,6 +38,7 @@ import { ConnectionConfig, ProjectService } from "./service/project";
       <div class="flexbox-item footer">
           <!-- <button class='btn btn-primary nav-btn' (click)="back()">Back</button> -->
           <button type="submit" [disabled]="!connectForm.form.valid" class='btn btn-primary nav-btn'>Connect</button>
+					<span style="margin-left:20px">* Integrated security is not supported</span>
         </div>
   </form>
     `,
