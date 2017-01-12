@@ -127,7 +127,7 @@ export class GenerateComponent extends BaseComponent {
             .replace('@district', "'" + addr.district + "'")
             .replace('@country', "'" + addr.country + "'")
             .replace('@postcode', "'" + addr.postcode + "'");
-        return `${tmp}`;
+        return `${tmp}'`;
     }
     private async generateDataForRow(colArr: ColumnDef[], fkConstraints: Set<number>, colNames: string[], variables: string[], tbl: any, tblProgress: any, tblCnt: number, rowCnt: number) {
         let vals: string[] = [];
