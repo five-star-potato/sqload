@@ -116,18 +116,18 @@ export class GenerateComponent extends BaseComponent {
     private getCleanName(name: string) {
         return name.replace(/[\$ #@]/g, '_');
     }
-    private substituteAddressField(field: string, addr: any): string {
+    private substituteAddressField(field: string, addr: any, isSQL:boolean): string {
         var tmp: string = field;
         tmp = field.replace('@id', "'" + addr.id + "'")
-            .replace('@num', "'" + addr.num + "'")
-            .replace('@unit', "'" + addr.unit + "'")
-            .replace('@street', "'" + addr.street + "'")
-            .replace('@city', "'" + addr.city + "'")
-            .replace('@region', "'" + addr.region + "'")
-            .replace('@district', "'" + addr.district + "'")
-            .replace('@country', "'" + addr.country + "'")
-            .replace('@postcode', "'" + addr.postcode + "'");
-        return `${tmp}'`;
+            .replace('@num', "'" + (addr.num || '').replace("'", isSQL ? "''" : "'") + "'")
+            .replace('@unit', "'" + (addr.unit || '').replace("'", isSQL ? "''" : "'") + "'")
+            .replace('@street', "'" + (addr.street || '').replace("'", isSQL ? "''" : "'") + "'")
+            .replace('@city', "'" + (addr.city || '').replace("'", isSQL ? "''" : "'") + "'")
+            .replace('@region', "'" + (addr.region || '').replace("'", isSQL ? "''" : "'") + "'")
+            .replace('@district', "'" + (addr.district || '').replace("'", isSQL ? "''" : "'") + "'")
+            .replace('@country', "'" + (addr.country || '').replace("'", isSQL ? "''" : "'") + "'")
+            .replace('@postcode', "'" + (addr.postcode || '').replace("'", isSQL ? "''" : "'") + "'");
+        return `${tmp}`;
     }
     private async generateDataForRow(colArr: ColumnDef[], fkConstraints: Set<number>, colNames: string[], variables: string[], tbl: any, tblProgress: any, tblCnt: number, rowCnt: number) {
         let vals: string[] = [];
@@ -146,21 +146,26 @@ export class GenerateComponent extends BaseComponent {
                     }
                     // getting data from pre-loaded sample addresses
                     else if (cf.plugIn[0] instanceof SampleAddressGenerator) {
-                        let expandedField: string, addrVal: string, key: string, field: string;
+                        let expandedField: string, addrVal: string;
                         try {
-                            key = (cf.plugIn[0] as SampleAddressGenerator).key;
-                            field = (cf.plugIn[0] as SampleAddressGenerator).fieldSpec;
+                            let ag: SampleAddressGenerator = (cf.plugIn[0] as SampleAddressGenerator);
                             if (!addressData) {
-                                if (this.sampleAdresses[key].length == 0) {
+                                if (this.sampleAdresses[ag.key].length == 0) {
                                     console.log("no more addresses");
                                     await this.getSampleAddresses();
                                     this.progressMsg = "";
                                 }
-                                addressData = this.sampleAdresses[key].pop();
+                                addressData = this.sampleAdresses[ag.key].pop();
                             }
-                            expandedField = this.substituteAddressField(field, addressData);
-                            addrVal = eval(expandedField);
-                            vals.push(`SET ${cf.variable} = '${addrVal}';`);
+                            if (ag.scriptType == "SQL") {
+                                expandedField = this.substituteAddressField(ag.fieldSpec, addressData, true);
+                                vals.push(`SELECT ${cf.variable} = ${expandedField};`);
+                            }
+                            else { // assuming it's JS
+                                expandedField = this.substituteAddressField(ag.fieldSpec, addressData, false);
+                                addrVal = eval(expandedField);
+                                vals.push(`SELECT ${cf.variable} = '${addrVal}';`);
+                            }
                         }
                         catch (err) {
                             console.log(expandedField + "-" + err);
