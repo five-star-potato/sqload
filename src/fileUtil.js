@@ -42,10 +42,8 @@ function openProjectFile() {
     }
 }
 
-function writeSqlToFile(connection, prefix, counter, content) {
+function writeSqlToFile(subDir, connection, prefix, counter, content) {
     // assume content is any array
-    var dt = new Date();
-    var subDir = dt.toISOString().replace(/\.\d+/,'').replace(/:/g,'');
     var fileDir = `${appConf.options.sqlOutputDir}/${subDir}`;
 
     if (!fs.existsSync(fileDir)){

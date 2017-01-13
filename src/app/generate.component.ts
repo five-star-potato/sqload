@@ -98,6 +98,7 @@ export class GenerateComponent extends BaseComponent {
     sampleNames = {};
     progressMsg: string = "";
     lineCount: number = 0;
+    fileSubDir: string;
 
     constructor(router: Router, ngZone: NgZone, wizardStateService: WizardStateService, dataService: SampleDataService, projectService: ProjectService) {
         super(router, ngZone, wizardStateService, dataService, projectService);
@@ -119,6 +120,8 @@ export class GenerateComponent extends BaseComponent {
     private substituteAddressField(field: string, addr: any, isSQL:boolean): string {
         var tmp: string = field;
         tmp = field.replace('@id', "'" + addr.id + "'")
+            .replace('@lat', "'" + (addr.lat || '0') + "'")
+            .replace('@lon', "'" + (addr.lon || '0') + "'")
             .replace('@num', "'" + (addr.num || '').replace("'", isSQL ? "''" : "'") + "'")
             .replace('@unit', "'" + (addr.unit || '').replace("'", isSQL ? "''" : "'") + "'")
             .replace('@street', "'" + (addr.street || '').replace("'", isSQL ? "''" : "'") + "'")
@@ -229,7 +232,7 @@ export class GenerateComponent extends BaseComponent {
         if (rowCnt < tbl.rowcount) {
             this.overallProgress = Math.ceil(this.runningRowCnt * 100 / this.totalRowCnt);
             console.log("overall progress: " + this.overallProgress.toString());
-            this.getWriteSqlToFileFn()(this.projectService.connection, this.getCleanName(tbl.name), rowCnt, [...this.declareStmts, ...this.stmts]);
+            this.getWriteSqlToFileFn()(this.fileSubDir, this.projectService.connection, this.getCleanName(tbl.name), rowCnt, [...this.declareStmts, ...this.stmts]);
             this.stmts = [];
             setTimeout(this.generateDataForRow.bind(this, colArr, fkConstraints, colNames, variables, tbl, tblProgress, tblCnt, rowCnt), 100);
         }
@@ -240,7 +243,7 @@ export class GenerateComponent extends BaseComponent {
             }
             else {
                 this.overallProgress = 100;
-                this.getWriteSqlToFileFn()(this.projectService.connection, this.getCleanName(tbl.name), rowCnt, [...this.declareStmts, ...this.stmts]);
+                this.getWriteSqlToFileFn()(this.fileSubDir, this.projectService.connection, this.getCleanName(tbl.name), rowCnt, [...this.declareStmts, ...this.stmts]);
                 this.stmts = [];
                 this.wizardStateService.hideSpinning();
             }
@@ -310,6 +313,9 @@ export class GenerateComponent extends BaseComponent {
         }
     }
     private async generateData() {
+        let dt = new Date();
+        this.fileSubDir = dt.toISOString().replace(/\.\d+/,'').replace(/:/g,'');
+        
         let needNames: boolean = false;
         this.cleanUnusedPlugin();
         this.stmts = [];
