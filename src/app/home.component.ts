@@ -15,7 +15,7 @@ import { Subscription }   from 'rxjs/Subscription';
             <div class="fill-area-content flexbox-item-grow">
                 <h1 style="font-family:Plavsky;opacity:0.5">Greetings</h1>
                 <br />
-                <strong>Gendat</strong> is test data generation tool built for SQL Server. We have been using SQL Server 2016 for testing, but it should be backward compatible to version 2012 as well. Our goal is to 
+                <strong>SQLOAD</strong> is test data generation tool built for SQL Server. We have been using SQL Server 2016 for testing, but it should be backward compatible to version 2012 as well. Our goal is to 
                 allow flexible and <i>realistic</i> test data generation. The tool includes various <a href="#">data generators</a> to provide the flexibility of generating data of different shapes. 
                 <br /><br />      
             </div>
