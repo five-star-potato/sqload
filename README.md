@@ -1,8 +1,8 @@
-# Gendat - Test data generation tool for SQL Server
+# SQLOAD - Test data generation tool for SQL Server
 
 ## Introduction
 
-Gendat is written in Electron with Angular 2. The project is in perpetual beta stage. Currently, it provides the following list of features:
+SQLOAD is written in Electron with Angular 2. The project is in perpetual beta stage. Currently, it provides the following list of features:
 
 1. Connecting to a SQL Server data source
 
@@ -35,7 +35,7 @@ Gendat is written in Electron with Angular 2. The project is in perpetual beta s
 ```bash
 # clone our repo
 # --depth 1 removes all but one .git commit history
-git clone https://github.com/five-star-potato/gendat.git
+git clone https://github.com/five-star-potato/sqload.git
 
 # change directory to our repo
 cd gendat
