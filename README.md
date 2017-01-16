@@ -38,7 +38,7 @@ SQLOAD is written in Electron with Angular 2. The project is in perpetual beta s
 git clone https://github.com/five-star-potato/sqload.git
 
 # change directory to our repo
-cd gendat
+cd sqload
 
 # install the repo with npm
 npm install
