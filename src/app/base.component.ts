@@ -43,4 +43,14 @@ export abstract class BaseComponent {
     protected getMsgBoxFn():any {
         return this.remote.getGlobal(TRON_GLOBAL.fnMsgBox);
     }
+    protected getObjectTypeName(t:string) {
+        switch (t) {
+            case 'U':
+                return "Table";
+            case 'V':
+                return "View";
+            case 'P':
+                return "Stored Procedure";
+        }
+    }
 }

@@ -8,8 +8,8 @@
                 <legend>Tables</legend>
                 <table class="table">
                     <tbody>
-                        <tr *ngFor="let item of tables"  [class.success]="activeTableId == item.id" >
-                            <td>
+                        <tr *ngFor="let item of getAllObjects()"  [class.success]="activeTableId == item.id" >
+                            <td><sup style="color:aqua">{{item.objType}}</sup>
                                 <a class="nav-link"(click)="setActiveTable(item.id)" [class.active]="activeTableId == item.id" href="javascript:void(0)">
                                     {{item.name}}
                                 </a>

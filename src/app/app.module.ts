@@ -7,7 +7,7 @@ import { ConnectionComponent }  from './connection.component';
 import { HomeComponent }  from './home.component';
 import { ColumnsComponent }  from './columns.component';
 import { GenerateComponent }  from './generate.component';
-import { TablesComponent }  from './tables.component';
+import { ObjectsComponent }  from './objects.component';
 import { RowsComponent }  from './rows.component';
 import { RouterModule, Routes } from '@angular/router';
 import { selectedObjectsPipe } from './pipes.component';
@@ -23,7 +23,7 @@ const appRoutes: Routes = [
   { path: "", redirectTo: "home", pathMatch: "full" },  
   { path: 'home', component: HomeComponent },
   { path: 'connect', component: ConnectionComponent },
-  { path: 'tables', component: TablesComponent },
+  { path: 'objects', component: ObjectsComponent },
   { path: 'generate', component: GenerateComponent },
   { path: 'columns', component: ColumnsComponent },
   { path: 'rows', component: RowsComponent }
@@ -31,7 +31,7 @@ const appRoutes: Routes = [
 
 @NgModule({
   imports:      [ BrowserModule, FormsModule, RouterModule.forRoot(appRoutes), HttpModule ],
-  declarations: [ AppComponent, ConnectionComponent, HomeComponent, TablesComponent, ColumnsComponent, RowsComponent, GenerateComponent, selectedObjectsPipe, OrderBy, SampleAddressConfigComponent ],
+  declarations: [ AppComponent, ConnectionComponent, HomeComponent, ObjectsComponent, ColumnsComponent, RowsComponent, GenerateComponent, selectedObjectsPipe, OrderBy, SampleAddressConfigComponent ],
   providers:    [ WizardStateService, SampleDataService, ProjectService ],
   bootstrap:    [ AppComponent ]
 })

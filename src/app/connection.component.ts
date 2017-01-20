@@ -83,7 +83,7 @@ export class ConnectionComponent extends BaseComponent implements OnInit, AfterV
 					else {
 						this.projectService.connection.verified = true;
 						this.wizardStateService.projectChange({ type: TRON_EVENT.refresh });
-						this.router.navigate(['/tables']);
+						this.router.navigate(['/objects']);
 					}
 					this.wizardStateService.hideSpinning();
 				})

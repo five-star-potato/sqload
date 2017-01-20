@@ -38,15 +38,15 @@ import { TRON_EVENT } from "./constants"
                                     </a>
                                 </li>
 
-                                <li role="presentation" [routerLinkActive]="['active']" [class.disabled]="isLinkDisabled('tables')">
-                                    <a routerLink="/tables" data-toggle="tab" aria-controls="step3" role="tab" title="select one or more tables" *ngIf="!isLinkDisabled('tables')">
-                                        <span class="round-tab" [class.round-tab-loading]="urlLoading=='tables'">
-                                            <i [style.color]="getLinkColor('tables')" class="fa fa-table" aria-hidden="true" style="vertical-align:5%"></i>
+                                <li role="presentation" [routerLinkActive]="['active']" [class.disabled]="isLinkDisabled('objects')">
+                                    <a routerLink="/objects" data-toggle="tab" aria-controls="step3" role="tab" title="select one or more objects" *ngIf="!isLinkDisabled('objects')">
+                                        <span class="round-tab" [class.round-tab-loading]="urlLoading=='objects'">
+                                            <i [style.color]="getLinkColor('objects')" class="fa fa-table" aria-hidden="true" style="vertical-align:5%"></i>
                                         </span>
                                     </a>
-                                    <a aria-controls="step3" role="tab" title="select one or more tables" *ngIf="isLinkDisabled('tables')">
+                                    <a aria-controls="step3" role="tab" title="select one or more objects" *ngIf="isLinkDisabled('objects')">
                                         <span class="round-tab">
-                                            <i [style.color]="getLinkColor('tables')" class="fa fa-table" aria-hidden="true" style="vertical-align:5%"></i>
+                                            <i [style.color]="getLinkColor('objects')" class="fa fa-table" aria-hidden="true" style="vertical-align:5%"></i>
                                         </span>
                                     </a>
                                 </li>

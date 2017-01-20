@@ -6,7 +6,7 @@ import { DataGenerator, fnGetDataTypeDesc } from './include';
 import * as gen from './generator/generators.component';
 import { WizardStateService } from "./service/wizard-state";
 import { SampleDataService } from "./service/sample-data";
-import { ColumnDef, TableDef, ProjectService } from "./service/project";
+import { ColumnDef, DBObjDef, ProjectService } from "./service/project";
 import { Subscription }   from 'rxjs/Subscription';
 
 @Component({

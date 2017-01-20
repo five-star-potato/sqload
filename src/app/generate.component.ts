@@ -6,7 +6,7 @@ import { fnGetDataTypeDesc, fnStringifyNoCircular } from './include';
 import { SampleAddressGenerator, GivenNameGenerator, SurnameGenerator, IntegerGenerator, TextGenerator, DateGenerator, UUIDGenerator, CustomSqlGenerator, CustomValueGenerator, FKGenerator } from './generator/generators.component';
 import { WizardStateService } from "./service/wizard-state";
 import { Address, PersonName, SampleDataService } from "./service/sample-data";
-import { ColumnDef, TableDef, ProjectService } from "./service/project";
+import { ColumnDef, DBObjDef, ProjectService } from "./service/project";
 declare var require: (moduleId: string) => any;
 var appConf = require('../app.conf');
 
@@ -88,7 +88,7 @@ interface ProgressData {
 export class GenerateComponent extends BaseComponent {
     stmts: string[] = [];
     declareStmts: string[] = [];
-    tables: any[];
+    tables: DBObjDef[];
     colDefs: any;
     progress: ProgressData[] = [];
     overallProgress: number = 0;
@@ -104,7 +104,7 @@ export class GenerateComponent extends BaseComponent {
         super(router, ngZone, wizardStateService, dataService, projectService);
     }
     private cleanUnusedPlugin() {
-        var tbls = this.projectService.selectedTables;
+        var tbls = this.projectService.selectedObjs['U'];
         tbls.forEach(t => {
             // trim unused plugin; cf.plugins is a list of plugins; only the first one is used. The rest are for users to undo changes only
             this.projectService.columnDefs[t.id].forEach((cf: ColumnDef) => {
@@ -343,7 +343,7 @@ export class GenerateComponent extends BaseComponent {
             });
         });
         this.tables.forEach(t => {
-            this.totalRowCnt += parseInt(t.rowcount);
+            this.totalRowCnt += (t.rowcount);
         });
         this.tables.sort((b, a) => b.sequence - a.sequence);
         await this.getSampleAddresses();
@@ -370,7 +370,7 @@ export class GenerateComponent extends BaseComponent {
         this.getSaveProjectFn()(projectContent);
     }
     ngOnInit() {
-        this.tables = this.projectService.selectedTables;
+        this.tables = this.projectService.selectedObjs['U'];
         this.colDefs = this.projectService.columnDefs;
     }
 }

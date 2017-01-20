@@ -1,12 +1,12 @@
 import { Component, OnInit, NgZone, TemplateRef, ViewChild, AfterViewInit } from '@angular/core';
 import { Router } from '@angular/router';
-import { TRON_GLOBAL, TRON_EVENT } from './constants';
+import { TRON_GLOBAL, TRON_EVENT, OBJ_TYPE, OBJECT_TYPES_LIST } from './constants';
 import { DataGenerator, fnGetDataTypeDesc } from './include';
 import { BaseComponent } from './base.component';
 import * as gen from './generator/generators.component';
 import { WizardStateService } from "./service/wizard-state";
 import { SampleDataService } from "./service/sample-data";
-import { ProjectService, ColumnDef } from "./service/project";
+import { ProjectService, DBObjDef, ColumnDef } from "./service/project";
 
 @Component({
     templateUrl: "./columns.component.html",
@@ -40,7 +40,7 @@ export class ColumnsComponent extends BaseComponent implements AfterViewInit {
     @ViewChild('GivenNameTemplate') givenNameTemplate: TemplateRef<any>;
     @ViewChild('SurnameTemplate') surnameTemplate: TemplateRef<any>;
 
-    tables: any[] = [];
+    objects: { [objType:string]: DBObjDef[] };
     columns: ColumnDef[] = [];
     activeTableId: number;
     activeColDef: ColumnDef = new ColumnDef();
@@ -51,7 +51,7 @@ export class ColumnsComponent extends BaseComponent implements AfterViewInit {
         super(router, ngZone, wizardStateService, dataService, projectService);
     }
     back() {
-        this.router.navigate(['/tables']);
+        this.router.navigate(['/objects']);
     }
     next() {
         this.wizardStateService.projectChange({ type: TRON_EVENT.refresh });
@@ -147,39 +147,71 @@ export class ColumnsComponent extends BaseComponent implements AfterViewInit {
     ngAfterViewInit() {
         //this.setActiveTable(this.tables[0].id);
     }
-    ngOnInit() {
-        // when moving back and forth among pages, we need to maintain states; 
-        // If columnDefs.length, the user is revisiting this page - clear the table entries that are no longer valid.
-        // If a table Id exists in both selectedTAbles and columnDefs, we don't need to reload column info from DB; take it off from tblIds
-        this.tables = this.projectService.selectedTables;
+    private getAllObjects() {
+        var allObj:DBObjDef[] = [];
+        for (let objType of OBJECT_TYPES_LIST) {
+            allObj = allObj.concat(this.objects[objType]);
+        }
+        return allObj;
+    }
+    private constructObjectIdsForLoad(objType:string, selectedIds:number[]):number[] {
         let columnDefs = this.projectService.columnDefs;
-        //this.setActiveTable(this.tables[0].id);
-        //if (columnDefs[this.activeTableId])
-        //    this.setActiveColumn(columnDefs[this.activeTableId][0]);
-
-        let tblIds = []; // Create a list of table object Ids for use in constructing the SQL statement
-        for (let i = this.tables.length - 1; i >= 0; i--) {
-            tblIds.unshift(this.tables[i].id);
+        let objIds = []; // Create a list of table object Ids for use in constructing the SQL statement
+        for (let cnt = this.objects[objType].length, i = 0; i < cnt; i++) {
+            objIds.push(this.objects[objType][i].id);
         }
-        let keys = []; // get all the "keys" i.e. table Object ID from columnDef. Remove them if the new list of selectedTables does not include them
-        for (var key in columnDefs) {
-            if (columnDefs.hasOwnProperty(key)) {
-                keys.push(parseInt(key));
-            }
-        }
-        keys.forEach(k => {
-            if (!tblIds.includes(k))
+        // check to see which tables are no longer selected
+        selectedIds.forEach(k => {
+            if (!objIds.includes(k))
                 delete columnDefs[k];
         });
-        // these tables don't need to be reloaded
-        for (let i = tblIds.length - 1; i >= 0; i--) {
-            if (columnDefs[tblIds[i]] != undefined) {
-                tblIds.splice(i, 1);
+        // for tables that are already selected, don't reload the columns ;
+        // TODO: what if the table defn changed?
+        for (let i = objIds.length - 1; i >= 0; i--) {
+            if (columnDefs[objIds[i]] != undefined) {
+                objIds.splice(i, 1);
             }
         }
-        if (tblIds.length == 0) // no need to load column info from DB
-            return;
-
+        return objIds;
+    }
+    private constructCommonPlughInForDataType(cf:ColumnDef):DataGenerator {
+        switch (cf.dataType) {
+            case "int":
+            case "bigint":
+            case "tinyint":
+            case "smallint":
+            case "bit":
+                return new gen.IntegerGenerator(cf.dataType);
+            case "uniqueidentifier":
+                return new gen.UUIDGenerator();
+            case "date":
+                return new gen.DateGenerator();
+            case "datetime":
+            case "datetime2":
+            case "smalldatetime":
+                return new gen.DateTimeGenerator();
+            case "char":
+            case "nchar":
+            case "varchar":
+            case "nvarchar":
+                if (cf.charMaxLen == 1) {
+                    // most likely it's a code  field like Gender
+                    let gn:gen.ListItemGenerator = new gen.ListItemGenerator(); 
+                    if (cf.name.toLowerCase() == "gender" || cf.name.toLowerCase() == "sex") {
+                        gn.items[0] = "M";
+                        gn.items[1] = "F";
+                    }
+                    return gn;
+                }
+                else 
+                    return new gen.TextGenerator(cf.charMaxLen);
+            default:
+                return null;
+        }
+    }
+    private async loadTableColumnDefs(selectedIds:number[]) {
+        let columnDefs = this.projectService.columnDefs;
+        let tblIds:number[] = this.constructObjectIdsForLoad(OBJ_TYPE.TB, selectedIds);
         let sql = `
             SELECT t.object_id, ic.*, fk.name [fk_constraint_name], fk.object_id [fk_constraint_id], fkc.constraint_column_id [fk_constraint_column_id], fk_rt.name [fk_table_name], fk_rc.name [fk_column_name], SCHEMA_NAME(fk_rt.schema_id) [fk_schema_name], c.is_identity
             FROM sys.columns c
@@ -193,7 +225,7 @@ export class ColumnsComponent extends BaseComponent implements AfterViewInit {
             JOIN INFORMATION_SCHEMA.COLUMNS ic ON t.name = ic.TABLE_NAME AND c.name = ic.COLUMN_NAME AND SCHEMA_NAME(t.schema_id) = ic.TABLE_SCHEMA
             WHERE c.object_id in (${tblIds.join()}) AND c.is_computed <> 1 AND c.is_identity <> 1
             order by ic.TABLE_SCHEMA, ic.TABLE_NAME, c.column_id`;
-        let dataSet = this.getSQLFn()(this.projectService.connection, sql,
+        let dataSet = await this.getSQLFn()(this.projectService.connection, sql,
             (err, res) => {
                 this.ngZone.run(() => {
                     let i: number = 0;
@@ -223,46 +255,9 @@ export class ColumnsComponent extends BaseComponent implements AfterViewInit {
                             cf.plugIn.push(new gen.FKGenerator());
                         }
                         else {
-                            switch (cf.dataType) {
-                                case "int":
-                                case "bigint":
-                                case "tinyint":
-                                case "smallint":
-                                case "bit":
-                                    cf.plugIn.push(new gen.IntegerGenerator(cf.dataType));
-                                    break;
-
-                                case "uniqueidentifier":
-                                    cf.plugIn.push(new gen.UUIDGenerator());
-
-                                case "date":
-                                    cf.plugIn.push(new gen.DateGenerator());
-                                    break;
-                                case "datetime":
-                                case "datetime2":
-                                case "smalldatetime":
-                                    cf.plugIn.push(new gen.DateTimeGenerator());
-                                    break;
-
-                                case "char":
-                                case "nchar":
-                                case "varchar":
-                                case "nvarchar":
-                                    if (cf.charMaxLen == 1) {
-                                        // most likely it's a code  field like Gender
-                                        let gn:gen.ListItemGenerator = new gen.ListItemGenerator(); 
-                                        if (cf.name.toLowerCase() == "gender" || cf.name.toLowerCase() == "sex") {
-                                            gn.items[0] = "M";
-                                            gn.items[1] = "F";
-                                        }
-                                        cf.plugIn.push(gn);
-                                    }
-                                    else 
-                                        cf.plugIn.push(new gen.TextGenerator(cf.charMaxLen));
-                                    break;
-                                default:
-                                    break;
-                            }
+                            let dn:DataGenerator = this.constructCommonPlughInForDataType(cf);
+                            if (dn)
+                                cf.plugIn.push(dn);
                         }
                         if (cf.plugIn.length == 0)    // we don't know how to generate this field
                             cf.include = false;
@@ -271,5 +266,107 @@ export class ColumnsComponent extends BaseComponent implements AfterViewInit {
                 });
             }
         );
+    }
+    private async loadViewColumnDefs(selectedIds:number[]) {
+        let columnDefs = this.projectService.columnDefs;
+        let vwIds:number[] = this.constructObjectIdsForLoad(OBJ_TYPE.VW, selectedIds);
+        let sql = `
+            SELECT t.object_id, ic.*, c.is_identity
+            FROM sys.columns c
+            JOIN sys.views t ON c.object_id = t.object_id
+            JOIN INFORMATION_SCHEMA.COLUMNS ic ON t.name = ic.TABLE_NAME AND c.name = ic.COLUMN_NAME AND SCHEMA_NAME(t.schema_id) = ic.TABLE_SCHEMA
+            WHERE c.object_id in (${vwIds.join()}) AND c.is_computed <> 1 AND c.is_identity <> 1
+            order by ic.TABLE_SCHEMA, ic.TABLE_NAME, c.column_id
+            `;
+        let dataSet = await this.getSQLFn()(this.projectService.connection, sql,
+            (err, res) => {
+                this.ngZone.run(() => {
+                    let i: number = 0;
+                    res.forEach((row) => {
+                        let vwId = row["object_id"];
+                        let colDef = columnDefs[vwId];
+                        if (!colDef) {
+                            columnDefs[vwId] = [];
+                        }
+                        let cf = new ColumnDef({
+                            name: row['COLUMN_NAME'],
+                            dataType: row['DATA_TYPE'],
+                            charMaxLen: row['CHARACTER_MAXIMUM_LENGTH'],
+                            precision: row['NUMERIC_PRECISION'],
+                            scale: row['NUMERIC_SCALE'],
+                            nullable: (row['IS_NULLABLE'] == "YES"),
+                            colDefault: row['COLUMN_DEFAULT'],
+                            include: (row['COLUMN_DEFAULT'] == null && row['is_identity'] != 1),
+                            isIdentity: (row["is_identity"] == 1)
+                        });
+                        let dn:DataGenerator = this.constructCommonPlughInForDataType(cf);
+                        if (dn)
+                            cf.plugIn.push(dn);
+                        if (cf.plugIn.length == 0)    // we don't know how to generate this field
+                            cf.include = false;
+                        columnDefs[vwId].push(cf);
+                    });
+                });
+            }
+        );
+    }
+    private async loadSPColumnDefs(selectedIds:number[]) {
+        let procIds:number[] = this.constructObjectIdsForLoad(OBJ_TYPE.SP, selectedIds);
+        let columnDefs = this.projectService.columnDefs;
+        let sql = `
+            SELECT t.object_id, ic.*
+            FROM sys.procedures t 
+            JOIN INFORMATION_SCHEMA.parameters ic ON t.name = ic.SPECIFIC_NAME AND SCHEMA_NAME(t.schema_id) = ic.SPECIFIC_SCHEMA
+            WHERE c.object_id in (${procIds.join()})
+            order by ic.SPECIFIC_SCHEMA, ic.SPECIFIC_NAME, ic.ORDINAL_POSITION
+        `;
+        let dataSet = await this.getSQLFn()(this.projectService.connection, sql,
+            (err, res) => {
+                this.ngZone.run(() => {
+                    let i: number = 0;
+                    res.forEach((row) => {
+                        let procId = row["object_id"];
+                        let colDef = columnDefs[procId];
+                        if (!colDef) {
+                            columnDefs[procId] = [];
+                        }
+                        let cf = new ColumnDef({
+                            name: row['PARAMETER_NAME'],
+                            dataType: row['DATA_TYPE'],
+                            charMaxLen: row['CHARACTER_MAXIMUM_LENGTH'],
+                            precision: row['NUMERIC_PRECISION'],
+                            scale: row['NUMERIC_SCALE'],
+                            include: true
+                        });
+                        let dn:DataGenerator = this.constructCommonPlughInForDataType(cf);
+                        if (dn)
+                            cf.plugIn.push(dn);
+                        if (cf.plugIn.length == 0)    // we don't know how to generate this field
+                            cf.include = false;
+                        columnDefs[procId].push(cf);
+                    });
+                });
+            }
+        );
+    }
+    async ngOnInit() {
+        let columnDefs = this.projectService.columnDefs;
+        // when moving back and forth among pages, we need to maintain states; 
+        // If columnDefs.length, the user is revisiting this page - clear the table entries that are no longer valid.
+        // If a table Id exists in both selectedTAbles and columnDefs, we don't need to reload column info from DB; take it off from tblIds
+        this.objects = this.projectService.selectedObjs;
+        //let columnDefs = this.projectService.columnDefs;
+        //this.setActiveTable(this.tables[0].id);
+        //if (columnDefs[this.activeTableId])
+        //    this.setActiveColumn(columnDefs[this.activeTableId][0]);
+        let keys = []; // get all the "keys" i.e. table Object ID from columnDef. Remove them if the new list of selectedTables does not include them
+        for (var key in columnDefs) {
+            if (columnDefs.hasOwnProperty(key)) {
+                keys.push(parseInt(key));
+            }
+        }
+        await this.loadTableColumnDefs(keys);
+        await this.loadViewColumnDefs(keys);
+        await this.loadSPColumnDefs(keys);
     }
 }

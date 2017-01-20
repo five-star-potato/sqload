@@ -10,9 +10,10 @@ export interface ConnectionConfig {
     password?: string
     verified: boolean;
 }
-export interface TableDef {
+export interface DBObjDef {
     id: number;
     name: string;
+    objType: string;
     rowcount?: number;
     sequence?: number;
     selected: boolean;
@@ -57,8 +58,10 @@ export class ColumnDef {
 export class ProjectStruct {
     connection: ConnectionConfig;
     filePath: string = "";
-    selectedTables: TableDef[] = [];
-    columnDefs: { [ tableId: number] : ColumnDef[] } = {};
+    selectedObjs: { [objType:string]:DBObjDef[] } = {
+        'U': [], 'V': [], 'P': [], 'Cu':[]
+    }
+    columnDefs: { [ objId: number] : ColumnDef[] } = {};
     constructor() {
         this.connection = {
             serverName: 'DELL',
@@ -79,13 +82,13 @@ export class ProjectService {
     get connection():ConnectionConfig {
         return this.project.connection;
     }
-    get selectedTables():TableDef[] {
-        return this.project.selectedTables;
+    get selectedObjs(): { [objType:string]: DBObjDef[] } {
+        return this.project.selectedObjs;
     }
-    set selectedTables(val) {
-        this.project.selectedTables = val;
+    set selectedObjs(val) {
+        this.project.selectedObjs = val;
     }
-    get columnDefs():{ [ tableId: number]: ColumnDef[] } {
+    get columnDefs():{ [ objId: number]: ColumnDef[] } {
         return this.project.columnDefs;
     }
     get serverName():string {

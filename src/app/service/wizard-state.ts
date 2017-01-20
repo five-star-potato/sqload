@@ -1,7 +1,7 @@
 import { Injectable } from "@angular/core";
 import { Subject } from 'rxjs/Subject';
 import { TRON_GLOBAL, TRON_EVENT } from '../constants';
-import { ProjectStruct, ProjectService, ConnectionConfig, TableDef, ColumnDef } from './project';
+import { ProjectStruct, ProjectService, ConnectionConfig, DBObjDef, ColumnDef } from './project';
 
 @Injectable()
 export class WizardStateService {
@@ -24,8 +24,8 @@ export class WizardStateService {
             let links:Set<string> = new Set();
             links.add("home"); links.add("connect");
             if (this.isConnectionReady(proj)) {
-                links.add("tables");
-                if (this.isTableReady(proj)) {
+                links.add("objects");
+                if (this.isObjectsReady(proj)) {
                     links.add("columns");
                     if (this.isColumnReady(proj)) {
                         links.add("rows");
@@ -46,8 +46,8 @@ export class WizardStateService {
                 proj.connection.password &&
                 proj.connection.verified);
     }
-    private isTableReady(proj: any):boolean {
-        return (proj.selectedTables.length > 0);
+    private isObjectsReady(proj: ProjectStruct):boolean {
+        return (proj.selectedObjs['U'].length > 0 || proj.selectedObjs['V'].length > 0 || proj.selectedObjs['P'].length > 0 );
     }
     private isColumnReady(proj: any):boolean {
         return !this.isEmpty(proj.columnDefs);

@@ -6,7 +6,7 @@ import { DataGenerator, fnGetDataTypeDesc } from './include';
 import * as gen from './generator/generators.component';
 import { WizardStateService } from "./service/wizard-state";
 import { SampleDataService } from "./service/sample-data";
-import { ColumnDef, TableDef, ProjectService } from "./service/project";
+import { ColumnDef, DBObjDef, ProjectService } from "./service/project";
 
 @Component({
     template: `	
@@ -46,12 +46,12 @@ import { ColumnDef, TableDef, ProjectService } from "./service/project";
     //providers: [ WizardStateService ]
 })
 export class RowsComponent extends BaseComponent {
-    tables: any[] = [];
+    objects: { [objType:string]: DBObjDef[] };
 
     constructor(router: Router, ngZone: NgZone, wizardStateService: WizardStateService, dataService: SampleDataService, projectService: ProjectService) {
         super(router, ngZone, wizardStateService, dataService, projectService);
     }
-
+/*
     private moveUp(index: number) {
         var b = this.tables[index].sequence;
         this.tables[index].sequence = this.tables[index - 1].sequence;
@@ -62,6 +62,7 @@ export class RowsComponent extends BaseComponent {
         this.tables[index].sequence = this.tables[index + 1].sequence;
         this.tables[index + 1].sequence = b;
     }
+*/
     back() { 
         this.router.navigate(['/columns']);
     }
@@ -70,6 +71,6 @@ export class RowsComponent extends BaseComponent {
         this.router.navigate(['/generate']);
     }
     ngOnInit() {
-        this.tables = this.projectService.selectedTables;
+        this.objects = this.projectService.selectedObjs;
     }    
 }
