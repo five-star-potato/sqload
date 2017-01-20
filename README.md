@@ -2,7 +2,7 @@
 
 ## Introduction
 
-SQLOAD (V2) is written in Electron with Angular 2. The project is in perpetual beta stage. Currently, it provides the following list of features:
+SQLOAD (V1) is written in Electron with Angular 2. The project is in perpetual beta stage. Currently, it provides the following list of features:
 
 1. Connecting to a SQL Server data source
 
