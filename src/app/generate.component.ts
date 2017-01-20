@@ -1,6 +1,6 @@
 import { Component, OnInit, NgZone } from '@angular/core';
 import { Router } from '@angular/router';
-import { TRON_GLOBAL, TRON_EVENT, NAME_TYPE } from './constants';
+import { TRON_GLOBAL, TRON_EVENT, NAME_TYPE, OBJ_TYPE } from './constants';
 import { BaseComponent } from './base.component';
 import { fnGetDataTypeDesc, fnStringifyNoCircular } from './include';
 import { SampleAddressGenerator, GivenNameGenerator, SurnameGenerator, IntegerGenerator, TextGenerator, DateGenerator, UUIDGenerator, CustomSqlGenerator, CustomValueGenerator, FKGenerator } from './generator/generators.component';
@@ -88,7 +88,7 @@ interface ProgressData {
 export class GenerateComponent extends BaseComponent {
     stmts: string[] = [];
     declareStmts: string[] = [];
-    tables: DBObjDef[];
+    allObjects: DBObjDef[];
     colDefs: any;
     progress: ProgressData[] = [];
     overallProgress: number = 0;
@@ -132,12 +132,12 @@ export class GenerateComponent extends BaseComponent {
             .replace('@postcode', "'" + (addr.postcode || '').replace("'", isSQL ? "''" : "'") + "'");
         return `${tmp}`;
     }
-    private async generateDataForRow(colArr: ColumnDef[], fkConstraints: Set<number>, colNames: string[], variables: string[], tbl: any, tblProgress: any, tblCnt: number, rowCnt: number) {
+    private async generateDataForRow(colArr: ColumnDef[], fkConstraints: Set<number>, colNames: string[], variables: string[], obj: DBObjDef, objProgress: any, objIndex: number, rowCnt: number) {
         let vals: string[] = [];
         let k = 0;
         let incr: number = appConf.options.sqlFileMaxInserts;
         // Don't "setTimeout" every row. How about every XXX rows. Does it improve performance?
-        while (k < incr && (rowCnt + k) < tbl.rowcount) {
+        while (k < incr && (rowCnt + k) < obj.rowcount) {
             let addressData: any = null;
             for (let cf of colArr) {
                 if (cf.include) {
@@ -210,7 +210,7 @@ export class GenerateComponent extends BaseComponent {
                         if (cf.fkConstraintID == constraintId) {
                             refTable = `${cf.fkSchema}.${cf.fkTable}`;
                             // can't correlate to "variables"" ...
-                            colAssign.push(`@${tblCnt}$${cf.name} = ${cf.fkColumn}`);
+                            colAssign.push(`@${objIndex}$${cf.name} = ${cf.fkColumn}`);
                         }
                     });
                     fkSql += colAssign.join();
@@ -220,7 +220,11 @@ export class GenerateComponent extends BaseComponent {
             let str: string = "";
             str += vals.join('\n') + '\n';
             str += fkSql;
-            str += `INSERT INTO ${tbl.name}(${colNames.join()}) VALUES(${variables.join()});`;
+            if (obj.objType == OBJ_TYPE.TB || obj.objType == OBJ_TYPE.VW) 
+                str += `INSERT INTO ${obj.name}(${colNames.join()}) VALUES(${variables.join()});`;
+            else if (obj.objType == OBJ_TYPE.SP) {
+                str += `EXEC ${obj.name} ${variables.join()};`;
+            }
             //console.log(str);
             this.stmts.push(str);
             vals.length = 0;
@@ -228,36 +232,36 @@ export class GenerateComponent extends BaseComponent {
         }
         rowCnt += k;
         this.runningRowCnt += k;
-        tblProgress.percent = Math.round(rowCnt * 100 / tbl.rowcount);
-        if (rowCnt < tbl.rowcount) {
+        objProgress.percent = Math.round(rowCnt * 100 / obj.rowcount);
+        if (rowCnt < obj.rowcount) {
             this.overallProgress = Math.ceil(this.runningRowCnt * 100 / this.totalRowCnt);
             console.log("overall progress: " + this.overallProgress.toString());
-            this.getWriteSqlToFileFn()(this.fileSubDir, this.projectService.connection, this.getCleanName(tbl.name), rowCnt, [...this.declareStmts, ...this.stmts]);
+            this.getWriteSqlToFileFn()(this.fileSubDir, this.projectService.connection, this.getCleanName(obj.name), rowCnt, [...this.declareStmts, ...this.stmts]);
             this.stmts = [];
-            setTimeout(this.generateDataForRow.bind(this, colArr, fkConstraints, colNames, variables, tbl, tblProgress, tblCnt, rowCnt), 100);
+            setTimeout(this.generateDataForRow.bind(this, colArr, fkConstraints, colNames, variables, obj, objProgress, objIndex, rowCnt), 100);
         }
         else {
-            tblCnt++;
-            if (tblCnt < this.tables.length) {
-                setTimeout(this.generateDataForTable.bind(this, tblCnt), 50);
+            objIndex++;
+            if (objIndex < this.allObjects.length) {
+                setTimeout(this.generateDataForObj.bind(this, objIndex), 50);
             }
             else {
                 this.overallProgress = 100;
-                this.getWriteSqlToFileFn()(this.fileSubDir, this.projectService.connection, this.getCleanName(tbl.name), rowCnt, [...this.declareStmts, ...this.stmts]);
+                this.getWriteSqlToFileFn()(this.fileSubDir, this.projectService.connection, this.getCleanName(obj.name), rowCnt, [...this.declareStmts, ...this.stmts]);
                 this.stmts = [];
                 this.wizardStateService.hideSpinning();
             }
         }
     }
-    private generateDeclareVars(colArr: ColumnDef[], fkConstraints: Set<number>, colNames: string[], variables: string[], tbl: any, tblCnt: number) {
+    private generateDeclareVars(colArr: ColumnDef[], fkConstraints: Set<number>, colNames: string[], variables: string[], obj: DBObjDef, objIndex: number) {
         this.declareStmts = [];
         // generate declare varialbles
         for (let cf of colArr) {
             if (cf.include) {
                 let varRoot = `${this.getCleanName(cf.name)}`;
-                cf.variable = `@${tblCnt}$` + varRoot;
+                cf.variable = `@${objIndex}$` + varRoot;
                 this.declareStmts.push(`DECLARE ${cf.variable} ${fnGetDataTypeDesc(cf)};`);
-                this.declareStmts.push(`DECLARE @T_${tblCnt}$${varRoot} TABLE ( value ${fnGetDataTypeDesc(cf)} );`); // not all columns need this; so far only the ones that use CustomSqlGenerator needs it
+                this.declareStmts.push(`DECLARE @T_${objIndex}$${varRoot} TABLE ( value ${fnGetDataTypeDesc(cf)} );`); // not all columns need this; so far only the ones that use CustomSqlGenerator needs it
                 colNames.push(`[${cf.name}]`);
                 variables.push(cf.variable);
 
@@ -277,21 +281,20 @@ export class GenerateComponent extends BaseComponent {
         }
 
     }
-    private generateDataForTable(tblCnt: number) {
-        let tbl: any = this.tables[tblCnt];
-        let tblId = tbl.id;
-        let colArr: ColumnDef[] = this.colDefs[tblId];
+    private generateDataForObj(objIndex: number) {
+        let obj: DBObjDef = this.allObjects[objIndex];
+        let colArr: ColumnDef[] = this.colDefs[obj.id];
         let colNames: string[] = [];
         let variables: string[] = [];
         let fkConstraints: Set<number> = new Set<number>();
 
         // generate declare vars
-        this.generateDeclareVars(colArr, fkConstraints, colNames, variables, tbl, tblCnt);
-        let tblProgress: ProgressData = { name: tbl.name, targetRows: parseInt(tbl.rowcount), percent: 0.0 };
-        this.progress.push(tblProgress);
+        this.generateDeclareVars(colArr, fkConstraints, colNames, variables, obj, objIndex);
+        let objProgress: ProgressData = { name: obj.name, targetRows: obj.rowcount, percent: 0.0 };
+        this.progress.push(objProgress);
 
         // generate [rowcount] number INSERTS for each table
-        setTimeout(this.generateDataForRow.bind(this, colArr, fkConstraints, colNames, variables, tbl, tblProgress, tblCnt, 0), 0);
+        setTimeout(this.generateDataForRow.bind(this, colArr, fkConstraints, colNames, variables, obj, objProgress, objIndex, 0), 0);
     }
     private async getSampleAddresses() {
         this.progressMsg = "Fetching sample addresses";
@@ -321,7 +324,7 @@ export class GenerateComponent extends BaseComponent {
         this.stmts = [];
         this.progress = [];
         // This is where preprocessing happens. E.g. calling data service to get sample addresses and names
-        this.tables.forEach(t => {
+        this.allObjects.forEach(t => {
             let colArr = this.colDefs[t.id];
             colArr.forEach((cf: ColumnDef) => {
                 if (cf.include) {
@@ -342,16 +345,15 @@ export class GenerateComponent extends BaseComponent {
                 }
             });
         });
-        this.tables.forEach(t => {
+        this.allObjects.forEach(t => {
             this.totalRowCnt += (t.rowcount);
         });
-        this.tables.sort((b, a) => b.sequence - a.sequence);
         await this.getSampleAddresses();
         if (needNames)
             await this.getSampleNames();
         this.progressMsg = "";
         console.log('left getSampleAddress');
-        setTimeout(this.generateDataForTable.bind(this, 0), 0);
+        setTimeout(this.generateDataForObj.bind(this, 0), 0);
     }
     back() {
         this.router.navigate(['/rows']);
@@ -370,7 +372,8 @@ export class GenerateComponent extends BaseComponent {
         this.getSaveProjectFn()(projectContent);
     }
     ngOnInit() {
-        this.tables = this.projectService.selectedObjs['U'];
+        this.allObjects = this.getAllObjects();
+        this.allObjects.sort((a, b) => a.sequence - b.sequence);
         this.colDefs = this.projectService.columnDefs;
     }
 }
