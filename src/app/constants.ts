@@ -23,5 +23,6 @@ export class OBJ_TYPE {
     public static TB = "U";
     public static VW = "V";
     public static SP = "P";
+    public static Cu = "Cu";
 }
 

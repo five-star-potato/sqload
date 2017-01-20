@@ -1,9 +1,9 @@
 import { NgZone } from '@angular/core';
 import { Router } from '@angular/router';
-import { TRON_GLOBAL, TRON_EVENT } from './constants';
+import { TRON_GLOBAL, TRON_EVENT, OBJECT_TYPES_LIST, OBJ_TYPE } from './constants';
 import { WizardStateService } from "./service/wizard-state";
 import { SampleDataService } from "./service/sample-data";
-import { ProjectService } from "./service/project";
+import { ProjectService, DBObjDef } from "./service/project";
 
 declare var electron: any;
 
@@ -54,5 +54,12 @@ export abstract class BaseComponent {
             case 'Cu':
                 return "Customer SQL";
         }
+    }
+    protected getAllObjects() {
+        var allObj:DBObjDef[] = [];
+        for (let objType of OBJECT_TYPES_LIST) {
+            allObj = allObj.concat(this.projectService.selectedObjs[objType]);
+        }
+        return allObj;
     }
 }

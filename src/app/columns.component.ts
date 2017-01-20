@@ -147,13 +147,6 @@ export class ColumnsComponent extends BaseComponent implements AfterViewInit {
     ngAfterViewInit() {
         //this.setActiveTable(this.tables[0].id);
     }
-    private getAllObjects() {
-        var allObj:DBObjDef[] = [];
-        for (let objType of OBJECT_TYPES_LIST) {
-            allObj = allObj.concat(this.objects[objType]);
-        }
-        return allObj;
-    }
     private constructObjectIdsForLoad(objType:string, selectedIds:number[]):number[] {
         let columnDefs = this.projectService.columnDefs;
         let objIds = []; // Create a list of table object Ids for use in constructing the SQL statement
