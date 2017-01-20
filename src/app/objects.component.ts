@@ -113,7 +113,7 @@ export class ObjectsComponent extends BaseComponent {
     ngOnInit() {
         let prjObjs = this.projectService.selectedObjs;
         //electron.ipcRenderer.send("message");
-        this.getSQLFn()(this.projectService.connection, "SELECT object_id, SCHEMA_NAME(schema_id) [Schema], RTRIM(name) [name], RTRIM(type) [type] FROM sys.objects WHERE type in ('U', 'V', 'P')",
+        this.getSQLFn()(this.projectService.connection, "SELECT object_id, SCHEMA_NAME(schema_id) [Schema], RTRIM(name) [name], RTRIM(type) [type] FROM sys.objects WHERE type in ('U', 'V', 'P') ORDER BY 4, 2, 3",
             (err, res) => {
                 this.ngZone.run(() => {
                     let i: number = 0;

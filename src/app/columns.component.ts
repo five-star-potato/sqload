@@ -215,7 +215,7 @@ export class ColumnsComponent extends BaseComponent implements AfterViewInit {
         if (tblIds.length == 0)
             return;
         tblIds.forEach(tid => columnDefs[tid] = []);
-        
+
         let sql = `
             SELECT t.object_id, ic.*, fk.name [fk_constraint_name], fk.object_id [fk_constraint_id], fkc.constraint_column_id [fk_constraint_column_id], fk_rt.name [fk_table_name], fk_rc.name [fk_column_name], SCHEMA_NAME(fk_rt.schema_id) [fk_schema_name], c.is_identity
             FROM sys.columns c
@@ -283,7 +283,7 @@ export class ColumnsComponent extends BaseComponent implements AfterViewInit {
             FROM sys.columns c
             JOIN sys.views t ON c.object_id = t.object_id
             JOIN INFORMATION_SCHEMA.COLUMNS ic ON t.name = ic.TABLE_NAME AND c.name = ic.COLUMN_NAME AND SCHEMA_NAME(t.schema_id) = ic.TABLE_SCHEMA
-            WHERE c.object_id in (${vwIds.join()}) AND c.is_computed <> 1 AND c.is_identity <> 1
+            WHERE t.object_id in (${vwIds.join()}) AND c.is_computed <> 1 AND c.is_identity <> 1
             order by ic.TABLE_SCHEMA, ic.TABLE_NAME, c.column_id
             `;
         let dataSet = await this.getSQLFn()(this.projectService.connection, sql,
@@ -329,7 +329,7 @@ export class ColumnsComponent extends BaseComponent implements AfterViewInit {
             SELECT t.object_id, ic.*
             FROM sys.procedures t 
             JOIN INFORMATION_SCHEMA.parameters ic ON t.name = ic.SPECIFIC_NAME AND SCHEMA_NAME(t.schema_id) = ic.SPECIFIC_SCHEMA
-            WHERE c.object_id in (${procIds.join()})
+            WHERE t.object_id in (${procIds.join()})
             order by ic.SPECIFIC_SCHEMA, ic.SPECIFIC_NAME, ic.ORDINAL_POSITION
         `;
         let dataSet = await this.getSQLFn()(this.projectService.connection, sql,
@@ -361,24 +361,37 @@ export class ColumnsComponent extends BaseComponent implements AfterViewInit {
             }
         );
     }
+    private getObjsWithColumnsLoaded(objType:string):number[] {
+        let objIdsWithColumnsLoaded:number[] = [];
+        let objs = this.objects[objType];
+        objs.forEach(t => {
+            if (this.projectService.columnDefs.hasOwnProperty(t.id)) {
+                objIdsWithColumnsLoaded.push(t.id);
+            }
+        });
+        return objIdsWithColumnsLoaded;
+    }
     async ngOnInit() {
+        this.objects = this.projectService.selectedObjs;
         let columnDefs = this.projectService.columnDefs;
         // when moving back and forth among pages, we need to maintain states; 
         // If columnDefs.length, the user is revisiting this page - clear the table entries that are no longer valid.
         // If a table Id exists in both selectedTAbles and columnDefs, we don't need to reload column info from DB; take it off from tblIds
-        this.objects = this.projectService.selectedObjs;
-        //let columnDefs = this.projectService.columnDefs;
-        //this.setActiveTable(this.tables[0].id);
-        //if (columnDefs[this.activeTableId])
-        //    this.setActiveColumn(columnDefs[this.activeTableId][0]);
-        let keys = []; // get all the "keys" i.e. table Object ID from columnDef. Remove them if the new list of selectedTables does not include them
-        for (var key in columnDefs) {
-            if (columnDefs.hasOwnProperty(key)) {
-                keys.push(parseInt(key));
-            }
-        }
-        await this.loadTableColumnDefs(keys);
-        await this.loadViewColumnDefs(keys);
-        await this.loadSPColumnDefs(keys);
+
+        console.log("columnDefs 1");
+        console.log(columnDefs);
+        let tbls = this.getObjsWithColumnsLoaded(OBJ_TYPE.TB);
+        await this.loadTableColumnDefs(tbls);
+        console.log("columnDefs 2");
+        console.log(columnDefs);
+        let vws = this.getObjsWithColumnsLoaded(OBJ_TYPE.VW);
+        await this.loadViewColumnDefs(vws);
+        console.log("columnDefs 3");
+        console.log(columnDefs);
+        let procs = this.getObjsWithColumnsLoaded(OBJ_TYPE.SP);
+        await this.loadSPColumnDefs(procs);
+        console.log("columnDefs 4");
+        console.log(columnDefs);
     }
+
 }
