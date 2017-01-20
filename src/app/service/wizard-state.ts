@@ -19,7 +19,7 @@ export class WizardStateService {
         this.spinningEventSource.next("");
     }
     projectChange(event: any) {
-        let proj = this.projectService.project;
+        let proj:ProjectStruct = this.projectService.project;
         if (event.type == TRON_EVENT.refresh) {
             let links:Set<string> = new Set();
             links.add("home"); links.add("connect");
@@ -39,7 +39,7 @@ export class WizardStateService {
         }
     }
 
-    private isConnectionReady(proj:any):boolean {
+    private isConnectionReady(proj:ProjectStruct):boolean {
         return (proj.connection.serverName && 
                 proj.connection.databaseName && 
                 proj.connection.userName && 
@@ -49,16 +49,17 @@ export class WizardStateService {
     private isObjectsReady(proj: ProjectStruct):boolean {
         return (proj.selectedObjs['U'].length > 0 || proj.selectedObjs['V'].length > 0 || proj.selectedObjs['P'].length > 0 );
     }
-    private isColumnReady(proj: any):boolean {
+    private isColumnReady(proj: ProjectStruct):boolean {
         return !this.isEmpty(proj.columnDefs);
     }
-    private isRowsReady(proj: any):boolean {
-        let ready:boolean = true;
-        proj.selectedTables.forEach(t => {
-            if (t.rowcount == 0)
-                ready = false;
-        });
-        return ready;
+    private isRowsReady(proj: ProjectStruct):boolean {
+        for (let objType in proj.selectedObjs) {
+            for (let obj of proj.selectedObjs[objType]) {
+                if (obj.rowcount == 0)
+                    return false;
+            }
+        }
+        return true;
     }
     //http://stackoverflow.com/questions/679915/how-do-i-test-for-an-empty-javascript-object
     private isEmpty(obj):boolean {

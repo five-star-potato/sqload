@@ -42,7 +42,7 @@ export class ColumnsComponent extends BaseComponent implements AfterViewInit {
 
     objects: { [objType:string]: DBObjDef[] };
     columns: ColumnDef[] = [];
-    activeTableId: number;
+    activeObjId: number;
     activeColDef: ColumnDef = new ColumnDef();
     // this is just to make initial binding working
     dummyAddressGenerator: gen.SampleAddressGenerator = new gen.SampleAddressGenerator(); 
@@ -66,8 +66,8 @@ export class ColumnsComponent extends BaseComponent implements AfterViewInit {
             }
         }
     }
-    private setActiveTable(objId: number) {
-        this.activeTableId = objId;
+    private setActiveObj(objId: number) {
+        this.activeObjId = objId;
         this.columns = this.projectService.columnDefs[objId];
     }
     private setActiveColumn(c: ColumnDef) {
@@ -212,6 +212,10 @@ export class ColumnsComponent extends BaseComponent implements AfterViewInit {
     private async loadTableColumnDefs(selectedIds:number[]) {
         let columnDefs = this.projectService.columnDefs;
         let tblIds:number[] = this.constructObjectIdsForLoad(OBJ_TYPE.TB, selectedIds);
+        if (tblIds.length == 0)
+            return;
+        tblIds.forEach(tid => columnDefs[tid] = []);
+        
         let sql = `
             SELECT t.object_id, ic.*, fk.name [fk_constraint_name], fk.object_id [fk_constraint_id], fkc.constraint_column_id [fk_constraint_column_id], fk_rt.name [fk_table_name], fk_rc.name [fk_column_name], SCHEMA_NAME(fk_rt.schema_id) [fk_schema_name], c.is_identity
             FROM sys.columns c
@@ -270,6 +274,10 @@ export class ColumnsComponent extends BaseComponent implements AfterViewInit {
     private async loadViewColumnDefs(selectedIds:number[]) {
         let columnDefs = this.projectService.columnDefs;
         let vwIds:number[] = this.constructObjectIdsForLoad(OBJ_TYPE.VW, selectedIds);
+        if (vwIds.length == 0)
+            return;
+        vwIds.forEach(vid => columnDefs[vid] = []);
+        
         let sql = `
             SELECT t.object_id, ic.*, c.is_identity
             FROM sys.columns c
@@ -311,8 +319,12 @@ export class ColumnsComponent extends BaseComponent implements AfterViewInit {
         );
     }
     private async loadSPColumnDefs(selectedIds:number[]) {
-        let procIds:number[] = this.constructObjectIdsForLoad(OBJ_TYPE.SP, selectedIds);
         let columnDefs = this.projectService.columnDefs;
+        let procIds:number[] = this.constructObjectIdsForLoad(OBJ_TYPE.SP, selectedIds);
+        if (procIds.length == 0)
+            return;
+        procIds.forEach(pid => columnDefs[pid] = []);
+        
         let sql = `
             SELECT t.object_id, ic.*
             FROM sys.procedures t 

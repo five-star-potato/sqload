@@ -5,18 +5,15 @@
     <div class="flexbox-item fill-area content flexbox-item-grow">
         <div class="fill-area-content flexbox-item-grow" style="display:flex; flex-direction:row; padding: 5px; overflow-y:auto">
             <div style="display:flex; flex-direction:column; margin-right:10px; border-right: 1px solid #ddd; padding-right:10px">
-                <legend>Tables</legend>
-                <table class="table">
-                    <tbody>
-                        <tr *ngFor="let item of getAllObjects()"  [class.success]="activeTableId == item.id" >
-                            <td><sup style="color:aqua">{{item.objType}}</sup>
-                                <a class="nav-link"(click)="setActiveTable(item.id)" [class.active]="activeTableId == item.id" href="javascript:void(0)">
-                                    {{item.name}}
-                                </a>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+                <legend>Database Objects</legend>
+                <ul *ngFor="let objType of ['U','V','P','Cu']">
+                    <li style="margin-left: -40px; list-style: none">{{getObjectTypeName(objType)}}</li>
+                    <li *ngFor="let obj of objects[objType]">
+                        <a class="nav-link"(click)="setActiveObj(obj.id)" [class.active]="activeObjId == obj.id" href="javascript:void(0)">
+                            {{obj.name}}
+                        </a>
+                    </li>
+                </ul>
             </div>
             <div style="margin-right:10px; display:flex; flex-direction: row; flex-grow: 1; border-right: 1px solid #ddd">
                 <div style="overflow-y: auto; overflow-x: hidden; flex-direction: column; display:flex; flex-grow: 1; border-right: 1px solid #ddd;padding-right:10px">
