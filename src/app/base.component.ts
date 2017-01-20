@@ -51,7 +51,7 @@ export abstract class BaseComponent {
                 return "View";
             case 'P':
                 return "Stored Procedure";
-            case 'Cu':
+            case 'SQL':
                 return "Customer SQL";
         }
     }

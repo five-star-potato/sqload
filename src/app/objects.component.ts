@@ -86,7 +86,7 @@ export class ObjectsComponent extends BaseComponent {
     // need to update the sequence # for all the objects that were not selected before
     updateGlobalObjectsSelection() {
         var objs: { [objType:string]: DBObjDef[] } = { 
-            'U': [], 'V': [], 'P': [], 'Cu':[]
+            'U': [], 'V': [], 'P': [], 'SQL':[]
         };
         var maxSeq:number = 0;
         for (let objType in this.objects) {

@@ -24,14 +24,14 @@ import { ColumnDef, DBObjDef, ProjectService } from "./service/project";
                         </tr>
                     </thead>
                     <tbody>
-                        <tr *ngFor="let item of getAllObjects() | orderBy : ['sequence']; let x = index">
+                        <tr *ngFor="let item of sequenceObj | orderBy : ['sequence']; let x = index">
                             <td>
                                 <span *ngIf="item.objType == 'U'" class="label label-primary object-sup-tag">T</span>
                                 <span *ngIf="item.objType == 'V'" class="label label-success object-sup-tag">V</span>
                                 <span *ngIf="item.objType == 'P'" class="label label-info object-sup-tag">SP</span>
-                                <span *ngIf="item.objType == 'Cu'" class="label label-warning object-sup-tag">SQL</span>
+                                <span *ngIf="item.objType == 'SQL'" class="label label-warning object-sup-tag">SQL</span>
                             &nbsp;{{item.name}}</td>
-                            <td><input class="form-control" [(ngModel)]="item.rowcount"></td>
+                            <td><input class="form-control col-md-2" [(ngModel)]="item.rowcount"></td>
                             <td><button [disabled]="x == 0" (click)="moveUp(x)" class="btn btn-sm"><i class="fa fa-arrow-up" aria-hidden="true"></i></button> 
                                 <button [disabled]="x == (getAllObjects().length - 1)" (click)="moveDown(x)" class="btn btn-sm"><i class="fa fa-arrow-down" aria-hidden="true"></i></button></td>
                         </tr>
@@ -59,22 +59,22 @@ import { ColumnDef, DBObjDef, ProjectService } from "./service/project";
 })
 export class RowsComponent extends BaseComponent {
     objects: { [objType:string]: DBObjDef[] };
+    sequenceObj: DBObjDef[];
 
     constructor(router: Router, ngZone: NgZone, wizardStateService: WizardStateService, dataService: SampleDataService, projectService: ProjectService) {
         super(router, ngZone, wizardStateService, dataService, projectService);
     }
-/*
     private moveUp(index: number) {
-        var b = this.tables[index].sequence;
-        this.tables[index].sequence = this.tables[index - 1].sequence;
-        this.tables[index - 1].sequence = b;
+        var b = this.sequenceObj[index].sequence;
+        this.sequenceObj[index].sequence = this.sequenceObj[index - 1].sequence;
+        this.sequenceObj[index - 1].sequence = b;
     }
     private moveDown(index: number) {
-        var b = this.tables[index].sequence;
-        this.tables[index].sequence = this.tables[index + 1].sequence;
-        this.tables[index + 1].sequence = b;
+        var b = this.sequenceObj[index].sequence;
+        this.sequenceObj[index].sequence = this.sequenceObj[index + 1].sequence;
+        this.sequenceObj[index + 1].sequence = b;
     }
-*/
+
     back() { 
         this.router.navigate(['/columns']);
     }
@@ -84,5 +84,6 @@ export class RowsComponent extends BaseComponent {
     }
     ngOnInit() {
         this.objects = this.projectService.selectedObjs;
+        this.sequenceObj = this.getAllObjects();
     }    
 }

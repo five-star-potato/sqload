@@ -6,7 +6,7 @@
         <div class="fill-area-content flexbox-item-grow" style="display:flex; flex-direction:row; padding: 5px; overflow-y:auto">
             <div style="display:flex; flex-direction:column; margin-right:10px; border-right: 1px solid #ddd; padding-right:10px">
                 <legend>Database Objects</legend>
-                <ul *ngFor="let objType of ['U','V','P','Cu']">
+                <ul *ngFor="let objType of ['U','V','P','SQL']">
                     <li style="margin-left: -40px; list-style: none">{{getObjectTypeName(objType)}}</li>
                     <li *ngFor="let obj of objects[objType]">
                         <a class="nav-link"(click)="setActiveObj(obj.id)" [class.active]="activeObjId == obj.id" href="javascript:void(0)">

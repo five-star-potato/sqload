@@ -18,11 +18,11 @@ export class NAME_TYPE {
     public static get LN():string { return "LN"; }
 }
 
-export const OBJECT_TYPES_LIST = ['U','V','P','Cu']; // Table, View, Procedure and "Cu"stomer SQL
+export const OBJECT_TYPES_LIST = ['U','V','P','SQL']; // Table, View, Procedure and "SQL"stomer SQL
 export class OBJ_TYPE {
     public static TB = "U";
     public static VW = "V";
     public static SP = "P";
-    public static Cu = "Cu";
+    public static SQL = "SQL";
 }
 

@@ -59,7 +59,7 @@ export class ProjectStruct {
     connection: ConnectionConfig;
     filePath: string = "";
     selectedObjs: { [objType:string]:DBObjDef[] } = {
-        'U': [], 'V': [], 'P': [], 'Cu':[]
+        'U': [], 'V': [], 'P': [], 'SQL':[]
     }
     columnDefs: { [ objId: number] : ColumnDef[] } = {};
     constructor() {
