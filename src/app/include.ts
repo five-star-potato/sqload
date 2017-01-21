@@ -39,3 +39,7 @@ export function fnStringifyNoCircular(o:any) {
     cache = null; // Enable garbage collection
     return s;    
 }
+
+export function fnGetLargeRandomNumber() {
+    return Math.floor(100000000 + Math.random() * 900000000);
+}

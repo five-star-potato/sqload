@@ -14,6 +14,7 @@ export interface DBObjDef {
     id: number;
     name: string;
     objType: string;
+    sql?: string;
     rowcount?: number;
     sequence?: number;
     selected: boolean;

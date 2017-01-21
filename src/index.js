@@ -22,7 +22,7 @@ app.on('ready', _ => {
     init();
     var mainWindow = new BrowserWindow({
         width: 1400,
-        height: 800
+        height: 1000
     });
     /* this is the entry point of angular 2 */
     mainWindow.loadURL('file://' + __dirname + '/../dist/index.html');
