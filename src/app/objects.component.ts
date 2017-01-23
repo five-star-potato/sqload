@@ -19,38 +19,48 @@ import { fnGetLargeRandomNumber } from './include'
             </div>
             <div class="flexbox-item fill-area content flexbox-item-grow">
                 <div class="fill-area-content flexbox-item-grow" style="display:flex; flex-direction:row; padding: 5px">
-                    <div style="display:flex; flex-direction:column; width:45%">
+                    <div style="display:flex; flex-direction:column; width:45%; overflow-y:scroll">
                         <p>Available Database Objects</p>
-                        <select [(ngModel)]="selectedOpts" class="form-control" multiple style="border: 1px solid gray; flex-grow: 1">
-                            <optgroup *ngFor="let objType of ['U','V','P']" label="{{getObjectTypeName(objType)}}"  >
-                                <option *ngFor="let obj of objects[objType] | selectedObjects:false" [value]="obj.id">
-                                {{obj.name}}
-                                </option>
-                            </optgroup>
-                        </select>
+                        <div *ngFor="let objType of ['U','V','P']">
+                            <a href="javascript:void(0)" class="object-type-heading" (click)="toggleAvailView(objType)">
+                                <i aria-hidden="true" class="fa fa-chevron-circle-right" style="color:limegreen" *ngIf="isAvailCollapsed[objType]"></i>
+                                <i aria-hidden="true" class="fa fa-chevron-circle-down" style="color:darksalmon" *ngIf="!isAvailCollapsed[objType]"></i>
+                                &nbsp;{{getObjectTypeName(objType)}}</a><br>
+                            <select [(ngModel)]="selectedOpts" class="form-control" multiple [size]="getAvailObjLength(objType)" 
+                                style="border:none;overflow-y:hidden"  [hidden]="isAvailCollapsed[objType] || getAvailObjLength(objType) == 0">
+                                <option *ngFor="let obj of objects[objType] | selectedObjects:false" [value]="obj.id">{{obj.name}}</option>
+                            </select>
+                        </div>
                     </div>
                     <div style="margin:80px 10px 0px 10px; display:flex; flex-direction:column">
                         <button (click)="selectObjs()"><i class="fa fa-angle-right" aria-hidden="true"></i></button><br>
                         <button (click)="unselectObjs()"><i class="fa fa-angle-left" aria-hidden="true"></i></button>
                     </div>
-                    <div style="display:flex; flex-direction:column; width:45%;">
+                    <div style="display:flex; flex-direction:column; width:45%; overflow-y:scroll">
                         <p>Selected Database Objects</p>
-                        <select [(ngModel)]="unselectedOpts" class="form-control" multiple style="border: 1px solid gray; flex-grow: 1">
-                            <optgroup *ngFor="let objType of ['U','V','P']" label="{{getObjectTypeName(objType)}}">
-                                <option *ngFor="let obj of objects[objType] | selectedObjects:true" [value]="obj.id">
-                                {{obj.name}}
-                                </option>
-                            </optgroup>
-                        </select>
-                        <p style="margin-top:10px;margin-bottom:0">Custom SQL Statements &nbsp;&nbsp; <button style="margin-bottom:5px" class="btn btn-primary btn-sm" (click)="addCustomSQL()">Add</button></p>
-                        <table class="table table-bordered table-condensed" id="tblSQL">
-                            <tr *ngFor="let obj of objects['SQL']">
-                                <td>{{obj.name}}</td>
-                                <td style=''><pre>{{obj.sql}}</pre></td>
-                                <td><button class="btn btn-primary btn-xs" (click)="editSQL(obj)"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></button>
-                                &nbsp;<button class="btn btn-danger btn-xs" (click)="deleteSQL(obj)"><i class="fa fa-trash-o" aria-hidden="true"></i></button></td>
-                            </tr>
-                        </table>
+                        <div *ngFor="let objType of ['U', 'V', 'P', 'SQL']">
+                            <a href="javascript:void(0)" class="object-type-heading" (click)="toggleSelectedView(objType)">
+                                <i aria-hidden="true" class="fa fa-chevron-circle-right" style="color:limegreen" *ngIf="isSelectedCollapsed[objType]"></i>
+                                <i aria-hidden="true" class="fa fa-chevron-circle-down" style="color:darksalmon" *ngIf="!isSelectedCollapsed[objType]"></i>
+                                &nbsp;{{getObjectTypeName(objType)}}</a>
+                                
+                                <br>
+                            <select *ngIf="objType != 'SQL'" [(ngModel)]="selectedOpts" class="form-control" multiple [size]="getSelectedObjLength(objType)" 
+                                style="border:none;overflow-y:hidden"  [hidden]="isSelectedCollapsed[objType] || getSelectedObjLength(objType) == 0">
+                                <option *ngFor="let obj of objects[objType] | selectedObjects:true" [value]="obj.id">{{obj.name}}</option>
+                            </select>
+                            <div *ngIf="objType == 'SQL'" >
+                                <table class="table table-bordered table-condensed" style="margin-left:20px; width:95%" id="tblSQL" [hidden]="getSelectedObjLength('SQL') == 0">
+                                    <tr *ngFor="let obj of objects['SQL']">
+                                        <td>{{obj.name}}</td>
+                                        <td style=''><pre>{{obj.sql}}</pre></td>
+                                        <td style="width:70px"><button class="btn btn-primary btn-xs" (click)="editSQL(obj)"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></button>
+                                        &nbsp;<button class="btn btn-danger btn-xs" (click)="deleteSQL(obj)"><i class="fa fa-trash-o" aria-hidden="true"></i></button></td>
+                                    </tr>
+                                </table>    
+                                <button style="margin-bottom:5px; margin-left:20px" class="btn btn-primary btn-sm" (click)="addCustomSQL()">Add</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -69,6 +79,10 @@ import { fnGetLargeRandomNumber } from './include'
         <h4 class="modal-title">Edit SQL Statement</h4>
       </div>
       <div class="modal-body">
+        <div class="form-group">
+            <label>Name</label>
+            <input type="text" class="form-control" [(ngModel)]="currSQLName"></textarea>
+        </div>
         <div class="form-group">
             <label>SQL Statement</label>
             <textarea class="form-control" [(ngModel)]="currSQL"></textarea>
@@ -93,6 +107,10 @@ import { fnGetLargeRandomNumber } from './include'
         }
         #tblSQL.table tr td {
         }
+        a.object-type-heading {
+            font-weight: bold;
+            text-decoration: none;
+        }
 `   
     ]
     // providers: [ WizardStateService ] -- this will create another instance
@@ -103,13 +121,31 @@ export class ObjectsComponent extends BaseComponent {
     selectedOpts: any;
     unselectedOpts: any;
     currSQL: string;
+    currSQLName: string;
     currSQLObj: DBObjDef;
-    
+    // isAvailCollapsed and isSelectedCollapsed is to control the open/close of the tree structures of Table/View/Procedure ...
+    private isAvailCollapsed: { [objType:string]: boolean } = { 'U': false, 'V': false, 'P': false };
+    private isSelectedCollapsed: { [objType:string]: boolean } = { 'U': false, 'V': false, 'P': false };
+
     constructor(router: Router, ngZone: NgZone, wizardStateService: WizardStateService, dataService: SampleDataService, projectService: ProjectService) {
         super(router, ngZone, wizardStateService, dataService, projectService);
     }
+    private getAvailObjLength(objType:string) {
+        // cannot be zero - if zero, the SELECT elemet becomes actually bigger (i.e. default size?)
+        return this.objects[objType].filter(x => !x.selected).length;
+    }
+    private getSelectedObjLength(objType:string) {
+        return this.objects[objType].filter(x => x.selected).length;
+    }
+    private toggleAvailView(objType:string) {
+        this.isAvailCollapsed[objType] = !this.isAvailCollapsed[objType];
+    }
+    private toggleSelectedView(objType:string) {
+        this.isSelectedCollapsed[objType] = !this.isSelectedCollapsed[objType];
+    }
     private saveSQLChanges() {
         this.currSQLObj.sql = this.currSQL;
+        this.currSQLObj.name = this.currSQLName;
     }
     private editSQL(obj) {
         this.currSQLObj = obj;
