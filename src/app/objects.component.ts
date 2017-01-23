@@ -19,24 +19,24 @@ import { fnGetLargeRandomNumber } from './include'
             </div>
             <div class="flexbox-item fill-area content flexbox-item-grow">
                 <div class="fill-area-content flexbox-item-grow" style="display:flex; flex-direction:row; padding: 5px">
-                    <div style="display:flex; flex-direction:column; width:45%; overflow-y:scroll">
+                    <div style="display:flex; flex-direction:column; width:45%; overflow-y:scroll; border-left:1px solid #DDD; padding-left:4px">
                         <p>Available Database Objects</p>
                         <div *ngFor="let objType of ['U','V','P']">
                             <a href="javascript:void(0)" class="object-type-heading" (click)="toggleAvailView(objType)">
                                 <i aria-hidden="true" class="fa fa-chevron-circle-right" style="color:limegreen" *ngIf="isAvailCollapsed[objType]"></i>
                                 <i aria-hidden="true" class="fa fa-chevron-circle-down" style="color:darksalmon" *ngIf="!isAvailCollapsed[objType]"></i>
                                 &nbsp;{{getObjectTypeName(objType)}}</a><br>
-                            <select [(ngModel)]="selectedOpts" class="form-control" multiple [size]="getAvailObjLength(objType)" 
+                            <select (change)="setSelected($event.target)" class="form-control" multiple [size]="getAvailObjLength(objType)" 
                                 style="border:none;overflow-y:hidden"  [hidden]="isAvailCollapsed[objType] || getAvailObjLength(objType) == 0">
                                 <option *ngFor="let obj of objects[objType] | selectedObjects:false" [value]="obj.id">{{obj.name}}</option>
                             </select>
                         </div>
                     </div>
                     <div style="margin:80px 10px 0px 10px; display:flex; flex-direction:column">
-                        <button (click)="selectObjs()"><i class="fa fa-angle-right" aria-hidden="true"></i></button><br>
-                        <button (click)="unselectObjs()"><i class="fa fa-angle-left" aria-hidden="true"></i></button>
+                        <button (click)="selectObjsClick()" class="btn btn-sm"><i class="fa fa-arrow-right" aria-hidden="true"></i></button><br>
+                        <button (click)="unselectObjsClick()" class="btn btn-sm"><i class="fa fa-arrow-left" aria-hidden="true"></i></button>
                     </div>
-                    <div style="display:flex; flex-direction:column; width:45%; overflow-y:scroll">
+                    <div style="display:flex; flex-direction:column; width:45%; overflow-y:scroll; border-left:1px solid #DDD; padding-left:4px">
                         <p>Selected Database Objects</p>
                         <div *ngFor="let objType of ['U', 'V', 'P', 'SQL']">
                             <a href="javascript:void(0)" class="object-type-heading" (click)="toggleSelectedView(objType)">
@@ -45,12 +45,12 @@ import { fnGetLargeRandomNumber } from './include'
                                 &nbsp;{{getObjectTypeName(objType)}}</a>
                                 
                                 <br>
-                            <select *ngIf="objType != 'SQL'" [(ngModel)]="selectedOpts" class="form-control" multiple [size]="getSelectedObjLength(objType)" 
+                            <select *ngIf="objType != 'SQL'" (change)="setUnselected($event.target)" class="form-control" multiple [size]="getSelectedObjLength(objType)" 
                                 style="border:none;overflow-y:hidden"  [hidden]="isSelectedCollapsed[objType] || getSelectedObjLength(objType) == 0">
                                 <option *ngFor="let obj of objects[objType] | selectedObjects:true" [value]="obj.id">{{obj.name}}</option>
                             </select>
                             <div *ngIf="objType == 'SQL'" >
-                                <table class="table table-bordered table-condensed" style="margin-left:20px; width:95%" id="tblSQL" [hidden]="getSelectedObjLength('SQL') == 0">
+                                <table class="table table-bordered table-condensed" style="margin-left:20px; width:95%" id="tblSQL" [hidden]="isSelectedCollapsed[objType] || getSelectedObjLength(objType) == 0">
                                     <tr *ngFor="let obj of objects['SQL']">
                                         <td>{{obj.name}}</td>
                                         <td style=''><pre>{{obj.sql}}</pre></td>
@@ -66,8 +66,8 @@ import { fnGetLargeRandomNumber } from './include'
             </div>
             
             <div class="flexbox-item footer">
-                <button style="margin-top:30px" class='btn btn-primary nav-btn' (click)="back()">Back</button>
-                <button style="margin-top:30px" class='btn btn-primary nav-btn' (click)="next()">Next</button>
+                <button style="" class='btn btn-primary nav-btn' (click)="back()">Back</button>
+                <button style="" class='btn btn-primary nav-btn' (click)="next()">Next</button>
             </div>
         </div>
 
@@ -81,7 +81,7 @@ import { fnGetLargeRandomNumber } from './include'
       <div class="modal-body">
         <div class="form-group">
             <label>Name</label>
-            <input type="text" class="form-control" [(ngModel)]="currSQLName"></textarea>
+            <input type="text" class="form-control" [(ngModel)]="currSQLName">
         </div>
         <div class="form-group">
             <label>SQL Statement</label>
@@ -118,8 +118,8 @@ import { fnGetLargeRandomNumber } from './include'
 export class ObjectsComponent extends BaseComponent {
     // objects contains all the objects id and anmes from the database, whether they are selected or not
     objects: { [objType:string]: DBObjDef[] } = { 'U':[], 'V':[], 'P':[], 'SQL':[] }; // U - user table; V - view; P - stored proc
-    selectedOpts: any;
-    unselectedOpts: any;
+    selectedOpts: any[];
+    unselectedOpts: any[];
     currSQL: string;
     currSQLName: string;
     currSQLObj: DBObjDef;
@@ -146,10 +146,12 @@ export class ObjectsComponent extends BaseComponent {
     private saveSQLChanges() {
         this.currSQLObj.sql = this.currSQL;
         this.currSQLObj.name = this.currSQLName;
+        this.updateGlobalObjectsSelection();
     }
-    private editSQL(obj) {
+    private editSQL(obj:DBObjDef) {
         this.currSQLObj = obj;
         this.currSQL = obj.sql; 
+        this.currSQLName = obj.name;
         jQuery("#modalEditor").modal();
     }
     private deleteSQL(obj) {
@@ -160,17 +162,37 @@ export class ObjectsComponent extends BaseComponent {
                 this.currSQLObj = null;
             }
         }
+        this.updateGlobalObjectsSelection();
     }
     private addCustomSQL() {
         this.objects[OBJ_TYPE.SQL].push({
             id: fnGetLargeRandomNumber(), // probably a big random number is enough to make it unique
-            name: 'SQL',
-            sql: "select 'hello , world'",
+            name: 'Sample SQL',
+            sql: "select * from Person.Person where BusinessEntityId = 1",
             objType: OBJ_TYPE.SQL,
             selected: true
-        })
+        });
+        this.updateGlobalObjectsSelection();
     }
-    private selectObjs() {
+    private setSelected(dropdown) {
+        this.selectedOpts = [];
+        for (var i = 0; i < dropdown.options.length; i++) {
+            var optionEle = dropdown.options[i];
+            if (optionEle.selected == true) { 
+                this.selectedOpts.push(parseInt(optionEle.value));
+            }
+        }
+    }    
+    private setUnselected(dropdown) {
+        this.unselectedOpts = [];
+        for (var i = 0; i < dropdown.options.length; i++) {
+            var optionEle = dropdown.options[i];
+            if (optionEle.selected == true) { 
+                this.unselectedOpts.push(parseInt(optionEle.value)); 
+            }
+        }
+    }    
+    private selectObjsClick() {
         for (let objType in this.objects) {
             this.objects[objType].forEach((o) => {
                 if (this.selectedOpts.includes(o.id))
@@ -179,7 +201,7 @@ export class ObjectsComponent extends BaseComponent {
         }
         this.updateGlobalObjectsSelection();
     }
-    private unselectObjs() {
+    private unselectObjsClick() {
         for (let objType in this.objects) {
             this.objects[objType].forEach((o) => {
                 if (this.unselectedOpts.includes(o.id))
@@ -220,6 +242,8 @@ export class ObjectsComponent extends BaseComponent {
     }
     ngOnInit() {
         let prjObjs = this.projectService.selectedObjs;
+        this.objects[OBJ_TYPE.SQL] = this.projectService.selectedObjs[OBJ_TYPE.SQL].slice(0);
+
         //electron.ipcRenderer.send("message");
         this.getSQLFn()(this.projectService.connection, "SELECT object_id, SCHEMA_NAME(schema_id) [Schema], RTRIM(name) [name], RTRIM(type) [type] FROM sys.objects WHERE type in ('U', 'V', 'P') ORDER BY 4, 2, 3",
             (err, res) => {
