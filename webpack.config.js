@@ -2,6 +2,7 @@ var webpack = require('webpack');
 var path = require('path');
 var HtmlWebpackPlugin = require('html-webpack-plugin');
 var CopyWebpackPlugin = require('copy-webpack-plugin');
+var ElectronPackager = require("webpack-electron-packager");
 
 module.exports = {
     devtool: 'source-map',
@@ -49,5 +50,12 @@ module.exports = {
             { from: 'src/app/columns.component.html' }
 
         ])
+        /*,
+        new ElectronPackager({
+          dir: "./",
+          arch: "x64",
+          platform: "win32",
+        })
+        */
     ]
 };

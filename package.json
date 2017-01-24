@@ -4,10 +4,11 @@
   "main": "./src/index.js",
   "scripts": {
     "start": "electron .",
-    "package": "electron-packager . --platform=win32 --arch=x64",
+    "package": "electron-packager . --platform=win32 --arch=x64 --asar=true",
     "build": "rimraf sqload-win32-x64 dist && webpack --progress",
     "rimraf": "rimraf",
-    "typings": "typings"
+    "typings": "typings",
+    "gulp": "gulp"
   },
   "devDependencies": {
     "bootstrap": "^3.3.7",
@@ -15,7 +16,9 @@
     "css-loader": "^0.26.0",
     "electron": "^1.4.7",
     "electron-packager": "^8.3.0",
+    "electron-windows-installer": "^1.4.4",
     "file-loader": "^0.9.0",
+    "gulp": "^3.9.1",
     "html-webpack-plugin": "^2.24.1",
     "is-property": "^1.0.2",
     "rimraf": "^2.5.4",
@@ -25,7 +28,8 @@
     "tslib": "^1.2.0",
     "typescript": "^2.1.4",
     "typings": "^2.0.0",
-    "webpack": "^1.13.3"
+    "webpack": "^1.13.3",
+    "webpack-electron-packager": "^1.0.0"
   },
   "dependencies": {
     "@angular/common": "2.2.1",
