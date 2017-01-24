@@ -9,7 +9,7 @@
                 <ul *ngFor="let objType of ['U','V','P','SQL']">
                     <li style="margin-left: -40px; list-style: none">{{getObjectTypeName(objType)}}</li>
                     <li *ngFor="let obj of objects[objType]">
-                        <a class="nav-link"(click)="setActiveObj(obj.id)" [class.active]="activeObjId == obj.id" href="javascript:void(0)">
+                        <a class="nav-link"(click)="setActiveObj(obj)" [class.active]="activeObjId == obj.id" href="javascript:void(0)">
                             {{obj.name}}
                         </a>
                     </li>
@@ -17,7 +17,7 @@
             </div>
             <div style="margin-right:10px; display:flex; flex-direction: row; flex-grow: 1; border-right: 1px solid #ddd">
                 <div style="overflow-y: auto; overflow-x: hidden; flex-direction: column; display:flex; flex-grow: 1; border-right: 1px solid #ddd;padding-right:10px">
-                    <legend>Columns</legend>
+                    <legend>Columns {{activeObjName ? '[' + activeObjName + ']' : ''}}</legend>
                     <table class="table table-hover table-sm table-condensed" style="font-size:12px">
                         <thead>
                             <tr>
@@ -71,7 +71,7 @@
                         <sample-address-configurator></sample-address-configurator>
                     </div>
                     <div *ngIf="showTemplateDiv()">
-                        <legend>[{{activeColDef.name}}] - Data Generation Settings</legend>
+                        <legend>Settings [{{activeColDef.name}}]</legend>
                         <template [ngTemplateOutlet]="getTemplate(activeColDef)" [ngOutletContext]="{ $implicit: activeColDef }"></template>
                     </div>
                 </div>

@@ -10,6 +10,7 @@ import { WizardStateService } from "./service/wizard-state";
 import { SampleDataService } from "./service/sample-data";
 import { ColumnDef, DBObjDef, ProjectService } from "./service/project";
 import { fnGetLargeRandomNumber } from './include'
+declare var require: (moduleId: string) => any;
 
 @Component({
     template: `	
@@ -36,7 +37,7 @@ import { fnGetLargeRandomNumber } from './include'
                         <button (click)="selectObjsClick()" class="btn btn-sm"><i class="fa fa-arrow-right" aria-hidden="true"></i></button><br>
                         <button (click)="unselectObjsClick()" class="btn btn-sm"><i class="fa fa-arrow-left" aria-hidden="true"></i></button>
                     </div>
-                    <div style="display:flex; flex-direction:column; width:45%; overflow-y:scroll; border-left:1px solid #DDD; padding-left:4px">
+                    <div style="display:flex; flex-direction:column; min-width:45%; overflow-y:scroll; border-left:1px solid #DDD; padding-left:4px">
                         <p>Selected Database Objects</p>
                         <div *ngFor="let objType of ['U', 'V', 'P', 'SQL']">
                             <a href="javascript:void(0)" class="object-type-heading" (click)="toggleSelectedView(objType)">
@@ -54,7 +55,7 @@ import { fnGetLargeRandomNumber } from './include'
                                     <tr *ngFor="let obj of objects['SQL']">
                                         <td>{{obj.name}}</td>
                                         <td style=''><pre>{{obj.sql}}</pre></td>
-                                        <td style="width:70px"><button class="btn btn-primary btn-xs" (click)="editSQL(obj)"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></button>
+                                        <td style="min-width:70px"><button class="btn btn-primary btn-xs" (click)="editSQL(obj)"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></button>
                                         &nbsp;<button class="btn btn-danger btn-xs" (click)="deleteSQL(obj)"><i class="fa fa-trash-o" aria-hidden="true"></i></button></td>
                                     </tr>
                                 </table>    
@@ -102,7 +103,7 @@ import { fnGetLargeRandomNumber } from './include'
     styles: [
         `pre {
             margin:0 !important;
-            max-height:25px;
+            /* max-height:25px; */
             padding: 2px;
         }
         #tblSQL.table tr td {
@@ -111,36 +112,37 @@ import { fnGetLargeRandomNumber } from './include'
             font-weight: bold;
             text-decoration: none;
         }
-`   
+`
     ]
     // providers: [ WizardStateService ] -- this will create another instance
 })
 export class ObjectsComponent extends BaseComponent {
     // objects contains all the objects id and anmes from the database, whether they are selected or not
-    objects: { [objType:string]: DBObjDef[] } = { 'U':[], 'V':[], 'P':[], 'SQL':[] }; // U - user table; V - view; P - stored proc
+    objects: { [objType: string]: DBObjDef[] } = { 'U': [], 'V': [], 'P': [], 'SQL': [] }; // U - user table; V - view; P - stored proc
     selectedOpts: any[];
     unselectedOpts: any[];
     currSQL: string;
     currSQLName: string;
     currSQLObj: DBObjDef;
+    tmpSqlVars: string[];
     // isAvailCollapsed and isSelectedCollapsed is to control the open/close of the tree structures of Table/View/Procedure ...
-    private isAvailCollapsed: { [objType:string]: boolean } = { 'U': false, 'V': false, 'P': false };
-    private isSelectedCollapsed: { [objType:string]: boolean } = { 'U': false, 'V': false, 'P': false };
+    private isAvailCollapsed: { [objType: string]: boolean } = { 'U': false, 'V': false, 'P': false };
+    private isSelectedCollapsed: { [objType: string]: boolean } = { 'U': false, 'V': false, 'P': false };
 
     constructor(router: Router, ngZone: NgZone, wizardStateService: WizardStateService, dataService: SampleDataService, projectService: ProjectService) {
         super(router, ngZone, wizardStateService, dataService, projectService);
     }
-    private getAvailObjLength(objType:string) {
+    private getAvailObjLength(objType: string) {
         // cannot be zero - if zero, the SELECT elemet becomes actually bigger (i.e. default size?)
         return this.objects[objType].filter(x => !x.selected).length;
     }
-    private getSelectedObjLength(objType:string) {
+    private getSelectedObjLength(objType: string) {
         return this.objects[objType].filter(x => x.selected).length;
     }
-    private toggleAvailView(objType:string) {
+    private toggleAvailView(objType: string) {
         this.isAvailCollapsed[objType] = !this.isAvailCollapsed[objType];
     }
-    private toggleSelectedView(objType:string) {
+    private toggleSelectedView(objType: string) {
         this.isSelectedCollapsed[objType] = !this.isSelectedCollapsed[objType];
     }
     private saveSQLChanges() {
@@ -148,15 +150,15 @@ export class ObjectsComponent extends BaseComponent {
         this.currSQLObj.name = this.currSQLName;
         this.updateGlobalObjectsSelection();
     }
-    private editSQL(obj:DBObjDef) {
+    private editSQL(obj: DBObjDef) {
         this.currSQLObj = obj;
-        this.currSQL = obj.sql; 
+        this.currSQL = obj.sql;
         this.currSQLName = obj.name;
         jQuery("#modalEditor").modal();
     }
     private deleteSQL(obj) {
         let sqlObjs = this.objects[OBJ_TYPE.SQL];
-        for(let i = sqlObjs.length - 1; i >=0; i--) {
+        for (let i = sqlObjs.length - 1; i >= 0; i--) {
             if (sqlObjs[i].id == obj.id) {
                 sqlObjs.splice(i, 1);
                 this.currSQLObj = null;
@@ -168,7 +170,7 @@ export class ObjectsComponent extends BaseComponent {
         this.objects[OBJ_TYPE.SQL].push({
             id: fnGetLargeRandomNumber(), // probably a big random number is enough to make it unique
             name: 'Sample SQL',
-            sql: "select * from Person.Person where BusinessEntityId = 1",
+            sql: "select * from Person.Person where BusinessEntityId = @EntityId",
             objType: OBJ_TYPE.SQL,
             selected: true
         });
@@ -178,20 +180,20 @@ export class ObjectsComponent extends BaseComponent {
         this.selectedOpts = [];
         for (var i = 0; i < dropdown.options.length; i++) {
             var optionEle = dropdown.options[i];
-            if (optionEle.selected == true) { 
+            if (optionEle.selected == true) {
                 this.selectedOpts.push(parseInt(optionEle.value));
             }
         }
-    }    
+    }
     private setUnselected(dropdown) {
         this.unselectedOpts = [];
         for (var i = 0; i < dropdown.options.length; i++) {
             var optionEle = dropdown.options[i];
-            if (optionEle.selected == true) { 
-                this.unselectedOpts.push(parseInt(optionEle.value)); 
+            if (optionEle.selected == true) {
+                this.unselectedOpts.push(parseInt(optionEle.value));
             }
         }
-    }    
+    }
     private selectObjsClick() {
         for (let objType in this.objects) {
             this.objects[objType].forEach((o) => {
@@ -213,23 +215,50 @@ export class ObjectsComponent extends BaseComponent {
     back() {
         this.router.navigate(['/connect']);
     }
+    private findSqlVars(obj) {
+        for (var property in obj) {
+            if (obj.hasOwnProperty(property)) {
+                if (typeof obj[property] == "object") {
+                    this.findSqlVars(obj[property]);
+                } else {
+                    if (property == "type" && obj["type"] == "variable" && obj["format"] == "named")
+                        this.tmpSqlVars.push(obj["name"]);
+                }
+            }
+        }
+    }
     // need to update the sequence # for all the objects that were not selected before
     updateGlobalObjectsSelection() {
-        var objs: { [objType:string]: DBObjDef[] } = { 
-            'U': [], 'V': [], 'P': [], 'SQL':[]
+        var objs: { [objType: string]: DBObjDef[] } = {
+            'U': [], 'V': [], 'P': [], 'SQL': []
         };
-        var maxSeq:number = 0;
+        var maxSeq: number = 0;
         for (let objType in this.objects) {
             let seq: number = Math.max.apply(Math, this.objects[objType].map(function (o) { return o.sequence; })) | 0;
             if (seq > maxSeq) maxSeq = seq;
-        }        
+        }
         for (let objType in this.objects) {
-            this.objects[objType] .forEach((o) => {
+            this.objects[objType].forEach((o) => {
                 if (o.selected) {
                     objs[objType].push(o);
                     if (!o.sequence) {
                         maxSeq += 10;
                         o.sequence = maxSeq;
+                    }
+                    if (objType == OBJ_TYPE.SQL) {
+                        let parser = require('sqlite-parser');
+                        let ast = parser(o.sql);
+                        this.tmpSqlVars = [];
+                        this.projectService.columnDefs[o.id] = [];
+                        this.findSqlVars(ast);
+                        this.tmpSqlVars.forEach(v => {
+                            this.projectService.columnDefs[o.id].push(new ColumnDef({
+                            name: v,
+                            dataType: 'nvarchar(max)',
+                            include: true
+                            }));
+                        });
+                        console.log(ast);
                     }
                 }
             });

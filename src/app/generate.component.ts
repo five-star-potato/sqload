@@ -225,6 +225,11 @@ export class GenerateComponent extends BaseComponent {
             else if (obj.objType == OBJ_TYPE.SP) {
                 str += `EXEC ${obj.name} ${variables.join()};`;
             }
+            else if (obj.objType == OBJ_TYPE.SQL) {
+                // just assume all @vars are nvarchar(max) for now
+                let declareParams:string = colArr.map(c => c.name).join(" nvarchar(max), ") + " nvarchar(max)";
+                str += "EXEC sp_executesql N'" + obj.sql.replace("'","''") + "',N'" + declareParams + "'," + variables.join();
+            }
             //console.log(str);
             this.stmts.push(str);
             vals.length = 0;

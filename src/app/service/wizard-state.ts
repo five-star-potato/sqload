@@ -1,6 +1,6 @@
 import { Injectable } from "@angular/core";
 import { Subject } from 'rxjs/Subject';
-import { TRON_GLOBAL, TRON_EVENT } from '../constants';
+import { TRON_GLOBAL, TRON_EVENT, OBJ_TYPE } from '../constants';
 import { ProjectStruct, ProjectService, ConnectionConfig, DBObjDef, ColumnDef } from './project';
 
 @Injectable()
@@ -34,7 +34,6 @@ export class WizardStateService {
                     }
                 }
             }
-
             this.projectEventSource.next({ type: "activate", urls: links });        
         }
     }
@@ -47,7 +46,10 @@ export class WizardStateService {
                 proj.connection.verified);
     }
     private isObjectsReady(proj: ProjectStruct):boolean {
-        return (proj.selectedObjs['U'].length > 0 || proj.selectedObjs['V'].length > 0 || proj.selectedObjs['P'].length > 0 );
+        return (proj.selectedObjs[OBJ_TYPE.TB].length > 0 || 
+                proj.selectedObjs[OBJ_TYPE.VW].length > 0 || 
+                proj.selectedObjs[OBJ_TYPE.SP].length > 0 || 
+                proj.selectedObjs[OBJ_TYPE.SQL].length > 0);
     }
     private isColumnReady(proj: ProjectStruct):boolean {
         return !this.isEmpty(proj.columnDefs);

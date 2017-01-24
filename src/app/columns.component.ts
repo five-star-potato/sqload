@@ -43,6 +43,7 @@ export class ColumnsComponent extends BaseComponent implements AfterViewInit {
     objects: { [objType:string]: DBObjDef[] };
     columns: ColumnDef[] = [];
     activeObjId: number;
+    activeObjName: string;
     activeColDef: ColumnDef = new ColumnDef();
     // this is just to make initial binding working
     dummyAddressGenerator: gen.SampleAddressGenerator = new gen.SampleAddressGenerator(); 
@@ -66,9 +67,10 @@ export class ColumnsComponent extends BaseComponent implements AfterViewInit {
             }
         }
     }
-    private setActiveObj(objId: number) {
-        this.activeObjId = objId;
-        this.columns = this.projectService.columnDefs[objId];
+    private setActiveObj(obj: DBObjDef) {
+        this.activeObjId = obj.id;
+        this.activeObjName = obj.name;
+        this.columns = this.projectService.columnDefs[obj.id];
     }
     private setActiveColumn(c: ColumnDef) {
         this.activeColDef = c;
