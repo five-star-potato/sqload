@@ -172,7 +172,8 @@ export class ObjectsComponent extends BaseComponent {
             name: 'Sample SQL',
             sql: "select * from Person.Person where BusinessEntityId = @EntityId",
             objType: OBJ_TYPE.SQL,
-            selected: true
+            selected: true,
+            rowcount: 100
         });
         this.updateGlobalObjectsSelection();
     }
