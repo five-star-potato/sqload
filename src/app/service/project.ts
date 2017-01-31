@@ -18,6 +18,7 @@ export interface DBObjDef {
     rowcount?: number;
     sequence?: number;
     selected: boolean;
+    instance?: number;
 }
 export class ColumnDef {
     name: string;

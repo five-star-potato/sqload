@@ -28,7 +28,7 @@ export class WizardStateService {
                 if (this.isObjectsReady(proj)) {
                     links.add("columns");
                     if (this.isColumnReady(proj)) {
-                        links.add("rows");
+                        links.add("workflow");
                         if (this.isRowsReady(proj))
                             links.add("generate");
                     }

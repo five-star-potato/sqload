@@ -56,7 +56,7 @@ export class ColumnsComponent extends BaseComponent implements AfterViewInit {
     }
     next() {
         this.wizardStateService.projectChange({ type: TRON_EVENT.refresh });
-        this.router.navigate(['/rows']);
+        this.router.navigate(['/flow']);
     }
     isFirstColumnUsingAddress():boolean {
         for (let cf of this.columns) {

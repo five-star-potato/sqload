@@ -106,12 +106,13 @@ export class GenerateComponent extends BaseComponent {
     private cleanUnusedPlugin() {
         var tbls = this.projectService.selectedObjs['U'];
         tbls.forEach(t => {
-            // trim unused plugin; cf.plugins is a list of plugins; only the first one is used. The rest are for users to undo changes only
-            this.projectService.columnDefs[t.id].forEach((cf: ColumnDef) => {
-                if (cf.plugIn.length > 1) {
-                    cf.plugIn.splice(1);
-                }
-            })
+            if (this.projectService.columnDefs[t.id]) {
+                // trim unused plugin; cf.plugins is a list of plugins; only the first one is used. The rest are for users to undo changes only
+                this.projectService.columnDefs[t.id].forEach((cf: ColumnDef) => {
+                    if (cf.plugIn.length > 1)
+                        cf.plugIn.splice(1);
+                });
+            }
         });
     }
     private getCleanName(name: string) {
@@ -361,7 +362,7 @@ export class GenerateComponent extends BaseComponent {
         setTimeout(this.generateDataForObj.bind(this, 0), 0);
     }
     back() {
-        this.router.navigate(['/rows']);
+        this.router.navigate(['/flow']);
     }
     next() {
         this.wizardStateService.showSpinning("generate");

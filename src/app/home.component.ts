@@ -1,3 +1,4 @@
+import * as joint from "jointjs";
 import { Component, NgZone, Output, EventEmitter, OnInit } from "@angular/core";
 import { Router } from '@angular/router';
 import { BaseComponent } from "./base.component";
@@ -7,7 +8,7 @@ import * as gen from './generator/generators.component';
 import { WizardStateService } from "./service/wizard-state";
 import { SampleDataService } from "./service/sample-data";
 import { ColumnDef, DBObjDef, ProjectService, ProjectStruct } from "./service/project";
-import { Subscription }   from 'rxjs/Subscription';
+import { Subscription } from 'rxjs/Subscription';
 
 @Component({
     template: `
@@ -34,8 +35,9 @@ export class HomeComponent extends BaseComponent implements OnInit {
     constructor(router: Router, ngZone: NgZone, wizardStateService: WizardStateService, dataService: SampleDataService, projectService: ProjectService) {
         super(router, ngZone, wizardStateService, dataService, projectService);
     }
-    ngOnInit() {}
-    private reviver(key, value):Date | string  {
+    ngOnInit() {
+    }
+    private reviver(key, value): Date | string {
         let dateFormat = new RegExp(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
         if (typeof value == 'string' && dateFormat.test(value)) {
             return new Date(value);
@@ -44,7 +46,7 @@ export class HomeComponent extends BaseComponent implements OnInit {
     }
     back() {
         this.router.navigate(['/home']);
-     }
+    }
     next() {
         this.projectService.createNewProject();
         this.wizardStateService.projectChange({ type: TRON_EVENT.refresh });
@@ -72,19 +74,21 @@ export class HomeComponent extends BaseComponent implements OnInit {
                     for (let objType in project.selectedObjs) {
                         data.selectedObjs[objType].forEach(obj => {
                             let cols = data.columnDefs[obj.id];
-                            for (let i = cols.length - 1; i >= 0; i--) {
-                                let c = cols[i];
-                                let realColDef: ColumnDef = Object.assign({}, c);
-                                cols[i] = realColDef;  
-                                if (c.plugIn.length > 0) {
-                                    let obj = c.plugIn[0];
-                                    let realPlug: any = new gen[obj.__name__](); // all the components within the module "gen" is accessible through [] indexer.
-                                    // Object.assign can't seem to handle string to date conversino
-                                    Object.assign(realPlug, obj);
-                                    realColDef.plugIn.splice(0, 1, realPlug);
+                            if (cols) {
+                                for (let i = cols.length - 1; i >= 0; i--) {
+                                    let c = cols[i];
+                                    let realColDef: ColumnDef = Object.assign({}, c);
+                                    cols[i] = realColDef;
+                                    if (c.plugIn.length > 0) {
+                                        let obj = c.plugIn[0];
+                                        let realPlug: any = new gen[obj.__name__](); // all the components within the module "gen" is accessible through [] indexer.
+                                        // Object.assign can't seem to handle string to date conversino
+                                        Object.assign(realPlug, obj);
+                                        realColDef.plugIn.splice(0, 1, realPlug);
+                                    }
                                 }
+                                project.columnDefs[obj.id] = cols;
                             }
-                            project.columnDefs[obj.id] = cols;
                         });
                     }
                     this.wizardStateService.projectChange({ type: TRON_EVENT.refresh });

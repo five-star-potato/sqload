@@ -64,15 +64,15 @@ import { TRON_EVENT } from "./constants"
                                     </a>
                                 </li>
 
-                                <li role="presentation" [routerLinkActive]="['active']" [class.disabled]="isLinkDisabled('rows')">
-                                    <a routerLink="/rows" data-toggle="tab" aria-controls="complete" role="tab" title="manage number of generated entries" *ngIf="!isLinkDisabled('rows')">
-                                        <span class="round-tab" [class.round-tab-loading]="urlLoading=='rows'">
-                                            <i [style.color]="getLinkColor('rows')" class="fa fa-random" aria-hidden="true" style="vertical-align:5%"></i>
+                                <li role="presentation" [routerLinkActive]="['active']" [class.disabled]="isLinkDisabled('workflow')">
+                                    <a routerLink="/flow" data-toggle="tab" aria-controls="complete" role="tab" title="manage number of generated entries" *ngIf="!isLinkDisabled('workflow')">
+                                        <span class="round-tab" [class.round-tab-loading]="urlLoading=='workflow'">
+                                            <i [style.color]="getLinkColor('workflow')" class="fa fa-random" aria-hidden="true" style="vertical-align:5%"></i>
                                         </span>
                                     </a>
-                                    <a aria-controls="complete" role="tab" title="manage number of generated entries" *ngIf="isLinkDisabled('rows')">
+                                    <a aria-controls="complete" role="tab" title="manage number of generated entries" *ngIf="isLinkDisabled('workflow')">
                                         <span class="round-tab">
-                                            <i [style.color]="getLinkColor('rows')" class="fa fa-random" aria-hidden="true" style="vertical-align:5%"></i>
+                                            <i [style.color]="getLinkColor('workflow')" class="fa fa-random" aria-hidden="true" style="vertical-align:5%"></i>
                                         </span>
                                     </a>
                                 </li>

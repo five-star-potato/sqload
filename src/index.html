@@ -42,6 +42,10 @@
 		padding: 0;
 	}
 
+	svg {
+		background-color: #fff;
+	}
+
 	body
 	{
 		padding:5px
@@ -188,18 +192,17 @@ legend {
 </head>
 <body>
 	<div class="box">
-	<div class="ribbon"><span>beta</span></div>
-
-	<div class="projectTitle projectGradient" style="display:none" id="divProjectTitle">
-		<span id="projectTitle"></span>
-	</div>
-	<h1 class="watermark" style="bottom: 38px">SQL Server 2016</h1>
-	<h1 class="watermark" style="bottom: 4px">Test Data Generation Tool</h1>
-	<!--<h6 class="watermark" style="bottom: 5px">copyright (c) <span id="copyrightYear"></span></h6> -->
-	<my-app></my-app>
-	<script type="text/javascript">
-		/* All required js, including main.ts(js) are injected by webpack as part of app.bundle.js. See webpack.config.js for reference */
-	</script>
+		<div class="ribbon"><span>beta</span></div>
+		<div class="projectTitle projectGradient" style="display:none" id="divProjectTitle">
+			<span id="projectTitle"></span>
+		</div>
+		<h1 class="watermark" style="bottom: 38px">SQL Server 2016</h1>
+		<h1 class="watermark" style="bottom: 4px">Test Data Generation Tool</h1>
+		<!--<h6 class="watermark" style="bottom: 5px">copyright (c) <span id="copyrightYear"></span></h6> -->
+		<my-app></my-app>
+		<script type="text/javascript">
+			/* All required js, including main.ts(js) are injected by webpack as part of app.bundle.js. See webpack.config.js for reference */
+		</script>
 	</div>
 </body>	
 
