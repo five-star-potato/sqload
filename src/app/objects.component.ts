@@ -303,7 +303,8 @@ export class ObjectsComponent extends BaseComponent {
                                 objType: objType,
                                 selected: false,
                                 rowcount: 100,
-                                sequence: null
+                                sequence: null,
+                                instance: 1
                             });
                         }
                     });

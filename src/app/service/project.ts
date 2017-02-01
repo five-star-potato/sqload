@@ -19,6 +19,8 @@ export interface DBObjDef {
     sequence?: number;
     selected: boolean;
     instance?: number;
+    x?:number;
+    y?:number;
 }
 export class ColumnDef {
     name: string;
@@ -36,7 +38,12 @@ export class ColumnDef {
     isIdentity: boolean = false;
     plugIn: DataGenerator[] = []; // DataGenerator sometimes requires much configuration... save the change in case the user switch generator types by mistakes
     variable: string; // placeholder for SQL variable names
+    x:number;   // these coordinates are for connecting lines in flow diagram
+    y:number; 
 
+    public get cleanName():string {
+        return this.name.replace(/[\$ #@]/g, '_');
+    }
     public constructor(
         fields?: {
             name: string;

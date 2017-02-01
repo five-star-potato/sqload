@@ -2,7 +2,7 @@ import { Component, OnInit, NgZone } from '@angular/core';
 import { Router } from '@angular/router';
 import { TRON_GLOBAL, TRON_EVENT, NAME_TYPE, OBJ_TYPE } from './constants';
 import { BaseComponent } from './base.component';
-import { fnGetDataTypeDesc, fnStringifyNoCircular } from './include';
+import { fnGetDataTypeDesc, fnStringifyNoCircular, fnGetCleanName } from './include';
 import { SampleAddressGenerator, GivenNameGenerator, SurnameGenerator, IntegerGenerator, TextGenerator, DateGenerator, UUIDGenerator, CustomSqlGenerator, CustomValueGenerator, FKGenerator } from './generator/generators.component';
 import { WizardStateService } from "./service/wizard-state";
 import { Address, PersonName, SampleDataService } from "./service/sample-data";
@@ -114,9 +114,6 @@ export class GenerateComponent extends BaseComponent {
                 });
             }
         });
-    }
-    private getCleanName(name: string) {
-        return name.replace(/[\$ #@]/g, '_');
     }
     private substituteAddressField(field: string, addr: any, isSQL:boolean): string {
         var tmp: string = field;
@@ -242,7 +239,7 @@ export class GenerateComponent extends BaseComponent {
         if (rowCnt < obj.rowcount) {
             this.overallProgress = Math.ceil(this.runningRowCnt * 100 / this.totalRowCnt);
             console.log("overall progress: " + this.overallProgress.toString());
-            this.getWriteSqlToFileFn()(this.fileSubDir, this.projectService.connection, this.getCleanName(obj.name), rowCnt, [...this.declareStmts, ...this.stmts]);
+            this.getWriteSqlToFileFn()(this.fileSubDir, this.projectService.connection, fnGetCleanName(obj.name), rowCnt, [...this.declareStmts, ...this.stmts]);
             this.stmts = [];
             setTimeout(this.generateDataForRow.bind(this, colArr, fkConstraints, colNames, variables, obj, objProgress, objIndex, rowCnt), 100);
         }
@@ -253,7 +250,7 @@ export class GenerateComponent extends BaseComponent {
             }
             else {
                 this.overallProgress = 100;
-                this.getWriteSqlToFileFn()(this.fileSubDir, this.projectService.connection, this.getCleanName(obj.name), rowCnt, [...this.declareStmts, ...this.stmts]);
+                this.getWriteSqlToFileFn()(this.fileSubDir, this.projectService.connection, fnGetCleanName(obj.name), rowCnt, [...this.declareStmts, ...this.stmts]);
                 this.stmts = [];
                 this.wizardStateService.hideSpinning();
             }
@@ -264,7 +261,7 @@ export class GenerateComponent extends BaseComponent {
         // generate declare varialbles
         for (let cf of colArr) {
             if (cf.include) {
-                let varRoot = `${this.getCleanName(cf.name)}`;
+                let varRoot = `${fnGetCleanName(cf.name)}`;
                 cf.variable = `@${objIndex}$` + varRoot;
                 this.declareStmts.push(`DECLARE ${cf.variable} ${fnGetDataTypeDesc(cf)};`);
                 this.declareStmts.push(`DECLARE @T_${objIndex}$${varRoot} TABLE ( value ${fnGetDataTypeDesc(cf)} );`); // not all columns need this; so far only the ones that use CustomSqlGenerator needs it

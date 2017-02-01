@@ -39,6 +39,7 @@ export class ColumnsComponent extends BaseComponent implements AfterViewInit {
     @ViewChild('ListItemTemplate') listItemTemplate: TemplateRef<any>;
     @ViewChild('GivenNameTemplate') givenNameTemplate: TemplateRef<any>;
     @ViewChild('SurnameTemplate') surnameTemplate: TemplateRef<any>;
+    @ViewChild('CommandOutputTemplate') commandOutputTemplate: TemplateRef<any>;
 
     objects: { [objType:string]: DBObjDef[] };
     columns: ColumnDef[] = [];
@@ -138,6 +139,8 @@ export class ColumnsComponent extends BaseComponent implements AfterViewInit {
                     return this.givenNameTemplate;
                 case "SurnameTemplate":
                     return this.surnameTemplate;
+                case "CommandOutputTemplate":
+                    return this.commandOutputTemplate;
             }
         }
         return this.defaultTemplate;

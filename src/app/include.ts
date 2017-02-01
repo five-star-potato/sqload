@@ -43,3 +43,7 @@ export function fnStringifyNoCircular(o:any) {
 export function fnGetLargeRandomNumber() {
     return Math.floor(100000000 + Math.random() * 900000000);
 }
+
+export function fnGetCleanName(name: string) {
+    return name.replace(/[\$ #@]/g, '_');
+}
