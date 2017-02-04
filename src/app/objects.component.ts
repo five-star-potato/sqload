@@ -154,9 +154,11 @@ export class ObjectsComponent extends BaseComponent {
         // change is: ... peg$otherExpectation("FROM Clause"),function(f,s){return{'from':s,'savedFromStartPos': peg$savedPos};}, ...
         let fromPos = ast.statement[0].savedFromStartPos;
         this.tmpSqlVars = [];
-        this.projectService.columnDefs[objId] = [];
         this.findSqlVars(ast);
+        // don't want to completely replaces all the coldefs, because that will erase all the connections too
         // removed unused coldef; add new from tmpVars; leave existing alone; so that connections can be preserved
+        if (!this.projectService.columnDefs[objId])
+            this.projectService.columnDefs[objId] = [];
         let colArr = this.projectService.columnDefs[objId];
         for (let i = colArr.length - 1; i >= 0; i--) {
             let col:ColumnDef = colArr[i];
@@ -208,6 +210,7 @@ export class ObjectsComponent extends BaseComponent {
         this.objects[OBJ_TYPE.SQL].push(newObj);
         this.parseSQL(newObj);
         this.updateGlobalObjectsSelection();
+        this.rearrangeSequence();
     }
     private setSelected(dropdown) {
         this.selectedOpts = [];
@@ -234,7 +237,7 @@ export class ObjectsComponent extends BaseComponent {
                     o.selected = true;
             });
         }
-        this.resortSequence();
+        this.rearrangeSequence();
         this.updateGlobalObjectsSelection();
     }
     private unselectObjsClick() {
@@ -244,7 +247,7 @@ export class ObjectsComponent extends BaseComponent {
                     o.selected = false;
             });
         }
-        this.resortSequence();
+        this.rearrangeSequence();
         this.updateGlobalObjectsSelection();
     }
     back() {
@@ -262,7 +265,7 @@ export class ObjectsComponent extends BaseComponent {
             }
         }
     }
-    private resortSequence() {
+    private rearrangeSequence() {
         // merge all the selected object together and sort it; for sequence = null, leave them at the end (because they are newly selected objects)
         let merged:DBObjDef[] = [];
         Object.keys(this.objects).forEach(objType => merged = merged.concat(this.objects[objType].filter(o => o.selected)));

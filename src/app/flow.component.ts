@@ -9,6 +9,8 @@ import { WizardStateService } from "./service/wizard-state";
 import { SampleDataService } from "./service/sample-data";
 import { ColumnDef, DBObjDef, ProjectService, OutputMap } from "./service/project";
 import { CommandOutputGenerator } from "./generator/generators.component";
+declare var require: (moduleId: string) => any;
+var appConf = require('../app.conf');
 
 class OutputMapAttribute {
     dbObjInstance: string;
@@ -237,6 +239,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
         let maxObjWidth: number = Math.max.apply(Math, this.merged.map(m => this.getTextWidth(m.name, 12, "arial"))) + 20;
         maxObjWidth = Math.max(maxObjWidth, 300);
         let maxY = this.merged.length * 100; // calculate the upperbound of rangeRound.
+        // yband to calculate the y position for each dbobject, using id as a marker
         let yband = d3.scaleBand().rangeRound([40, maxY]).domain(this.merged.map(m => String(m.id)));
 
         let selection = this.svgContainer.selectAll(".selectedObjs")
@@ -248,25 +251,25 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
         selection.append('rect')
             .attr('rx', 2)
             .attr('ry', 2)
-            .attr("x", sx + 1) // set up the connection point origin
+            .attr("x", sx + 5) // set up the connection point origin
             .attr("y", d => yband(d.id) - 13)
-            .attr("width", 90)
+            .attr("width", 94)
             .attr("height", 15)
             .style("fill", d => {
                 switch (d.objType) {
                     case OBJ_TYPE.TB:
                         return "DarkSeaGreen";
                     case OBJ_TYPE.VW:
-                        return "MediumOrchid";
+                        return "Salmon";
                     case OBJ_TYPE.SP:
                         return "CornflowerBlue";
                     case OBJ_TYPE.SQL:
-                        return "IndianRed";
+                        return "Goldenrod";
                 }
             });
         // this is the word TABLE, VIEW, ...
         selection.append('text')
-            .attr("x", sx + 8)
+            .attr("x", sx + 11)
             .attr("y", d => yband(d.id) - 3)
             .attr("fill", "#fff")
             .style("stroke-width", 1)
@@ -308,11 +311,15 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
                      <button id="btnDown_${i}" data-index='${i}' class="btn btn-xs btn-info" style="position:absolute; top:3px; left:30px">
                         <i id="iconDown_${i}" data-index='${i}' class="fa fa-arrow-down" aria-hidden="true"></i></button>
                      <input id="chkInclude_${i}" style="position:absolute; left:100px; top:5px" class="flowChkGrouping" type="checkbox">`);
+        let incrShiftX:number = 0; // this is for gradually shifting the position of columns so that lines don't overlap too much
         fo1.each(r => {
-            let cx: number = 10;
+            if (incrShiftX >= 500) {
+                incrShiftX = 0;
+            }
+            let cx: number = (incrShiftX += 10);
             let id = r.id;
             var colors = this.svgContainer
-                // for all the columns that are to be wired from previous commands, lay them out as buttons
+                // for all the columns that are to be wired from other commands, lay them out as buttons
                 .selectAll('.columnDefs')
                 .data(this.projectService.columnDefs[id].filter(d => {
                     if (d.plugIn.length > 0 && d.plugIn[0].constructor.name == "CommandOutputGenerator")
@@ -342,6 +349,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             for (let col of cols.filter(c => { return (c.plugIn.length > 0 && c.plugIn[0].constructor.name == "CommandOutputGenerator") })) {
                 let mapId: number = (col.plugIn[0] as CommandOutputGenerator).outputMappingId;
                 if (mapId) {
+                    // find the outputMap object to reconnect src and col
                     let outMap: OutputMap = this.projectService.outputMaps.find(o => o.id == mapId);
                     let srcObj = this.merged.find(obj => (obj.id == outMap.dbObjectId && obj.instance == outMap.instance));
                     if (srcObj) {

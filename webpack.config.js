@@ -6,10 +6,12 @@ var ElectronPackager = require("webpack-electron-packager");
 
 module.exports = {
     devtool: 'source-map',
-    entry: path.join(__dirname, "src", "main"),
+    entry: {
+        app: path.join(__dirname, "src", "main")
+    },
     output: {
         path: path.join(__dirname, "dist"),
-        filename: 'app.bundle.js'
+        filename: '[name].js'
     },
     module: {
         loaders: [
@@ -43,10 +45,12 @@ module.exports = {
             { from: 'node_modules/bootstrap/dist/js/bootstrap.min.js'},
             */
             { from: 'src/css', to: "css"},
+            { from: 'node_modules/font-awesome/css/font-awesome.css', to: "css" },
             { from: 'src/img', to: "img"},
-            { from: 'node_modules/bootstrap/dist/fonts', to: "fonts" },
+            /* { from: 'node_modules/bootstrap/dist/fonts', to: "fonts" }, */
             { from: 'src/fonts/Plavsky.otf', to: "fonts" },
-            { from: 'src/fonts/NeoGen.ttf', to: "fonts" },
+            /* { from: 'src/fonts/NeoGen.ttf', to: "fonts" }, */
+            { from: 'node_modules/font-awesome/fonts', to: "fonts" },
             { from: 'src/app/columns.component.html' }
         ])
         /*,
