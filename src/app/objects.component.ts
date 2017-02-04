@@ -119,12 +119,14 @@ declare var require: (moduleId: string) => any;
 export class ObjectsComponent extends BaseComponent {
     // objects contains all the objects id and anmes from the database, whether they are selected or not
     objects: { [objType: string]: DBObjDef[] } = { 'U': [], 'V': [], 'P': [], 'SQL': [] }; // U - user table; V - view; P - stored proc
-    selectedOpts: any[];
-    unselectedOpts: any[];
+    selectedOpts: any[] = [];
+    unselectedOpts: any[] = [];
     currSQL: string;
     currSQLName: string;
     currSQLObj: DBObjDef;
     tmpSqlVars: string[];
+    sqlParser = require('sqlite-parser');
+
     // isAvailCollapsed and isSelectedCollapsed is to control the open/close of the tree structures of Table/View/Procedure ...
     private isAvailCollapsed: { [objType: string]: boolean } = { 'U': false, 'V': false, 'P': false };
     private isSelectedCollapsed: { [objType: string]: boolean } = { 'U': false, 'V': false, 'P': false };
@@ -145,10 +147,36 @@ export class ObjectsComponent extends BaseComponent {
     private toggleSelectedView(objType: string) {
         this.isSelectedCollapsed[objType] = !this.isSelectedCollapsed[objType];
     }
+    private parseSQL(dbObj:DBObjDef) {
+        let objId = dbObj.id;
+        let ast = this.sqlParser(dbObj.sql);
+        // I have modified sqlite-parser.js in node_modules dist folder. Don't reinstall this package
+        // change is: ... peg$otherExpectation("FROM Clause"),function(f,s){return{'from':s,'savedFromStartPos': peg$savedPos};}, ...
+        let fromPos = ast.statement[0].savedFromStartPos;
+        this.tmpSqlVars = [];
+        this.projectService.columnDefs[objId] = [];
+        this.findSqlVars(ast);
+        // removed unused coldef; add new from tmpVars; leave existing alone; so that connections can be preserved
+        let colArr = this.projectService.columnDefs[objId];
+        for (let i = colArr.length - 1; i >= 0; i--) {
+            let col:ColumnDef = colArr[i];
+            if (!this.tmpSqlVars.find(t => t == col.name))
+                colArr.splice(i, 1);
+        }
+        this.tmpSqlVars.forEach(v => {
+            if (!colArr.find(c => c.name == v)) {
+                this.projectService.columnDefs[objId].push(new ColumnDef({
+                name: v,
+                dataType: 'nvarchar(max)',
+                include: true
+                }));
+            }
+        });
+    }
     private saveSQLChanges() {
         this.currSQLObj.sql = this.currSQL;
         this.currSQLObj.name = this.currSQLName;
-        this.updateGlobalObjectsSelection();
+        this.parseSQL(this.currSQLObj);
     }
     private editSQL(obj: DBObjDef) {
         this.currSQLObj = obj;
@@ -167,14 +195,18 @@ export class ObjectsComponent extends BaseComponent {
         this.updateGlobalObjectsSelection();
     }
     private addCustomSQL() {
-        this.objects[OBJ_TYPE.SQL].push({
+        let newObj:DBObjDef = {
             id: fnGetLargeRandomNumber(), // probably a big random number is enough to make it unique
             name: 'Sample SQL',
             sql: "select * from Person.Person where BusinessEntityId = @EntityId",
             objType: OBJ_TYPE.SQL,
             selected: true,
-            rowcount: 100
-        });
+            rowcount: 100,
+            instance: 1,
+            x: 0, y: 0
+        }
+        this.objects[OBJ_TYPE.SQL].push(newObj);
+        this.parseSQL(newObj);
         this.updateGlobalObjectsSelection();
     }
     private setSelected(dropdown) {
@@ -202,6 +234,7 @@ export class ObjectsComponent extends BaseComponent {
                     o.selected = true;
             });
         }
+        this.resortSequence();
         this.updateGlobalObjectsSelection();
     }
     private unselectObjsClick() {
@@ -211,6 +244,7 @@ export class ObjectsComponent extends BaseComponent {
                     o.selected = false;
             });
         }
+        this.resortSequence();
         this.updateGlobalObjectsSelection();
     }
     back() {
@@ -228,38 +262,28 @@ export class ObjectsComponent extends BaseComponent {
             }
         }
     }
+    private resortSequence() {
+        // merge all the selected object together and sort it; for sequence = null, leave them at the end (because they are newly selected objects)
+        let merged:DBObjDef[] = [];
+        Object.keys(this.objects).forEach(objType => merged = merged.concat(this.objects[objType].filter(o => o.selected)));
+        merged.sort((a, b) => {
+            let s1 = a.sequence || Number.MAX_VALUE;
+            let s2 = b.sequence || Number.MAX_VALUE;
+            return s1 - s2;
+        });
+        let seq:number = 1; // make sure don't start with 0 as 0 is false
+        merged.forEach(m => m.sequence = seq++);
+    }
     // need to update the sequence # for all the objects that were not selected before
     updateGlobalObjectsSelection() {
         var objs: { [objType: string]: DBObjDef[] } = {
             'U': [], 'V': [], 'P': [], 'SQL': []
         };
-        var maxSeq: number = 0;
-        for (let objType in this.objects) {
-            let seq: number = Math.max.apply(Math, this.objects[objType].map(function (o) { return o.sequence; })) | 0;
-            if (seq > maxSeq) maxSeq = seq;
-        }
         for (let objType in this.objects) {
             this.objects[objType].forEach((o) => {
                 if (o.selected) {
                     objs[objType].push(o);
-                    if (!o.sequence) {
-                        maxSeq += 10;
-                        o.sequence = maxSeq;
-                    }
                     if (objType == OBJ_TYPE.SQL) {
-                        let parser = require('sqlite-parser');
-                        let ast = parser(o.sql);
-                        this.tmpSqlVars = [];
-                        this.projectService.columnDefs[o.id] = [];
-                        this.findSqlVars(ast);
-                        this.tmpSqlVars.forEach(v => {
-                            this.projectService.columnDefs[o.id].push(new ColumnDef({
-                            name: v,
-                            dataType: 'nvarchar(max)',
-                            include: true
-                            }));
-                        });
-                        console.log(ast);
                     }
                 }
             });
@@ -293,7 +317,10 @@ export class ObjectsComponent extends BaseComponent {
                                 objType: objType,
                                 selected: true,
                                 rowcount: sel.rowcount,
-                                sequence: sel.sequence
+                                sequence: sel.sequence,
+                                instance: sel.instance,
+                                x: sel.x,
+                                y: sel.y
                             });
                         }
                         else {
@@ -304,7 +331,9 @@ export class ObjectsComponent extends BaseComponent {
                                 selected: false,
                                 rowcount: 100,
                                 sequence: null,
-                                instance: 1
+                                instance: 1,
+                                x: 0,
+                                y: 0
                             });
                         }
                     });

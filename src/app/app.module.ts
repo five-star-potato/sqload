@@ -8,7 +8,7 @@ import { HomeComponent }  from './home.component';
 import { ColumnsComponent }  from './columns.component';
 import { GenerateComponent }  from './generate.component';
 import { ObjectsComponent }  from './objects.component';
-import { WorkflowComponent }  from './flow.component';
+import { FlowComponent }  from './flow.component';
 import { RouterModule, Routes } from '@angular/router';
 import { selectedObjectsPipe } from './pipes.component';
 import { OrderBy } from './orderby.component';
@@ -26,12 +26,12 @@ const appRoutes: Routes = [
   { path: 'objects', component: ObjectsComponent },
   { path: 'generate', component: GenerateComponent },
   { path: 'columns', component: ColumnsComponent },
-  { path: 'flow', component: WorkflowComponent }
+  { path: 'flow', component: FlowComponent }
 ];
 
 @NgModule({
   imports:      [ BrowserModule, FormsModule, RouterModule.forRoot(appRoutes), HttpModule ],
-  declarations: [ AppComponent, ConnectionComponent, HomeComponent, ObjectsComponent, ColumnsComponent, WorkflowComponent,  GenerateComponent, selectedObjectsPipe, OrderBy, SampleAddressConfigComponent ],
+  declarations: [ AppComponent, ConnectionComponent, HomeComponent, ObjectsComponent, ColumnsComponent, FlowComponent,  GenerateComponent, selectedObjectsPipe, OrderBy, SampleAddressConfigComponent ],
   providers:    [ WizardStateService, SampleDataService, ProjectService ],
   bootstrap:    [ AppComponent ]
 })

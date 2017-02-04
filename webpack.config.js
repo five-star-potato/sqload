@@ -48,7 +48,6 @@ module.exports = {
             { from: 'src/fonts/Plavsky.otf', to: "fonts" },
             { from: 'src/fonts/NeoGen.ttf', to: "fonts" },
             { from: 'src/app/columns.component.html' }
-
         ])
         /*,
         new ElectronPackager({

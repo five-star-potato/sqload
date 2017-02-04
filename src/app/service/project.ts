@@ -1,7 +1,20 @@
 import { Injectable } from "@angular/core";
 import { DataGenerator } from '../include';
+import { SQL_OUTPUT_TYPE } from "../constants";
 
 //import { TRON_GLOBAL, TRON_EVENT } from '../constants';
+
+export interface OutputMap {
+    id: number;
+    dbObjectId: number;
+    instance: number;
+    //sequence: number; // for layout; ideally, the outputMap will have lines pointing to columns but the number of edge crossing is minimized
+    outputName: string;
+    outputType: SQL_OUTPUT_TYPE;
+    refCount: number;
+    // Should we let the user to choose between name vs sequence nr?
+    useSequence?: boolean;
+}
 
 export interface ConnectionConfig {
     serverName: string;
@@ -21,6 +34,7 @@ export interface DBObjDef {
     instance?: number;
     x?:number;
     y?:number;
+    fromStmtStartPos?: number; // the position of the word "from" in the SQL; in order to insert INTO ##tmpTbl for storing results
 }
 export class ColumnDef {
     name: string;
@@ -61,6 +75,7 @@ export class ColumnDef {
             isIdentity?: boolean;
         }) 
     {
+        this.x = 0; this.y = 0;
         if (fields) Object.assign(this, fields);
     }
 }
@@ -71,6 +86,7 @@ export class ProjectStruct {
         'U': [], 'V': [], 'P': [], 'SQL':[]
     }
     columnDefs: { [ objId: number] : ColumnDef[] } = {};
+    outputMaps:  OutputMap[] = [];
     constructor() {
         this.connection = {
             serverName: 'DELL',
@@ -99,6 +115,9 @@ export class ProjectService {
     }
     get columnDefs():{ [ objId: number]: ColumnDef[] } {
         return this.project.columnDefs;
+    }
+    get outputMaps(): OutputMap[]  {
+        return this.project.outputMaps;
     }
     get serverName():string {
         return this.project.connection.serverName;

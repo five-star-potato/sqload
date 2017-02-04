@@ -245,10 +245,7 @@ export class SampleAddressGenerator extends DataGenerator {
 }
 
 export class CommandOutputGenerator extends DataGenerator {
-    public commandObjectId: number;
-    public instance: number;
-    public outputIndex: number;
-    public outputName: string;
+    public outputMappingId: number;
 
     constructor() {
         super("CommandOutputGenerator");
@@ -257,6 +254,3 @@ export class CommandOutputGenerator extends DataGenerator {
         return "";
     }
 }
-
-
-

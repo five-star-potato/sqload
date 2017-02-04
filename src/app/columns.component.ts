@@ -376,20 +376,12 @@ export class ColumnsComponent extends BaseComponent implements AfterViewInit {
         // If columnDefs.length, the user is revisiting this page - clear the table entries that are no longer valid.
         // If a table Id exists in both selectedTAbles and columnDefs, we don't need to reload column info from DB; take it off from tblIds
 
-        console.log("columnDefs 1");
-        console.log(columnDefs);
         let tbls = this.getObjsWithColumnsLoaded(OBJ_TYPE.TB);
         await this.loadTableColumnDefs(tbls);
-        console.log("columnDefs 2");
-        console.log(columnDefs);
         let vws = this.getObjsWithColumnsLoaded(OBJ_TYPE.VW);
         await this.loadViewColumnDefs(vws);
-        console.log("columnDefs 3");
-        console.log(columnDefs);
         let procs = this.getObjsWithColumnsLoaded(OBJ_TYPE.SP);
         await this.loadSPColumnDefs(procs);
-        console.log("columnDefs 4");
-        console.log(columnDefs);
     }
 
 }

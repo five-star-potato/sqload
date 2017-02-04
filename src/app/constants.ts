@@ -25,4 +25,9 @@ export class OBJ_TYPE {
     public static SP = "P";
     public static SQL = "SQL";
 }
+export class SQL_OUTPUT_TYPE {
+    public static RET = "RET";
+    public static OUTPARAM = "OUTPARAM";
+    public static RSLTSET = "RSLTSET";
+}
 
