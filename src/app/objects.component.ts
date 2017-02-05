@@ -3,7 +3,7 @@
 /// <reference path="../../node_modules/@types/jquery/index.d.ts" />
 import { Component, OnInit, NgZone, Pipe } from '@angular/core';
 import { Router } from '@angular/router';
-import { TRON_GLOBAL, TRON_EVENT, OBJ_TYPE } from './constants';
+import { TRON_GLOBAL, TRON_EVENT, OBJ_TYPE, COLUMN_DIR_TYPE } from './constants';
 import { BaseComponent } from './base.component';
 import { OrderBy } from './orderby.component';
 import { WizardStateService } from "./service/wizard-state";
@@ -170,7 +170,8 @@ export class ObjectsComponent extends BaseComponent {
                 this.projectService.columnDefs[objId].push(new ColumnDef({
                 name: v,
                 dataType: 'nvarchar(max)',
-                include: true
+                include: true,
+                dirType: COLUMN_DIR_TYPE.IN_PARAM
                 }));
             }
         });

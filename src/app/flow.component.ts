@@ -2,7 +2,7 @@ import * as d3 from 'd3';
 import { Component, NgZone, ElementRef, Renderer, OnDestroy } from "@angular/core";
 import { Router } from '@angular/router';
 import { BaseComponent } from "./base.component";
-import { TRON_GLOBAL, TRON_EVENT, OBJ_TYPE, SQL_OUTPUT_TYPE } from './constants';
+import { TRON_GLOBAL, TRON_EVENT, OBJ_TYPE } from './constants';
 import { DataGenerator, fnGetDataTypeDesc, fnGetCleanName, fnGetLargeRandomNumber } from './include';
 import * as gen from './generator/generators.component';
 import { WizardStateService } from "./service/wizard-state";
@@ -14,7 +14,6 @@ var appConf = require('../app.conf');
 
 class OutputMapAttribute {
     dbObjInstance: string;
-    outputType: SQL_OUTPUT_TYPE;
     outputName: string;
 }
 
@@ -47,26 +46,6 @@ class OutputMapAttribute {
                 <select required [(ngModel)]="outputMapping.dbObjInstance" class="form-control"> 
                     <option *ngFor="let obj of merged" [value]="obj.id + ':' + obj.instance">{{obj.name + ':' + obj.instance}}</option>
                 </select>
-            </div>
-            <div class="form-group" [class.ng-invalid]="invalidOutputType()">
-                <div class="radio" style="margin-left:4px">
-                    <label>
-                        <input type="radio" required [(ngModel)]="outputMapping.outputType" name="optOutputType" value="RSLTSET">
-                        Column from Result Set
-                    </label>
-                </div>
-                <div class="radio" style="margin-left:4px">
-                    <label>
-                        <input type="radio" required [(ngModel)]="outputMapping.outputType" name="optOutputType" value="OUTPARAM">
-                        Stored Procedure Output Parameter
-                    </label>
-                </div>        
-                <div class="radio" style="margin-left:4px">
-                    <label>
-                        <input type="radio" required [(ngModel)]="outputMapping.outputType" name="optOutputType" value="RET">
-                        Stored Procedure Return Value
-                    </label>
-                </div>        
             </div>
             <div class="form-group">
                 <input required type="text" [(ngModel)]="outputMapping.outputName" class="form-control">
@@ -125,14 +104,8 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
         });
         return map;
     }
-    private invalidOutputType() {
-        if (this.outputMapping.outputType)
-            return false;
-        else
-            return true;
-    }
     private checkMappingDisabled():boolean {
-        if (this.outputMapping.outputType && this.outputMapping.outputName && this.outputMapping.dbObjInstance) 
+        if (this.outputMapping.outputName && this.outputMapping.dbObjInstance) 
             return false;
         else
             return true;
@@ -154,7 +127,6 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
                 id: fnGetLargeRandomNumber(),
                 dbObjectId: objId,
                 instance: instance,
-                outputType: this.outputMapping.outputType,
                 outputName: this.outputMapping.outputName,
                 refCount: 1
             };
@@ -165,10 +137,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             cmdGen.outputMappingId = newMap.id;
             newMap.refCount += 1;
         }
-        else {
-            // same outmap obejectid, instance and output; only need to update the output type
-            newMap.outputType = this.outputMapping.outputType;
-        }
+
         //reduce refcount of the old one
         if (oldMap && oldMap.id != newMap.id) {
             oldMap.refCount -= 1;
@@ -375,7 +344,6 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
     private clearOutputMapping() {
         this.outputMapping.dbObjInstance = undefined;
         this.outputMapping.outputName = undefined;
-        this.outputMapping.outputType = undefined;
     }
 
     ngOnInit() {
@@ -409,7 +377,6 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
                 if (mapId) {
                     let outMap: OutputMap = this.projectService.outputMaps.find(o => o.id == mapId);
                     this.outputMapping.dbObjInstance = outMap.dbObjectId + ":" + outMap.instance;
-                    this.outputMapping.outputType = outMap.outputType;
                     this.outputMapping.outputName = outMap.outputName;
                 }
                 $("#modalOutputMapping").modal('show');

@@ -1,6 +1,6 @@
 import { Component, OnInit, NgZone, TemplateRef, ViewChild, AfterViewInit } from '@angular/core';
 import { Router } from '@angular/router';
-import { TRON_GLOBAL, TRON_EVENT, OBJ_TYPE, OBJECT_TYPES_LIST } from './constants';
+import { TRON_GLOBAL, TRON_EVENT, OBJ_TYPE, OBJECT_TYPES_LIST, COLUMN_DIR_TYPE } from './constants';
 import { DataGenerator, fnGetDataTypeDesc } from './include';
 import { BaseComponent } from './base.component';
 import * as gen from './generator/generators.component';
@@ -251,7 +251,8 @@ export class ColumnsComponent extends BaseComponent implements AfterViewInit {
                             fkTable: row['fk_table_name'],
                             fkColumn: row['fk_column_name'],
                             fkSchema: row['fk_schema_name'],
-                            isIdentity: (row["is_identity"] == 1)
+                            isIdentity: (row["is_identity"] == 1),
+                            dirType: COLUMN_DIR_TYPE.TBLVW_COL
                         });
                         if (cf.fkConstraintID) {
                             cf.plugIn.push(new gen.FKGenerator());
@@ -303,7 +304,8 @@ export class ColumnsComponent extends BaseComponent implements AfterViewInit {
                             nullable: (row['IS_NULLABLE'] == "YES"),
                             colDefault: row['COLUMN_DEFAULT'],
                             include: (row['COLUMN_DEFAULT'] == null && row['is_identity'] != 1),
-                            isIdentity: (row["is_identity"] == 1)
+                            isIdentity: (row["is_identity"] == 1),
+                            dirType: COLUMN_DIR_TYPE.TBLVW_COL
                         });
                         let dn:DataGenerator = this.constructCommonPlughInForDataType(cf);
                         if (dn)
@@ -346,7 +348,9 @@ export class ColumnsComponent extends BaseComponent implements AfterViewInit {
                             charMaxLen: row['CHARACTER_MAXIMUM_LENGTH'],
                             precision: row['NUMERIC_PRECISION'],
                             scale: row['NUMERIC_SCALE'],
-                            include: true
+                            include: true,
+                            dirType: row['PARAMETER_MODE'] == "IN" ? COLUMN_DIR_TYPE.IN_PARAM : COLUMN_DIR_TYPE.OUT_PARAM
+                            
                         });
                         let dn:DataGenerator = this.constructCommonPlughInForDataType(cf);
                         if (dn)

@@ -25,9 +25,11 @@ export class OBJ_TYPE {
     public static SP = "P";
     public static SQL = "SQL";
 }
-export class SQL_OUTPUT_TYPE {
-    public static RET = "RET";
-    public static OUTPARAM = "OUTPARAM";
-    public static RSLTSET = "RSLTSET";
+export class COLUMN_DIR_TYPE {
+    public static RET_VAL = "RET_VAL";      // Return value
+    public static IN_PARAM = "IN_PARAM";    // Input Parameter to SP or Custom SQL
+    public static OUT_PARAM = "OUT_PARAM";  // Ouput Parameter from SP
+    public static RSLTSET = "RSLTSET";      // Column from Return result set
+    public static TBLVW_COL = "TBLVW_COL";  // Table or View Column
 }
 

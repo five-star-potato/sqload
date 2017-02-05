@@ -1,6 +1,6 @@
 import { Injectable } from "@angular/core";
 import { DataGenerator } from '../include';
-import { SQL_OUTPUT_TYPE } from "../constants";
+import { COLUMN_DIR_TYPE } from "../constants";
 
 //import { TRON_GLOBAL, TRON_EVENT } from '../constants';
 
@@ -10,7 +10,6 @@ export interface OutputMap {
     instance: number;
     //sequence: number; // for layout; ideally, the outputMap will have lines pointing to columns but the number of edge crossing is minimized
     outputName: string;
-    outputType: SQL_OUTPUT_TYPE;
     refCount: number;
     // Should we let the user to choose between name vs sequence nr?
     useSequence?: boolean;
@@ -50,6 +49,7 @@ export class ColumnDef {
     fkColumn: string;    
     fkSchema: string;
     isIdentity: boolean = false;
+    dirType: COLUMN_DIR_TYPE;
     plugIn: DataGenerator[] = []; // DataGenerator sometimes requires much configuration... save the change in case the user switch generator types by mistakes
     variable: string; // placeholder for SQL variable names
     x:number;   // these coordinates are for connecting lines in flow diagram
@@ -73,6 +73,7 @@ export class ColumnDef {
             fkColumn?: string; 
             fkSchema?: string;  
             isIdentity?: boolean;
+            dirType?: COLUMN_DIR_TYPE;
         }) 
     {
         this.x = 0; this.y = 0;
