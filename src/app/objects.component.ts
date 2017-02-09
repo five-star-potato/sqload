@@ -3,7 +3,7 @@
 /// <reference path="../../node_modules/@types/jquery/index.d.ts" />
 import { Component, OnInit, NgZone, Pipe } from '@angular/core';
 import { Router } from '@angular/router';
-import { TRON_GLOBAL, TRON_EVENT, OBJ_TYPE, COLUMN_DIR_TYPE } from './constants';
+import { TRON_GLOBAL, TRON_EVENT, OBJ_TYPE, COL_DIR_TYPE } from './constants';
 import { BaseComponent } from './base.component';
 import { OrderBy } from './orderby.component';
 import { WizardStateService } from "./service/wizard-state";
@@ -147,7 +147,30 @@ export class ObjectsComponent extends BaseComponent {
     private toggleSelectedView(objType: string) {
         this.isSelectedCollapsed[objType] = !this.isSelectedCollapsed[objType];
     }
-    private parseSQL(dbObj:DBObjDef) {
+    private getFirstResultSet(dbObj:DBObjDef)  {
+        dbObj.columns[COL_DIR_TYPE.RSLTSET] = [];
+        this.getSQL2Fn()(this.projectService.connection, `exec sp_describe_first_result_set N'${dbObj.sql.replace("'", "''")}'`)
+            .then(res => {
+                res.forEach((row) => {
+                    if (row['is_hidden'] == '0') {
+                        let cf = new ColumnDef({
+                            name: row['name'],
+                            dataType: row['system_type_name'],
+                            charMaxLen: row['max_length'],
+                            precision: row['precision'],
+                            scale: row['scale'],
+                            dirType: COL_DIR_TYPE.RSLTSET,
+                            ordinal: row['column_ordinal']
+                        });
+                        dbObj.columns[COL_DIR_TYPE.RSLTSET].push(cf);
+                    }
+                });
+            })
+            .catch(err => {
+                this.getMsgBoxFn()("Get First Result Set Error", err.toString());
+            });
+    }
+    private async parseSQL(dbObj:DBObjDef) {
         let objId = dbObj.id;
         let ast = this.sqlParser(dbObj.sql);
         // I have modified sqlite-parser.js in node_modules dist folder. Don't reinstall this package
@@ -157,9 +180,7 @@ export class ObjectsComponent extends BaseComponent {
         this.findSqlVars(ast);
         // don't want to completely replaces all the coldefs, because that will erase all the connections too
         // removed unused coldef; add new from tmpVars; leave existing alone; so that connections can be preserved
-        if (!this.projectService.columnDefs[objId])
-            this.projectService.columnDefs[objId] = [];
-        let colArr = this.projectService.columnDefs[objId];
+        let colArr = dbObj.columns[COL_DIR_TYPE.IN_PARAM];
         for (let i = colArr.length - 1; i >= 0; i--) {
             let col:ColumnDef = colArr[i];
             if (!this.tmpSqlVars.find(t => t == col.name))
@@ -167,14 +188,15 @@ export class ObjectsComponent extends BaseComponent {
         }
         this.tmpSqlVars.forEach(v => {
             if (!colArr.find(c => c.name == v)) {
-                this.projectService.columnDefs[objId].push(new ColumnDef({
+                colArr.push(new ColumnDef({
                 name: v,
                 dataType: 'nvarchar(max)',
                 include: true,
-                dirType: COLUMN_DIR_TYPE.IN_PARAM
+                dirType: COL_DIR_TYPE.IN_PARAM
                 }));
             }
         });
+        this.getFirstResultSet(dbObj);
     }
     private saveSQLChanges() {
         this.currSQLObj.sql = this.currSQL;
@@ -198,20 +220,18 @@ export class ObjectsComponent extends BaseComponent {
         this.updateGlobalObjectsSelection();
     }
     private addCustomSQL() {
-        let newObj:DBObjDef = {
+        let newObj = new DBObjDef({
             id: fnGetLargeRandomNumber(), // probably a big random number is enough to make it unique
             name: 'Sample SQL',
-            sql: "select * from Person.Person where BusinessEntityId = @EntityId",
             objType: OBJ_TYPE.SQL,
-            selected: true,
-            rowcount: 100,
-            instance: 1,
-            x: 0, y: 0
-        }
+            sql: "select * from Person.Person where BusinessEntityId = @EntityId",
+            selected: true
+        });
         this.objects[OBJ_TYPE.SQL].push(newObj);
         this.parseSQL(newObj);
         this.updateGlobalObjectsSelection();
         this.rearrangeSequence();
+        this.isSelectedCollapsed[OBJ_TYPE.SQL] = false;
     }
     private setSelected(dropdown) {
         this.selectedOpts = [];
@@ -287,8 +307,6 @@ export class ObjectsComponent extends BaseComponent {
             this.objects[objType].forEach((o) => {
                 if (o.selected) {
                     objs[objType].push(o);
-                    if (objType == OBJ_TYPE.SQL) {
-                    }
                 }
             });
         }
@@ -303,8 +321,8 @@ export class ObjectsComponent extends BaseComponent {
         this.objects[OBJ_TYPE.SQL] = this.projectService.selectedObjs[OBJ_TYPE.SQL].slice(0);
 
         //electron.ipcRenderer.send("message");
-        this.getSQLFn()(this.projectService.connection, "SELECT object_id, SCHEMA_NAME(schema_id) [Schema], RTRIM(name) [name], RTRIM(type) [type] FROM sys.objects WHERE type in ('U', 'V', 'P') ORDER BY 4, 2, 3",
-            (err, res) => {
+        this.getSQL2Fn()(this.projectService.connection, "SELECT object_id, SCHEMA_NAME(schema_id) [Schema], RTRIM(name) [name], RTRIM(type) [type] FROM sys.objects WHERE type in ('U', 'V', 'P') ORDER BY 4, 2, 3")
+            .then(res => {
                 this.ngZone.run(() => {
                     let i: number = 0;
                     res.forEach((row) => {
@@ -315,34 +333,30 @@ export class ObjectsComponent extends BaseComponent {
                         });
 
                         if (sel) { // previously selected table
-                            this.objects[objType].push({
-                                name: objName,
+                            this.objects[objType].push(new DBObjDef({
                                 id: row["object_id"],
+                                name: objName,
                                 objType: objType,
-                                selected: true,
-                                rowcount: sel.rowcount,
                                 sequence: sel.sequence,
                                 instance: sel.instance,
+                                selected: true,
                                 x: sel.x,
-                                y: sel.y
-                            });
+                                y: sel.y,
+                                rowcount: sel.rowcount
+                            }));
                         }
                         else {
-                            this.objects[objType].push({
-                                name: objName,
+                            this.objects[objType].push(new DBObjDef({
                                 id: row["object_id"],
-                                objType: objType,
-                                selected: false,
-                                rowcount: 100,
-                                sequence: null,
-                                instance: 1,
-                                x: 0,
-                                y: 0
-                            });
+                                name: objName,
+                                objType: objType
+                            }));
                         }
                     });
                 });
-            }
-        );
+            })
+            .catch(err => {
+                this.getMsgBoxFn()("Loading Database Objects Error", err.toString());
+            });
     }
 }

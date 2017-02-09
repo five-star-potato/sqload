@@ -1,6 +1,6 @@
 import { Component, OnInit, NgZone, TemplateRef, ViewChild, AfterViewInit } from '@angular/core';
 import { Router } from '@angular/router';
-import { TRON_GLOBAL, TRON_EVENT, OBJ_TYPE, OBJECT_TYPES_LIST, COLUMN_DIR_TYPE } from './constants';
+import { TRON_GLOBAL, TRON_EVENT, OBJ_TYPE, OBJECT_TYPES_LIST, COL_DIR_TYPE } from './constants';
 import { DataGenerator, fnGetDataTypeDesc } from './include';
 import { BaseComponent } from './base.component';
 import * as gen from './generator/generators.component';
@@ -71,7 +71,10 @@ export class ColumnsComponent extends BaseComponent implements AfterViewInit {
     private setActiveObj(obj: DBObjDef) {
         this.activeObjId = obj.id;
         this.activeObjName = obj.name;
-        this.columns = this.projectService.columnDefs[obj.id];
+        if (obj.isTableOrView)
+            this.columns = obj.columns[COL_DIR_TYPE.TBLVW_COL];
+        else 
+            this.columns = obj.columns[COL_DIR_TYPE.IN_PARAM];
     }
     private setActiveColumn(c: ColumnDef) {
         this.activeColDef = c;
@@ -152,26 +155,6 @@ export class ColumnsComponent extends BaseComponent implements AfterViewInit {
     ngAfterViewInit() {
         //this.setActiveTable(this.tables[0].id);
     }
-    private constructObjectIdsForLoad(objType:string, selectedIds:number[]):number[] {
-        let columnDefs = this.projectService.columnDefs;
-        let objIds = []; // Create a list of table object Ids for use in constructing the SQL statement
-        for (let cnt = this.objects[objType].length, i = 0; i < cnt; i++) {
-            objIds.push(this.objects[objType][i].id);
-        }
-        // check to see which tables are no longer selected
-        selectedIds.forEach(k => {
-            if (!objIds.includes(k))
-                delete columnDefs[k];
-        });
-        // for tables that are already selected, don't reload the columns ;
-        // TODO: what if the table defn changed?
-        for (let i = objIds.length - 1; i >= 0; i--) {
-            if (columnDefs[objIds[i]] != undefined) {
-                objIds.splice(i, 1);
-            }
-        }
-        return objIds;
-    }
     private constructCommonPlughInForDataType(cf:ColumnDef):DataGenerator {
         switch (cf.dataType) {
             case "int":
@@ -207,13 +190,7 @@ export class ColumnsComponent extends BaseComponent implements AfterViewInit {
                 return null;
         }
     }
-    private async loadTableColumnDefs(selectedIds:number[]) {
-        let columnDefs = this.projectService.columnDefs;
-        let tblIds:number[] = this.constructObjectIdsForLoad(OBJ_TYPE.TB, selectedIds);
-        if (tblIds.length == 0)
-            return;
-        tblIds.forEach(tid => columnDefs[tid] = []);
-
+    private async loadTableColumnDefs(objIdsWithoutColumn:number[]) {
         let sql = `
             SELECT t.object_id, ic.*, fk.name [fk_constraint_name], fk.object_id [fk_constraint_id], fkc.constraint_column_id [fk_constraint_column_id], fk_rt.name [fk_table_name], fk_rc.name [fk_column_name], SCHEMA_NAME(fk_rt.schema_id) [fk_schema_name], c.is_identity
             FROM sys.columns c
@@ -225,19 +202,15 @@ export class ColumnsComponent extends BaseComponent implements AfterViewInit {
                 JOIN sys.columns fk_rc ON fk_rt.object_id = fk_rc.object_id AND fk_rc.column_id = fkc.referenced_column_id
             ) ON t.object_id = fk.parent_object_id AND c.column_id = fkc.parent_column_id
             JOIN INFORMATION_SCHEMA.COLUMNS ic ON t.name = ic.TABLE_NAME AND c.name = ic.COLUMN_NAME AND SCHEMA_NAME(t.schema_id) = ic.TABLE_SCHEMA
-            WHERE c.object_id in (${tblIds.join()}) AND c.is_computed <> 1 AND c.is_identity <> 1
+            WHERE c.object_id in (${objIdsWithoutColumn.join()}) AND c.is_computed <> 1 AND c.is_identity <> 1
             order by ic.TABLE_SCHEMA, ic.TABLE_NAME, c.column_id`;
-        let dataSet = await this.getSQLFn()(this.projectService.connection, sql,
-            (err, res) => {
+        await this.getSQL2Fn()(this.projectService.connection, sql)
+            .then(res => {
                 this.ngZone.run(() => {
                     let i: number = 0;
                     res.forEach((row) => {
                         let tblId = row["object_id"];
 
-                        let colDef = columnDefs[tblId];
-                        if (!colDef) {
-                            columnDefs[tblId] = [];
-                        }
                         let cf = new ColumnDef({
                             name: row['COLUMN_NAME'],
                             dataType: row['DATA_TYPE'],
@@ -252,7 +225,7 @@ export class ColumnsComponent extends BaseComponent implements AfterViewInit {
                             fkColumn: row['fk_column_name'],
                             fkSchema: row['fk_schema_name'],
                             isIdentity: (row["is_identity"] == 1),
-                            dirType: COLUMN_DIR_TYPE.TBLVW_COL
+                            dirType: COL_DIR_TYPE.TBLVW_COL
                         });
                         if (cf.fkConstraintID) {
                             cf.plugIn.push(new gen.FKGenerator());
@@ -264,37 +237,29 @@ export class ColumnsComponent extends BaseComponent implements AfterViewInit {
                         }
                         if (cf.plugIn.length == 0)    // we don't know how to generate this field
                             cf.include = false;
-                        columnDefs[tblId].push(cf);
+                        this.projectService.getDBObj(tblId).columns[COL_DIR_TYPE.TBLVW_COL].push(cf);
                     });
                 });
-            }
-        );
+            })
+            .catch(err => {
+                this.getMsgBoxFn()("Loading Table Columns Error", err.toString());
+            });
     }
-    private async loadViewColumnDefs(selectedIds:number[]) {
-        let columnDefs = this.projectService.columnDefs;
-        let vwIds:number[] = this.constructObjectIdsForLoad(OBJ_TYPE.VW, selectedIds);
-        if (vwIds.length == 0)
-            return;
-        vwIds.forEach(vid => columnDefs[vid] = []);
-        
+    private async loadViewColumnDefs(objIdsWithoutColumns:number[]) {
         let sql = `
             SELECT t.object_id, ic.*, c.is_identity
             FROM sys.columns c
             JOIN sys.views t ON c.object_id = t.object_id
             JOIN INFORMATION_SCHEMA.COLUMNS ic ON t.name = ic.TABLE_NAME AND c.name = ic.COLUMN_NAME AND SCHEMA_NAME(t.schema_id) = ic.TABLE_SCHEMA
-            WHERE t.object_id in (${vwIds.join()}) AND c.is_computed <> 1 AND c.is_identity <> 1
+            WHERE t.object_id in (${objIdsWithoutColumns.join()}) AND c.is_computed <> 1 AND c.is_identity <> 1
             order by ic.TABLE_SCHEMA, ic.TABLE_NAME, c.column_id
             `;
-        let dataSet = await this.getSQLFn()(this.projectService.connection, sql,
-            (err, res) => {
+        await this.getSQL2Fn()(this.projectService.connection, sql)
+            .then(res => {
                 this.ngZone.run(() => {
                     let i: number = 0;
                     res.forEach((row) => {
                         let vwId = row["object_id"];
-                        let colDef = columnDefs[vwId];
-                        if (!colDef) {
-                            columnDefs[vwId] = [];
-                        }
                         let cf = new ColumnDef({
                             name: row['COLUMN_NAME'],
                             dataType: row['DATA_TYPE'],
@@ -305,43 +270,35 @@ export class ColumnsComponent extends BaseComponent implements AfterViewInit {
                             colDefault: row['COLUMN_DEFAULT'],
                             include: (row['COLUMN_DEFAULT'] == null && row['is_identity'] != 1),
                             isIdentity: (row["is_identity"] == 1),
-                            dirType: COLUMN_DIR_TYPE.TBLVW_COL
+                            dirType: COL_DIR_TYPE.TBLVW_COL
                         });
                         let dn:DataGenerator = this.constructCommonPlughInForDataType(cf);
                         if (dn)
                             cf.plugIn.push(dn);
                         if (cf.plugIn.length == 0)    // we don't know how to generate this field
                             cf.include = false;
-                        columnDefs[vwId].push(cf);
+                        this.projectService.getDBObj(vwId).columns[COL_DIR_TYPE.TBLVW_COL].push(cf);
                     });
                 });
-            }
-        );
+            })            
+            .catch(err => {
+                this.getMsgBoxFn()("Loading View Columns Error", err.toString());
+            });
     }
-    private async loadSPColumnDefs(selectedIds:number[]) {
-        let columnDefs = this.projectService.columnDefs;
-        let procIds:number[] = this.constructObjectIdsForLoad(OBJ_TYPE.SP, selectedIds);
-        if (procIds.length == 0)
-            return;
-        procIds.forEach(pid => columnDefs[pid] = []);
-        
+    private async loadSPColumnDefs(objIdsWithoutColumns:number[]) {
         let sql = `
             SELECT t.object_id, ic.*
             FROM sys.procedures t 
             JOIN INFORMATION_SCHEMA.parameters ic ON t.name = ic.SPECIFIC_NAME AND SCHEMA_NAME(t.schema_id) = ic.SPECIFIC_SCHEMA
-            WHERE t.object_id in (${procIds.join()})
+            WHERE t.object_id in (${objIdsWithoutColumns.join()})
             order by ic.SPECIFIC_SCHEMA, ic.SPECIFIC_NAME, ic.ORDINAL_POSITION
         `;
-        let dataSet = await this.getSQLFn()(this.projectService.connection, sql,
-            (err, res) => {
+        await this.getSQL2Fn()(this.projectService.connection, sql)
+            .then(res => {
                 this.ngZone.run(() => {
                     let i: number = 0;
                     res.forEach((row) => {
                         let procId = row["object_id"];
-                        let colDef = columnDefs[procId];
-                        if (!colDef) {
-                            columnDefs[procId] = [];
-                        }
                         let cf = new ColumnDef({
                             name: row['PARAMETER_NAME'],
                             dataType: row['DATA_TYPE'],
@@ -349,43 +306,67 @@ export class ColumnsComponent extends BaseComponent implements AfterViewInit {
                             precision: row['NUMERIC_PRECISION'],
                             scale: row['NUMERIC_SCALE'],
                             include: true,
-                            dirType: row['PARAMETER_MODE'] == "IN" ? COLUMN_DIR_TYPE.IN_PARAM : COLUMN_DIR_TYPE.OUT_PARAM
-                            
+                            dirType: row['PARAMETER_MODE'] == "IN" ? COL_DIR_TYPE.IN_PARAM : COL_DIR_TYPE.OUT_PARAM
                         });
                         let dn:DataGenerator = this.constructCommonPlughInForDataType(cf);
                         if (dn)
                             cf.plugIn.push(dn);
                         if (cf.plugIn.length == 0)    // we don't know how to generate this field
                             cf.include = false;
-                        columnDefs[procId].push(cf);
+                        if (row['PARAMETER_MODE'] == "IN")
+                            this.projectService.getDBObj(procId).columns[COL_DIR_TYPE.IN_PARAM].push(cf);
+                        else
+                            this.projectService.getDBObj(procId).columns[COL_DIR_TYPE.OUT_PARAM].push(cf);
                     });
                 });
-            }
-        );
+            })
+            .catch(err => {
+                this.getMsgBoxFn()("Loading View Columns Error", err.toString());
+            });
+
+        sql = ``;
+
+        await this.getSQL2Fn()(this.projectService.connection, sql)
+            .then(res => {
+            })
+            .catch(err => {
+                this.getMsgBoxFn()("Loading View Columns Error", err.toString());
+            });
     }
-    private getObjsWithColumnsLoaded(objType:string):number[] {
-        let objIdsWithColumnsLoaded:number[] = [];
+    private getObjsWithoutColumnsLoaded(objType:string):number[] {
+        let objIdsWithoutColumns:number[] = [];
         let objs = this.objects[objType];
-        objs.forEach(t => {
-            if (this.projectService.columnDefs.hasOwnProperty(t.id)) {
-                objIdsWithColumnsLoaded.push(t.id);
-            }
-        });
-        return objIdsWithColumnsLoaded;
+        if (objType == OBJ_TYPE.TB || objType == OBJ_TYPE.VW) {
+            objs.forEach(t => {
+                if (t.columns[COL_DIR_TYPE.TBLVW_COL].length == 0) {
+                    objIdsWithoutColumns.push(t.id);
+                }
+            });
+        }
+        else { 
+            // SP or SQL
+            objs.forEach(t => {
+                if (t.columns[COL_DIR_TYPE.IN_PARAM].length == 0) {
+                    objIdsWithoutColumns.push(t.id);
+                }
+            });
+        }
+        return objIdsWithoutColumns;
     }
     async ngOnInit() {
         this.objects = this.projectService.selectedObjs;
-        let columnDefs = this.projectService.columnDefs;
         // when moving back and forth among pages, we need to maintain states; 
-        // If columnDefs.length, the user is revisiting this page - clear the table entries that are no longer valid.
-        // If a table Id exists in both selectedTAbles and columnDefs, we don't need to reload column info from DB; take it off from tblIds
+        // If a database object already has columnDefs defined, we don't need to reload column info from DB; take it off from tblIds
 
-        let tbls = this.getObjsWithColumnsLoaded(OBJ_TYPE.TB);
-        await this.loadTableColumnDefs(tbls);
-        let vws = this.getObjsWithColumnsLoaded(OBJ_TYPE.VW);
-        await this.loadViewColumnDefs(vws);
-        let procs = this.getObjsWithColumnsLoaded(OBJ_TYPE.SP);
-        await this.loadSPColumnDefs(procs);
+        let tbls = this.getObjsWithoutColumnsLoaded(OBJ_TYPE.TB);
+        if (tbls.length)
+            await this.loadTableColumnDefs(tbls);
+        let vws = this.getObjsWithoutColumnsLoaded(OBJ_TYPE.VW);
+        if (vws.length)
+            await this.loadViewColumnDefs(vws);
+        let procs = this.getObjsWithoutColumnsLoaded(OBJ_TYPE.SP);
+        if (procs.length)
+            await this.loadSPColumnDefs(procs);
     }
 
 }

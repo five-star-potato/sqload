@@ -2,7 +2,7 @@ import * as d3 from 'd3';
 import { Component, NgZone, ElementRef, Renderer, OnDestroy } from "@angular/core";
 import { Router } from '@angular/router';
 import { BaseComponent } from "./base.component";
-import { TRON_GLOBAL, TRON_EVENT, OBJ_TYPE } from './constants';
+import { TRON_GLOBAL, TRON_EVENT, OBJ_TYPE, COL_DIR_TYPE } from './constants';
 import { DataGenerator, fnGetDataTypeDesc, fnGetCleanName, fnGetLargeRandomNumber } from './include';
 import * as gen from './generator/generators.component';
 import { WizardStateService } from "./service/wizard-state";
@@ -13,8 +13,8 @@ declare var require: (moduleId: string) => any;
 var appConf = require('../app.conf');
 
 class OutputMapAttribute {
-    dbObjInstance: string;
-    outputName: string;
+    dbObjInstance: string;  // this combined objId : instance
+    outputName: string;     // this combined dirType : column name
 }
 
 @Component({
@@ -43,12 +43,14 @@ class OutputMapAttribute {
       <div class="modal-body">
             <div class="form-group">
                 <label>Database Object instance</label>
-                <select required [(ngModel)]="outputMapping.dbObjInstance" class="form-control"> 
+                <select required [ngModel]="outputMapping.dbObjInstance" (ngModelChange)="mappingObjChanged($event)" class="form-control"> 
                     <option *ngFor="let obj of merged" [value]="obj.id + ':' + obj.instance">{{obj.name + ':' + obj.instance}}</option>
                 </select>
             </div>
             <div class="form-group">
-                <input required type="text" [(ngModel)]="outputMapping.outputName" class="form-control">
+                <select required [(ngModel)]="outputMapping.outputName" class="form-control"> 
+                    <option *ngFor="let col of mappableSourceColumns" [value]="col.dirType + ':' +  col.name">{{ col.dirType + ' - ' + col.name}}</option>
+                </select>
             </div>
       </div>
       <div class="modal-footer">
@@ -83,10 +85,18 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
     svgContainer: any;
     merged: DBObjDef[];
     outputMapping: OutputMapAttribute = new OutputMapAttribute();
+    mappableSourceColumns: ColumnDef[] = [];
     currColDef: ColumnDef;
+    
     constructor(router: Router, ngZone: NgZone, wizardStateService: WizardStateService, dataService: SampleDataService, projectService: ProjectService,
         public el: ElementRef, public renderer: Renderer) {
         super(router, ngZone, wizardStateService, dataService, projectService);
+    }
+    private mappingObjChanged(value) {
+        this.outputMapping.dbObjInstance = value;
+        let objId:number, instance:number;
+        [objId, instance] = value.split(":").map(Number);
+        this.mappableSourceColumns = this.projectService.getMappableSourceColumns(objId, instance);
     }
     private moveUp(index: number) {
         var b = this.merged[index].sequence;
@@ -98,21 +108,22 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
         this.merged[index].sequence = this.merged[index + 1].sequence;
         this.merged[index + 1].sequence = b;
     }
-    private findExistingOutputMap(objId:number, instance:number, colName:string):OutputMap {
-        let map:OutputMap = this.projectService.outputMaps.find(o => {
-            return (o.dbObjectId === objId && o.instance === instance && o.outputName == colName);
+    private findExistingOutputMap(objId: number, instance: number, dirType: COL_DIR_TYPE, colName: string): OutputMap {
+        let map: OutputMap = this.projectService.outputMaps.find(o => {
+            return (o.dbObjectId === objId && o.instance === instance && o.dirType == dirType && o.outputName == colName);
         });
         return map;
     }
-    private checkMappingDisabled():boolean {
-        if (this.outputMapping.outputName && this.outputMapping.dbObjInstance) 
+    private checkMappingDisabled(): boolean {
+        if (this.outputMapping.outputName && this.outputMapping.dbObjInstance)
             return false;
         else
             return true;
     }
     private saveOutputMappingChanges() {
         let newMap: OutputMap;
-        let objId:number, instance:number;
+        let objId: number, instance: number;
+        let dirType: COL_DIR_TYPE, colName: string;
         let cmdGen: CommandOutputGenerator = this.currColDef.plugIn[0] as CommandOutputGenerator;
         let oldMap = this.projectService.outputMaps.find(o => (o.id == cmdGen.outputMappingId));
 
@@ -121,13 +132,15 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
         // 2. if found, assign it; increase refCount
         // 3. if colDef is switching map id, the old one needs to decrease refCount
         [objId, instance] = this.outputMapping.dbObjInstance.split(':').map(Number);
-        newMap = this.findExistingOutputMap(objId, instance, this.outputMapping.outputName);
+        [dirType, colName] = this.outputMapping.outputName.split(':');
+        newMap = this.findExistingOutputMap(objId, instance, dirType, colName);
         if (!newMap) {
             newMap = {
                 id: fnGetLargeRandomNumber(),
                 dbObjectId: objId,
                 instance: instance,
-                outputName: this.outputMapping.outputName,
+                dirType: dirType,
+                outputName: colName,
                 refCount: 1
             };
             this.projectService.outputMaps.push(newMap);
@@ -138,7 +151,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             newMap.refCount += 1;
         }
 
-        //reduce refcount of the old one
+        //reduce refcount of the old one; if refCount dropped to 0, remove it
         if (oldMap && oldMap.id != newMap.id) {
             oldMap.refCount -= 1;
             if (oldMap.refCount <= 0) { // if refCount drops to 0, GC it
@@ -206,8 +219,8 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
         let colBtnHeight: number = 25;
         // find width of the object with the longest name
         let maxObjWidth: number = Math.max.apply(Math, this.merged.map(m => this.getTextWidth(m.name, 12, "arial"))) + 20;
-        maxObjWidth = Math.max(maxObjWidth, 300);
-        let maxY = this.merged.length * 100; // calculate the upperbound of rangeRound.
+        maxObjWidth = Math.max(maxObjWidth, 200);
+        let maxY = this.merged.length * 120; // calculate the upperbound of rangeRound.
         // yband to calculate the y position for each dbobject, using id as a marker
         let yband = d3.scaleBand().rangeRound([40, maxY]).domain(this.merged.map(m => String(m.id)));
 
@@ -240,7 +253,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
         selection.append('text')
             .attr("x", sx + 11)
             .attr("y", d => yband(d.id) - 3)
-            .attr("fill", "#fff")
+            .style("fill", "#fff")
             .style("stroke-width", 1)
             .style("font-size", "10px")
             .style("font-family", "arial")
@@ -253,12 +266,13 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             .attr("x", d => { d.x = sx + maxObjWidth; return sx; }) // set up the connection point origin
             .attr("y", d => { d.y = yband(d.id) + 15; return yband(d.id); })
             .attr("width", maxObjWidth)
-            .attr("height", 30)
-            .style("fill", '#AAA');
+            .attr("height", 50)
+            .style("fill", '#FFF')
+            .style("stroke", '#888');
         selection.append('text')
             .attr("x", sx + 10)
             .attr("y", d => yband(d.id) + 20)
-            .attr("fill", "#fff")
+            .style("fill", "#888")
             .style("stroke-width", 1)
             .style("font-size", "12px")
             .style("font-family", "arial")
@@ -280,21 +294,15 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
                      <button id="btnDown_${i}" data-index='${i}' class="btn btn-xs btn-info" style="position:absolute; top:3px; left:30px">
                         <i id="iconDown_${i}" data-index='${i}' class="fa fa-arrow-down" aria-hidden="true"></i></button>
                      <input id="chkInclude_${i}" style="position:absolute; left:100px; top:5px" class="flowChkGrouping" type="checkbox">`);
-        let incrShiftX:number = 0; // this is for gradually shifting the position of columns so that lines don't overlap too much
+
+        // Now draw the buttons that represent mappable target columnDefs
         fo1.each(r => {
-            if (incrShiftX >= 500) {
-                incrShiftX = 0;
-            }
-            let cx: number = (incrShiftX += 10);
-            let id = r.id;
-            var colors = this.svgContainer
+            let cx: number = 10; // (incrShiftX += 10);
+            let objId = r.id;
+            this.svgContainer
                 // for all the columns that are to be wired from other commands, lay them out as buttons
-                .selectAll('.columnDefs')
-                .data(this.projectService.columnDefs[id].filter(d => {
-                    if (d.plugIn.length > 0 && d.plugIn[0].constructor.name == "CommandOutputGenerator")
-                        return true;
-                    return false;
-                }))
+                .selectAll('.mappableTarget')
+                .data(this.projectService.getMappableTargetColumns(r.id, r.instance))
                 .enter().append("foreignObject")
                 .attr('x', d => {
                     let x1 = cx;
@@ -304,17 +312,59 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
                     cx += (30 + w);
                     return x2;
                 })
-                .attr('y', d => { let y = yband(r.id) + 3; d.y = y; return y; })
+                .attr('y', d => { let y = yband(objId) + 3; d.y = y; return y; })
                 .attr('width', d => this.getTextWidth(d.name, 11, "arial"))
                 .attr('height', colBtnHeight)
-                .html(d => `<button id="btnMap_${fnGetCleanName(d.name)}" data-obj-id="${id}" class="btn btn-xs btn-primary flowBtnColumn">${d.name}</button>`);
-
+                .html(d => `<button id="btnMap_${fnGetCleanName(d.name)}_${r.objType}" data-obj-id="${objId}" data-obj-inst="${r.instance}" data-col-type="${d.dirType}" class="btn btn-xs ${ d.dirType == COL_DIR_TYPE.IN_PARAM ? 'btn-primary' : 'btn-warning' } flowBtnColumn">${d.name}</button>`);
+        });
+        // Draw the shapes that represent mapped output column (source)
+        selection.each(r => {
+            let cx: number = 10; 
+            let objId = r.id;
+            this.svgContainer
+                .selectAll('.mappedOutput')
+                .data(this.projectService.getMappedSourceColumns(r.id, r.instance))
+                .enter().append("rect")
+                .attr('x', d => {
+                    let x1 = cx;
+                    let x2 = sx + maxObjWidth + 10 + x1;
+                    let w = this.getTextWidth(d.name, 11, "arial");
+                    d.x = x2 + w / 2;
+                    cx += (30 + w);
+                    return x2;
+                })
+                .attr('rx', 2)
+                .attr('ry', 2)
+                .attr('y', d => { let y = yband(objId) + 30; d.y = y; return y; })
+                .attr('width', d => this.getTextWidth(d.name, 12, "arial"))
+                .attr('height', 20)
+                .style("fill", 'coral')
+                .style("stroke", 'brown');
+            cx = 10;
+            this.svgContainer
+                .selectAll('.mappedOutputText')
+                .data(this.projectService.getMappedSourceColumns(r.id, r.instance))
+                .enter().append("text")
+                .attr('x', d => {
+                    return d.x + 2 - this.getTextWidth(d.name, 11, "arial") / 2;
+                })
+                .attr('y', d => { let y = yband(objId) + 45; d.y = y; return y; })
+                .style("fill", "#FFF")
+                .style("stroke-width", 1)
+                .style("font-size", "11px") // I use 12px to calculate the width, just so that it has some margin
+                .style("font-family", "arial")
+                .style("text-anchor", "start")
+                .text(d => d.name);
         });
 
         // draw connection lines
         let lineFactory = d3.line().curve(d3.curveBasis);
         for (let dbObj of this.merged) {
-            let cols = this.projectService.columnDefs[dbObj.id];
+            let cols: ColumnDef[] = [];
+            if (dbObj.isTableOrView)
+                cols = dbObj.columns[COL_DIR_TYPE.TBLVW_COL];
+            else 
+                cols = dbObj.columns[COL_DIR_TYPE.IN_PARAM].concat(dbObj.columns[COL_DIR_TYPE.RSLTSET]).concat(dbObj.columns[COL_DIR_TYPE.RET_VAL]);
             for (let col of cols.filter(c => { return (c.plugIn.length > 0 && c.plugIn[0].constructor.name == "CommandOutputGenerator") })) {
                 let mapId: number = (col.plugIn[0] as CommandOutputGenerator).outputMappingId;
                 if (mapId) {
@@ -322,11 +372,12 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
                     let outMap: OutputMap = this.projectService.outputMaps.find(o => o.id == mapId);
                     let srcObj = this.merged.find(obj => (obj.id == outMap.dbObjectId && obj.instance == outMap.instance));
                     if (srcObj) {
-                        let points_a = [[srcObj.x, srcObj.y], [srcObj.x, (srcObj.y + col.y)/2], [col.x, (srcObj.y + col.y)/2],
+                        let points_a = [[srcObj.x, srcObj.y], [srcObj.x, (srcObj.y + col.y) / 2], [col.x, (srcObj.y + col.y) / 2],
                         [col.x, srcObj.y > col.y ? col.y + colBtnHeight + 5 : col.y - 3]];
                         this.svgContainer.append('path')
                             .datum(points_a)
                             .attr('d', lineFactory)
+                            .attr('z', '-10')
                             .attr('fill', 'none')
                             .attr('stroke', 'orange')
                             .attr('marker-end', 'url(#triangle)');
@@ -370,14 +421,16 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             }
             if (e.target.id.startsWith("btnMap_")) {
                 let objId = $(e.target).data("obj-id");
+                let inst = $(e.target).data("obj-inst");
+                let dirType = $(e.target).data("col-type");
                 let colName = $(e.target).html();
                 this.clearOutputMapping();
-                this.currColDef = this.projectService.columnDefs[objId].find(c => c.name == colName);
+                this.currColDef = this.projectService.getDBObjInstance(objId, inst).columns[dirType].find(c => c.name == colName);
                 let mapId: number = (this.currColDef.plugIn[0] as CommandOutputGenerator).outputMappingId;
                 if (mapId) {
                     let outMap: OutputMap = this.projectService.outputMaps.find(o => o.id == mapId);
                     this.outputMapping.dbObjInstance = outMap.dbObjectId + ":" + outMap.instance;
-                    this.outputMapping.outputName = outMap.outputName;
+                    this.outputMapping.outputName = outMap.dirType + ":" + outMap.outputName;
                 }
                 $("#modalOutputMapping").modal('show');
             }

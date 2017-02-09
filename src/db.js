@@ -1,7 +1,7 @@
 var tedious = require('tedious');
 
-var verifyConnection = function(connection, callback) {
-    var Connection = require('tedious').Connection;
+var verifyConnection = function(connection) {
+    var Connection = tedious.Connection;
     var config = {
         userName: connection.userName,
         password: connection.password,
@@ -10,13 +10,64 @@ var verifyConnection = function(connection, callback) {
         options: { encrypt: true, database: connection.databaseName }
     };
     var connection = new Connection(config);
-    connection.on('connect', function (err) {
-        callback(err);            
+    return new Promise(function(resolve, reject){
+        connection.on('connect', function (err) {
+            if (err)
+                reject(err);
+            else
+                resolve();
+        });
     });
     
 }
+var execSQL2 = function(connection, sqlStmt) {
+    var Request = tedious.Request;
+    var TYPES = tedious.TYPES;
+    var Connection = tedious.Connection;
+    var config = {
+        userName: connection.userName,
+        password: connection.password,
+        server: connection.serverName,
+        // If you are on Microsoft Azure, you need this:  
+        options: { encrypt: true, database: connection.databaseName }
+    };
+    var connection = new Connection(config);
+    return new Promise(function(resolve, reject) {
+        connection.on('connect', function (err) {
+            // If no error, then good to proceed.  
+            if (err) {
+                console.log("connection error: ");
+                reject(err);
+            }
+            else {
+                    var newData = [];
+                    var dataSet = [];
+                    request = new Request(sqlStmt, function (err, rowCount) {
+                        if (err) 
+                            reject(err);
+                        else {
+                            if (rowCount < 1) 
+                                reject(false);
+                            else {
+                                resolve(newData);
+                            }
+                        }
+                    });
+                    request.on('row', function (row) {
+                        dataSet = {};
+                        row.forEach(function (column) {
+                            dataSet[column.metadata.colName] = column.value;
+                        });
+                        newData.push(dataSet);
+                    });
+                    connection.execSql(request);
+            }
+        });
+    });
+}
+/*
 var execSQL = function(connection, sqlStmt, callback) {
-    var Connection = require('tedious').Connection;
+    var Connection = tedious.Connection;
     var config = {
         userName: connection.userName,
         password: connection.password,
@@ -35,8 +86,8 @@ var execSQL = function(connection, sqlStmt, callback) {
             executeStatement(sqlStmt);
     });
 
-    var Request = require('tedious').Request;
-    var TYPES = require('tedious').TYPES;
+    var Request = tedious.Request;
+    var TYPES = tedious.TYPES;
 
     function executeStatement(sqlStmt) {
         var newData = [];
@@ -65,9 +116,9 @@ var execSQL = function(connection, sqlStmt, callback) {
         connection.execSql(request);
     }
 }
-
+*/
 var dbFunctions = {
-    execSQL,
+    execSQL2,
     verifyConnection
 }
 

@@ -1,5 +1,6 @@
 export class TRON_GLOBAL {
     public static get fnExecSQL():string { return "fnExecSQL"; }
+    public static get fnExecSQL2():string { return "fnExecSQL2"; }
     public static get fnVerifyConnection():string { return "fnVerifyConnection"; }
     public static get fnSaveProject():string { return "fnSaveProject"; }
     public static get fnOpenProject():string { return "fnOpenProject"; }
@@ -25,7 +26,7 @@ export class OBJ_TYPE {
     public static SP = "P";
     public static SQL = "SQL";
 }
-export class COLUMN_DIR_TYPE {
+export class COL_DIR_TYPE {
     public static RET_VAL = "RET_VAL";      // Return value
     public static IN_PARAM = "IN_PARAM";    // Input Parameter to SP or Custom SQL
     public static OUT_PARAM = "OUT_PARAM";  // Ouput Parameter from SP

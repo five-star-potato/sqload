@@ -1,6 +1,6 @@
 import { NgZone } from '@angular/core';
 import { Router } from '@angular/router';
-import { TRON_GLOBAL, TRON_EVENT, OBJECT_TYPES_LIST, OBJ_TYPE } from './constants';
+import { TRON_GLOBAL, TRON_EVENT, OBJECT_TYPES_LIST, OBJ_TYPE, COL_DIR_TYPE } from './constants';
 import { WizardStateService } from "./service/wizard-state";
 import { SampleDataService } from "./service/sample-data";
 import { ProjectService, DBObjDef } from "./service/project";
@@ -25,8 +25,8 @@ export abstract class BaseComponent {
    }
     abstract back(): void;
     abstract next(): void;
-    protected getSQLFn():any {
-        return this.remote.getGlobal(TRON_GLOBAL.fnExecSQL);
+    protected getSQL2Fn():any {
+        return this.remote.getGlobal(TRON_GLOBAL.fnExecSQL2);
     }
     protected getVerifyConnFn():any {
         return this.remote.getGlobal(TRON_GLOBAL.fnVerifyConnection);
@@ -45,16 +45,31 @@ export abstract class BaseComponent {
     }
     protected getObjectTypeName(t:string) {
         switch (t) {
-            case 'U':
+            case OBJ_TYPE.TB:
                 return "Table";
-            case 'V':
+            case OBJ_TYPE.VW:
                 return "View";
-            case 'P':
+            case OBJ_TYPE.SP:
                 return "Stored Procedure";
-            case 'SQL':
+            case OBJ_TYPE.SQL:
                 return "Customer SQL";
         }
     }
+    protected getColumnDirTypeName(t:string) {
+        switch (t) {
+            case COL_DIR_TYPE.IN_PARAM:
+                return "Input Param";
+            case COL_DIR_TYPE.OUT_PARAM:
+                return "Output Param";
+            case COL_DIR_TYPE.RET_VAL:
+                return "Return Value";
+            case COL_DIR_TYPE.RSLTSET:
+                return "Result Set";
+            case COL_DIR_TYPE.TBLVW_COL:
+                return "Column";
+        }
+    }
+    /*
     protected getAllObjects() {
         var allObj:DBObjDef[] = [];
         for (let objType of OBJECT_TYPES_LIST) {
@@ -62,4 +77,5 @@ export abstract class BaseComponent {
         }
         return allObj;
     }
+    */
 }

@@ -10,7 +10,7 @@ function messageBox(title, msg) {
     dialog.showErrorBox(title, msg);
 }
 function init() {
-    global.fnExecSQL = db.execSQL;
+    global.fnExecSQL2 = db.execSQL2;
     global.fnVerifyConnection = db.verifyConnection;
     global.fnSaveProject = fileUtil.saveProjectFile;
     global.fnOpenProject = fileUtil.openProjectFile;

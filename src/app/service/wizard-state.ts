@@ -1,6 +1,6 @@
 import { Injectable } from "@angular/core";
 import { Subject } from 'rxjs/Subject';
-import { TRON_GLOBAL, TRON_EVENT, OBJ_TYPE } from '../constants';
+import { TRON_GLOBAL, TRON_EVENT, OBJ_TYPE, COL_DIR_TYPE } from '../constants';
 import { ProjectStruct, ProjectService, ConnectionConfig, DBObjDef, ColumnDef } from './project';
 
 @Injectable()
@@ -37,7 +37,6 @@ export class WizardStateService {
             this.projectEventSource.next({ type: "activate", urls: links });        
         }
     }
-
     private isConnectionReady(proj:ProjectStruct):boolean {
         return (proj.connection.serverName && 
                 proj.connection.databaseName && 
@@ -52,7 +51,24 @@ export class WizardStateService {
                 proj.selectedObjs[OBJ_TYPE.SQL].length > 0);
     }
     private isColumnReady(proj: ProjectStruct):boolean {
-        return !this.isEmpty(proj.columnDefs);
+        proj.selectedObjs[OBJ_TYPE.TB].forEach(t => {
+            if (t.columns[COL_DIR_TYPE.TBLVW_COL].length == 0) return false;
+        })
+        proj.selectedObjs[OBJ_TYPE.VW].forEach(t => {
+            if (t.columns[COL_DIR_TYPE.TBLVW_COL].length == 0) return false;
+        })
+        proj.selectedObjs[OBJ_TYPE.SP].forEach(t => {
+            if (t.columns[COL_DIR_TYPE.IN_PARAM].length == 0 &&
+                t.columns[COL_DIR_TYPE.OUT_PARAM].length == 0 &&
+                t.columns[COL_DIR_TYPE.RSLTSET ].length == 0)
+                return false; // you have to have something in, out params or result set
+        })
+        proj.selectedObjs[OBJ_TYPE.SP].forEach(t => {
+            if (t.columns[COL_DIR_TYPE.IN_PARAM].length == 0 &&
+                t.columns[COL_DIR_TYPE.RSLTSET ].length == 0)
+                return false; // you have to have something in, out params or result set
+        })
+        return true;
     }
     private isRowsReady(proj: ProjectStruct):boolean {
         for (let objType in proj.selectedObjs) {

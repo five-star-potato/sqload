@@ -1,6 +1,6 @@
 import { Component, OnInit, NgZone } from '@angular/core';
 import { Router } from '@angular/router';
-import { TRON_GLOBAL, TRON_EVENT, NAME_TYPE, OBJ_TYPE } from './constants';
+import { TRON_GLOBAL, TRON_EVENT, NAME_TYPE, OBJ_TYPE, COL_DIR_TYPE } from './constants';
 import { BaseComponent } from './base.component';
 import { fnGetDataTypeDesc, fnStringifyNoCircular, fnGetCleanName } from './include';
 import { SampleAddressGenerator, GivenNameGenerator, SurnameGenerator, IntegerGenerator, TextGenerator, DateGenerator, UUIDGenerator, CustomSqlGenerator, CustomValueGenerator, FKGenerator } from './generator/generators.component';
@@ -89,7 +89,6 @@ export class GenerateComponent extends BaseComponent {
     stmts: string[] = [];
     declareStmts: string[] = [];
     allObjects: DBObjDef[];
-    colDefs: any;
     progress: ProgressData[] = [];
     overallProgress: number = 0;
     totalRowCnt: number = 0;
@@ -106,13 +105,11 @@ export class GenerateComponent extends BaseComponent {
     private cleanUnusedPlugin() {
         var tbls = this.projectService.selectedObjs['U'];
         tbls.forEach(t => {
-            if (this.projectService.columnDefs[t.id]) {
-                // trim unused plugin; cf.plugins is a list of plugins; only the first one is used. The rest are for users to undo changes only
-                this.projectService.columnDefs[t.id].forEach((cf: ColumnDef) => {
-                    if (cf.plugIn.length > 1)
-                        cf.plugIn.splice(1);
-                });
-            }
+            // trim unused plugin; cf.plugins is a list of plugins; only the first one is used. The rest are for users to undo changes only
+            this.projectService.getAllColumns(t.id, t.instance).forEach((cf: ColumnDef) => {
+                if (cf.plugIn.length > 1)
+                    cf.plugIn.splice(1);
+            });
         });
     }
     private substituteAddressField(field: string, addr: any, isSQL:boolean): string {
@@ -218,7 +215,7 @@ export class GenerateComponent extends BaseComponent {
             let str: string = "";
             str += vals.join('\n') + '\n';
             str += fkSql;
-            if (obj.objType == OBJ_TYPE.TB || obj.objType == OBJ_TYPE.VW) 
+            if (obj.isTableOrView)
                 str += `INSERT INTO ${obj.name}(${colNames.join()}) VALUES(${variables.join()});`;
             else if (obj.objType == OBJ_TYPE.SP) {
                 str += `EXEC ${obj.name} ${variables.join()};`;
@@ -282,11 +279,14 @@ export class GenerateComponent extends BaseComponent {
                 }
             }
         }
-
     }
     private generateDataForObj(objIndex: number) {
         let obj: DBObjDef = this.allObjects[objIndex];
-        let colArr: ColumnDef[] = this.colDefs[obj.id];
+        let colArr: ColumnDef[];
+        if (obj.isTableOrView)
+            colArr = obj.columns[COL_DIR_TYPE.TBLVW_COL];
+        else
+            colArr = obj.columns[COL_DIR_TYPE.IN_PARAM];
         let colNames: string[] = [];
         let variables: string[] = [];
         let fkConstraints: Set<number> = new Set<number>();
@@ -328,7 +328,7 @@ export class GenerateComponent extends BaseComponent {
         this.progress = [];
         // This is where preprocessing happens. E.g. calling data service to get sample addresses and names
         this.allObjects.forEach(t => {
-            let colArr = this.colDefs[t.id];
+            let colArr = this.projectService.getAllColumns(t.id, t.instance);
             colArr.forEach((cf: ColumnDef) => {
                 if (cf.include) {
                     if (cf.plugIn.length > 0) {
@@ -375,8 +375,7 @@ export class GenerateComponent extends BaseComponent {
         this.getSaveProjectFn()(projectContent);
     }
     ngOnInit() {
-        this.allObjects = this.getAllObjects();
+        this.allObjects = this.projectService.getAllObjects();
         this.allObjects.sort((a, b) => a.sequence - b.sequence);
-        this.colDefs = this.projectService.columnDefs;
     }
 }
