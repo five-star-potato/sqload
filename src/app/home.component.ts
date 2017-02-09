@@ -1,4 +1,3 @@
-import * as joint from "jointjs";
 import { Component, NgZone, Output, EventEmitter, OnInit } from "@angular/core";
 import { Router } from '@angular/router';
 import { BaseComponent } from "./base.component";
