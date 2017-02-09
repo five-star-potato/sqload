@@ -60,13 +60,13 @@ export class DBObjDef {
         this.columns[COL_DIR_TYPE.RET_VAL] = [];
         if (fields) Object.assign(this, fields);
     }
-    get isTableOrView():boolean {
+    isTableOrView():boolean {
         return (this.objType == OBJ_TYPE.TB || this.objType == OBJ_TYPE.VW);
     }
-    get isSQL():boolean {
+    isSQL():boolean {
         return (this.objType == OBJ_TYPE.SQL);
     }
-    get isSP():boolean {
+    isSP():boolean {
         return (this.objType == OBJ_TYPE.SP);
     }
 }
@@ -88,10 +88,13 @@ export class ColumnDef {
     //dirType: COLUMN_DIR_TYPE;
     plugIn: DataGenerator[] = []; // DataGenerator sometimes requires much configuration... save the change in case the user switch generator types by mistakes
     variable: string; // placeholder for SQL variable names
-    x: number;   // these coordinates are for connecting lines in flow diagram
-    y: number;
     dirType: COL_DIR_TYPE;
     ordinal: number;
+
+    x: number;   // these coordinates are for connecting lines in flow diagram
+    y: number;
+    width: number; 
+    height: number;
 
     public get cleanName(): string {
         return this.name.replace(/[\$ #@]/g, '_');
@@ -165,14 +168,18 @@ export class ProjectService {
         if (i) return i;
         return null;
     }
+    getColumnFromDBObj(objId:number, instance:number, dirType: COL_DIR_TYPE, colName): ColumnDef {
+        return this.getAllColumnsByObj(objId, instance).find(c => c.name == colName && c.dirType == dirType);
+    }
     getMappableTargetColumns(objId:number, instance:number): ColumnDef[] {
         let obj = this.getDBObjInstance(objId, instance);
-        return obj.columns[COL_DIR_TYPE.IN_PARAM].concat(obj.columns[COL_DIR_TYPE.TBLVW_COL])
+        let tmp = obj.columns[COL_DIR_TYPE.IN_PARAM].concat(obj.columns[COL_DIR_TYPE.TBLVW_COL])
             .filter(d => {
                 if (d.plugIn.length > 0 && d.plugIn[0].constructor.name == "CommandOutputGenerator")
                     return true;
                 return false;
             });
+        return tmp;
     }
     // find all the columns of an object that have been used for mapping (output). We need this list to draw the rect and connect the line.
     // I don't intend to draw every columns even if they don't participate in mapping
@@ -181,7 +188,11 @@ export class ProjectService {
         for (let o of this.project.outputMaps) {
             if (o.dbObjectId == objId && o.instance == instance) {
                 let dbObj = this.getDBObjInstance(objId, instance);
-                colArr.push(dbObj.columns[o.dirType.toString()].find(c => c.dirType == o.dirType && c.name == o.outputName));
+                let c = dbObj.columns[o.dirType.toString()].find(c => c.dirType == o.dirType && c.name == o.outputName);
+                // if this column is both mappable target and mapped output, don't return it, because in the flow diagram logic, I draw the mappable target first
+                // not very nice because it's very coupled with the flow diagram logic
+                if (c.plugIn.length == 0 || c.plugIn[0].constructor.name != "CommandOutputGenerator")
+                    colArr.push(c);
             }
         }
         return colArr;
@@ -190,11 +201,12 @@ export class ProjectService {
         let obj = this.getDBObjInstance(objId, instance);
         return obj.columns[COL_DIR_TYPE.RSLTSET].concat(obj.columns[COL_DIR_TYPE.TBLVW_COL]).concat(obj.columns[COL_DIR_TYPE.OUT_PARAM]).concat(obj.columns[COL_DIR_TYPE.RET_VAL]).concat(obj.columns[COL_DIR_TYPE.IN_PARAM]);
     }
-    getAllColumns(objId:number, instance:number): ColumnDef[] {
+    getAllColumnsByObj(objId:number, instance:number): ColumnDef[] {
         let obj = this.getDBObjInstance(objId, instance);
         return obj.columns[COL_DIR_TYPE.IN_PARAM]
             .concat(obj.columns[COL_DIR_TYPE.TBLVW_COL])
             .concat(obj.columns[COL_DIR_TYPE.OUT_PARAM])
+            .concat(obj.columns[COL_DIR_TYPE.RET_VAL])
             .concat(obj.columns[COL_DIR_TYPE.RSLTSET]);
     }
     getAllObjects():DBObjDef[] {

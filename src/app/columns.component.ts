@@ -71,7 +71,7 @@ export class ColumnsComponent extends BaseComponent implements AfterViewInit {
     private setActiveObj(obj: DBObjDef) {
         this.activeObjId = obj.id;
         this.activeObjName = obj.name;
-        if (obj.isTableOrView)
+        if (obj.objType == OBJ_TYPE.TB || obj.objType == OBJ_TYPE.VW)
             this.columns = obj.columns[COL_DIR_TYPE.TBLVW_COL];
         else 
             this.columns = obj.columns[COL_DIR_TYPE.IN_PARAM];

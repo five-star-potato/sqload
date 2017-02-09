@@ -22,7 +22,7 @@ class OutputMapAttribute {
         <div class="flexbox-parent">
                <canvas id="hdnCanvas" style="display:none"></canvas>
                <div class="flexbox-item header">
-                <h3>Set up the number of rows to be generated</h3>
+                <h3>Configure the flow of data generation</h3>
             </div>
             <div class="flexbox-item fill-area content flexbox-item-grow" style="overflow-x:auto;overflow-y:auto" id="divFlow">
             </div>
@@ -168,6 +168,20 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
         this.wizardStateService.projectChange({ type: TRON_EVENT.refresh });
         this.router.navigate(['/generate']);
     }
+    private getColumnDirClass(dirType: COL_DIR_TYPE):string {
+        switch (dirType) {
+            case COL_DIR_TYPE.IN_PARAM:
+                return "btn-primary";
+            case COL_DIR_TYPE.RSLTSET:
+                return "btn-warning";
+            case COL_DIR_TYPE.TBLVW_COL:
+                return "btn-success";
+            case COL_DIR_TYPE.OUT_PARAM:
+                return "btn-info";
+            default:
+                return "btn-default";
+        }
+    }
     private getTextWidth(text, fontSize, fontFace): number {
         let a: any = document.getElementById('hdnCanvas');
         let b: any = a.getContext('2d');
@@ -214,12 +228,13 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             .attr("strok-width", 1);
     }
     private drawFlow() {
+        let rightPos: { [objId:number]:number } = {};
         this.merged.sort((a, b) => a.sequence - b.sequence);
 
         let colBtnHeight: number = 25;
         // find width of the object with the longest name
         let maxObjWidth: number = Math.max.apply(Math, this.merged.map(m => this.getTextWidth(m.name, 12, "arial"))) + 20;
-        maxObjWidth = Math.max(maxObjWidth, 200);
+        maxObjWidth = Math.max(maxObjWidth, 300);
         let maxY = this.merged.length * 120; // calculate the upperbound of rangeRound.
         // yband to calculate the y position for each dbobject, using id as a marker
         let yband = d3.scaleBand().rangeRound([40, maxY]).domain(this.merged.map(m => String(m.id)));
@@ -260,15 +275,17 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             .style("text-anchor", "start")
             .text(d => this.getObjectTypeName(d.objType));
 
+        // this is the main shape of the DB object
         selection.append('rect')
             .attr('rx', 5)
             .attr('ry', 5)
             .attr("x", d => { d.x = sx + maxObjWidth; return sx; }) // set up the connection point origin
             .attr("y", d => { d.y = yband(d.id) + 15; return yband(d.id); })
             .attr("width", maxObjWidth)
-            .attr("height", 50)
+            .attr("height", 30)
             .style("fill", '#FFF')
             .style("stroke", '#888');
+        // DB Object label
         selection.append('text')
             .attr("x", sx + 10)
             .attr("y", d => yband(d.id) + 20)
@@ -284,7 +301,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             .attr("x", sx - 170)
             .attr("y", d => yband(d.id))
             .attr("width", 120)
-            .attr("height", 20);
+            .attr("height", d => d.height = 20);
         let div1 = fo1.append("xhtml:div")
             .append("div")
             .style("position", "relative")
@@ -305,39 +322,38 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
                 .data(this.projectService.getMappableTargetColumns(r.id, r.instance))
                 .enter().append("foreignObject")
                 .attr('x', d => {
-                    let x1 = cx;
-                    let x2 = sx + maxObjWidth + 10 + x1;
-                    let w = this.getTextWidth(d.name, 11, "arial");
-                    d.x = x2 + w / 2;
-                    cx += (30 + w);
+                    let x2 = sx + maxObjWidth + 10 + cx;
+                    d.width = this.getTextWidth(d.name, 11, "arial");
+                    d.x = x2 + d.width / 2 + 3;
+                    cx += (30 + d.width);
+                    rightPos[objId] = cx; // remember the rightmost position
                     return x2;
                 })
                 .attr('y', d => { let y = yband(objId) + 3; d.y = y; return y; })
-                .attr('width', d => this.getTextWidth(d.name, 11, "arial"))
+                .attr('width', d => d.width)
                 .attr('height', colBtnHeight)
-                .html(d => `<button id="btnMap_${fnGetCleanName(d.name)}_${r.objType}" data-obj-id="${objId}" data-obj-inst="${r.instance}" data-col-type="${d.dirType}" class="btn btn-xs ${ d.dirType == COL_DIR_TYPE.IN_PARAM ? 'btn-primary' : 'btn-warning' } flowBtnColumn">${d.name}</button>`);
+                .html(d => `<button id="btnMap_${fnGetCleanName(d.name)}_${r.objType}" data-obj-id="${objId}" data-obj-inst="${r.instance}" data-col-type="${d.dirType}" class="btn btn-xs flowBtnColumn ${this.getColumnDirClass(d.dirType)}" >${d.name}</button>`);
         });
         // Draw the shapes that represent mapped output column (source)
         selection.each(r => {
-            let cx: number = 10; 
             let objId = r.id;
+            let cx: number = rightPos[objId] || 10;
             this.svgContainer
                 .selectAll('.mappedOutput')
                 .data(this.projectService.getMappedSourceColumns(r.id, r.instance))
                 .enter().append("rect")
                 .attr('x', d => {
-                    let x1 = cx;
-                    let x2 = sx + maxObjWidth + 10 + x1;
-                    let w = this.getTextWidth(d.name, 11, "arial");
-                    d.x = x2 + w / 2;
-                    cx += (30 + w);
+                    let x2 = sx + maxObjWidth + 10 + cx;
+                    d.width = this.getTextWidth(d.name, 12, "arial") + 3;
+                    d.x = x2 + d.width / 2;
+                    cx += (30 + d.width);
                     return x2;
                 })
                 .attr('rx', 2)
                 .attr('ry', 2)
-                .attr('y', d => { let y = yband(objId) + 30; d.y = y; return y; })
-                .attr('width', d => this.getTextWidth(d.name, 12, "arial"))
-                .attr('height', 20)
+                .attr('y', d => d.y = yband(objId) + 4)
+                .attr('width', d => this.getTextWidth(d.name, 12, "arial") + 3)
+                .attr('height', d => d.height = 20)
                 .style("fill", 'coral')
                 .style("stroke", 'brown');
             cx = 10;
@@ -346,9 +362,9 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
                 .data(this.projectService.getMappedSourceColumns(r.id, r.instance))
                 .enter().append("text")
                 .attr('x', d => {
-                    return d.x + 2 - this.getTextWidth(d.name, 11, "arial") / 2;
+                    return d.x - d.width / 2 + 3;
                 })
-                .attr('y', d => { let y = yband(objId) + 45; d.y = y; return y; })
+                .attr('y', d => { let y = yband(objId) + 18; d.y = y; return y; })
                 .style("fill", "#FFF")
                 .style("stroke-width", 1)
                 .style("font-size", "11px") // I use 12px to calculate the width, just so that it has some margin
@@ -360,24 +376,23 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
         // draw connection lines
         let lineFactory = d3.line().curve(d3.curveBasis);
         for (let dbObj of this.merged) {
-            let cols: ColumnDef[] = [];
-            if (dbObj.isTableOrView)
-                cols = dbObj.columns[COL_DIR_TYPE.TBLVW_COL];
-            else 
-                cols = dbObj.columns[COL_DIR_TYPE.IN_PARAM].concat(dbObj.columns[COL_DIR_TYPE.RSLTSET]).concat(dbObj.columns[COL_DIR_TYPE.RET_VAL]);
+            let cols: ColumnDef[] = this.projectService.getAllColumnsByObj(dbObj.id, dbObj.instance)
+
             for (let col of cols.filter(c => { return (c.plugIn.length > 0 && c.plugIn[0].constructor.name == "CommandOutputGenerator") })) {
                 let mapId: number = (col.plugIn[0] as CommandOutputGenerator).outputMappingId;
                 if (mapId) {
                     // find the outputMap object to reconnect src and col
                     let outMap: OutputMap = this.projectService.outputMaps.find(o => o.id == mapId);
-                    let srcObj = this.merged.find(obj => (obj.id == outMap.dbObjectId && obj.instance == outMap.instance));
-                    if (srcObj) {
-                        let points_a = [[srcObj.x, srcObj.y], [srcObj.x, (srcObj.y + col.y) / 2], [col.x, (srcObj.y + col.y) / 2],
-                        [col.x, srcObj.y > col.y ? col.y + colBtnHeight + 5 : col.y - 3]];
+                    let srcCol = this.projectService.getColumnFromDBObj(outMap.dbObjectId, outMap.instance, outMap.dirType, outMap.outputName);
+                    if (srcCol) {
+                        // don't understand why srcCol.y + height is too much
+                        let points_a = [[srcCol.x, srcCol.y + 8], [srcCol.x, (srcCol.y + col.y) / 2], [col.x, (srcCol.y + col.y) / 2],
+                        // srcCol must be above target col
+                        [col.x, col.y - 4]];
                         this.svgContainer.append('path')
                             .datum(points_a)
                             .attr('d', lineFactory)
-                            .attr('z', '-10')
+                            .attr('z', '0')
                             .attr('fill', 'none')
                             .attr('stroke', 'orange')
                             .attr('marker-end', 'url(#triangle)');
