@@ -321,7 +321,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             .call(d3.drag().on("start", () => { console.log('dragging started') }))
             .merge(updateSel)
             .attr("x", d => { d.x = sx + maxObjWidth; return sx; }) // set up the connection point origin
-            .attr("y", d => { d.y = yband(d.id) + 15; return yband(d.id); });
+            .attr("y", d => { d.y = yband(d.id) + 15; return yband(d.id) /* + Math.random() * 10 */; });
 
         let selectDbObjText = this.svgContainer.selectAll(".selectDbObjText");
         updateSel = selectDbObjText.data(this.mergedDbObjs, d => d.id + ':' + d.instance);   // UPDATE selection
@@ -440,39 +440,29 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             .style("text-anchor", "middle")
             .text((c: ColumnDef) => c.name)
             .merge(mappedColTextSelection)
-            .attr('x', (c: ColumnDef) => {
-                //console.log(c.name + ' based on 11px font: ' + this.getTextWidth(c.name, 11, "arial"));
-                //console.log(c.name + ' text x: ' + c.x);
-                return c.x;
-            })
-            .attr('y', (c: ColumnDef) => {
-                return c.y + 14;
-            })
+            .attr('x', (c: ColumnDef) => c.x)
+            .attr('y', (c: ColumnDef) => c.y + 14);
 
         // draw connection lines
-        let lineFactory = d3.line().curve(d3.curveBasis);
-        let connectors: SrcTargetLine[] = [];
         let series: any[] = []; // series represent the group of connector lines
-
+        let lineIds: string[] = []; // don't know how to embedded a unique id in the series
         this.projectService.getAllObjects().forEach(o => {
             this.projectService.getMappableTargetColumns(o.id, o.instance).forEach(target => {
                 let cmdGen: CommandOutputGenerator = target.plugIn[0] as CommandOutputGenerator;
                 if (cmdGen.outputMappingId) {
                     let outMap: OutputMap = this.projectService.outputMaps.find(p => p.id == cmdGen.outputMappingId);
                     let src: ColumnDef = this.projectService.getColumnFromDBObj(outMap.dbObjectId, outMap.instance, outMap.dirType, outMap.outputName);
-                    connectors.push({
-                        srcObjId: outMap.dbObjectId,
-                        srcInstance: outMap.instance,
-                        srcDirType: src.dirType,
-                        srcColName: src.name,
-                        targetObjId: o.id,
-                        targetInstance: o.instance,
-                        targetDirType: target.dirType,
-                        targetColName: target.name,
-                        x1: src.x, y1: src.y,
-                        x2: target.x, y2: target.y
-                    });
-                    series.push([{ x: src.x, y: src.y + 22 }, { x: src.x, y: (src.y + target.y) / 2 }, { x: target.x, y: (src.y + target.y) / 2 }, { x: target.x, y: target.y - 8 }]);
+                    series.push([{ x: src.x, y: src.y + 22 }, { x: src.x, y: (src.y + target.y) / 2}, { x: target.x, y: (src.y + target.y) / 2 }, { x: target.x, y: target.y - 8 }]);
+                    lineIds.push(
+                        outMap.dbObjectId + ':' +
+                        outMap.instance + ':' +
+                        src.dirType + ':' +
+                        src.name + ':' +
+                        o.id + ':' +
+                        o.instance + ':' +
+                        target.dirType + ':' +
+                        target.name              
+                    );
                 }
             });
         });
@@ -482,7 +472,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             .y(function (d: any) { return d.y })
             .curve(d3.curveBasis);
         let selPath = this.svgContainer.selectAll(".connectorLine")
-            .data(series);
+            .data(series, (d, i) => lineIds[i]);
         selPath
             .enter().append("path")
             .attr("class", "connectorLine")
