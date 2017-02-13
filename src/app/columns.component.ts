@@ -225,7 +225,8 @@ export class ColumnsComponent extends BaseComponent implements AfterViewInit {
                             fkColumn: row['fk_column_name'],
                             fkSchema: row['fk_schema_name'],
                             isIdentity: (row["is_identity"] == 1),
-                            dirType: COL_DIR_TYPE.TBLVW_COL
+                            dirType: COL_DIR_TYPE.TBLVW_COL,
+                            dbObjId: row["object_id"]
                         });
                         if (cf.fkConstraintID) {
                             cf.plugIn.push(new gen.FKGenerator());
@@ -270,7 +271,8 @@ export class ColumnsComponent extends BaseComponent implements AfterViewInit {
                             colDefault: row['COLUMN_DEFAULT'],
                             include: (row['COLUMN_DEFAULT'] == null && row['is_identity'] != 1),
                             isIdentity: (row["is_identity"] == 1),
-                            dirType: COL_DIR_TYPE.TBLVW_COL
+                            dirType: COL_DIR_TYPE.TBLVW_COL,
+                            dbObjId: row["object_id"]
                         });
                         let dn:DataGenerator = this.constructCommonPlughInForDataType(cf);
                         if (dn)
@@ -306,7 +308,8 @@ export class ColumnsComponent extends BaseComponent implements AfterViewInit {
                             precision: row['NUMERIC_PRECISION'],
                             scale: row['NUMERIC_SCALE'],
                             include: true,
-                            dirType: row['PARAMETER_MODE'] == "IN" ? COL_DIR_TYPE.IN_PARAM : COL_DIR_TYPE.OUT_PARAM
+                            dirType: row['PARAMETER_MODE'] == "IN" ? COL_DIR_TYPE.IN_PARAM : COL_DIR_TYPE.OUT_PARAM,
+                            dbObjId: row["object_id"]
                         });
                         let dn:DataGenerator = this.constructCommonPlughInForDataType(cf);
                         if (dn)
@@ -321,16 +324,7 @@ export class ColumnsComponent extends BaseComponent implements AfterViewInit {
                 });
             })
             .catch(err => {
-                this.getMsgBoxFn()("Loading View Columns Error", err.toString());
-            });
-
-        sql = ``;
-
-        await this.getSQL2Fn()(this.projectService.connection, sql)
-            .then(res => {
-            })
-            .catch(err => {
-                this.getMsgBoxFn()("Loading View Columns Error", err.toString());
+                this.getMsgBoxFn()("Loading SP Columns Error", err.toString());
             });
     }
     private getObjsWithoutColumnsLoaded(objType:string):number[] {

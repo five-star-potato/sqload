@@ -1,31 +1,76 @@
+import * as gen from '../generator/generators.component';
 import { Injectable } from "@angular/core";
 import { DataGenerator } from '../include';
 import { OBJ_TYPE, COL_DIR_TYPE, OBJECT_TYPES_LIST } from "../constants";
 
 //import { TRON_GLOBAL, TRON_EVENT } from '../constants';
-
-export interface OutputMap {
+interface Serializable<T> {
+    deserialize(input: Object): T;
+}
+export class OutputMap implements Serializable<OutputMap> {
     id: number;
     dbObjectId: number;
     instance: number;
     //sequence: number; // for layout; ideally, the outputMap will have lines pointing to columns but the number of edge crossing is minimized
     outputName: string;
     dirType: COL_DIR_TYPE;
-
     refCount: number;
     // Should we let the user to choose between name vs sequence nr?
     useSequence?: boolean;
+
+    public deserialize(input) {
+        this.id = input.id;
+        this.dbObjectId = input.dbObjectId;
+        this.instance = input.instance;
+        this.outputName = input.outputName;
+        this.dirType = input.dirType;
+        this.refCount = input.refCount;
+        this.useSequence = input.useSequence;
+        return this;
+    }
+    public constructor(
+        fields?: {
+            id: number;
+            dbObjectId: number;
+            instance: number;
+            outputName: string;
+            dirType: COL_DIR_TYPE;
+            refCount: number;
+        }) 
+    {
+        if (fields) Object.assign(this, fields);
+    }
 }
 
-export interface ConnectionConfig {
+export class ConnectionConfig implements Serializable<ConnectionConfig> {
     serverName: string;
     databaseName: string;
     userName: string;
     password?: string
     verified: boolean;
+
+    public deserialize(input) {
+        this.serverName = input.serverName;
+        this.databaseName = input.databaseName;
+        this.userName = input.userName;
+        this.password = input.password;
+        this.verified = input.verified;
+        return this;
+    }
+    public constructor(
+        fields?: {
+            serverName: string;
+            databaseName: string;
+            userName: string;
+            password: string
+            verified: boolean;
+        }) 
+    {
+        if (fields) Object.assign(this, fields);
+    }
 }
 
-export class DBObjDef {
+export class DBObjDef implements Serializable<DBObjDef> {
     id: number;
     name: string;
     objType: string;
@@ -35,11 +80,36 @@ export class DBObjDef {
     x: number = 0;
     y: number = 0;
     rowcount: number = 100;
-
     columns: { [dirType: string]: ColumnDef[] } = {}
     sql: string;
     fromStmtStartPos?: number; // the position of the word "from" in the SQL; in order to insert INTO ##tmpTbl for storing results
 
+    public deserialize(input) {
+        this.id = input.id;
+        this.name = input.name;
+        this.objType = input.objType;
+        this.sequence = input.sequence;
+        this.instance = input.instance;
+        this.selected = input.selected;
+        this.x = input.x;
+        this.y = input.y;
+        this.rowcount = input.rowcount;
+        this.sql = input.sql;
+        this.fromStmtStartPos = input.fromStmtStartPos;
+        this.columns[COL_DIR_TYPE.TBLVW_COL] = [];
+        this.columns[COL_DIR_TYPE.IN_PARAM] = [];
+        this.columns[COL_DIR_TYPE.OUT_PARAM] = [];
+        this.columns[COL_DIR_TYPE.RSLTSET] = [];
+        this.columns[COL_DIR_TYPE.RET_VAL] = [];
+
+        for (let dt of [COL_DIR_TYPE.TBLVW_COL, COL_DIR_TYPE.IN_PARAM, COL_DIR_TYPE.OUT_PARAM, COL_DIR_TYPE.RSLTSET, COL_DIR_TYPE.RET_VAL]) {
+            input.columns[dt].forEach(c => {
+                let colDef: ColumnDef = new ColumnDef().deserialize(c);
+                this.columns[dt].push(colDef);
+            });
+        }
+        return this;
+    }
     public constructor(
         fields?: {
             id: number;
@@ -71,7 +141,7 @@ export class DBObjDef {
     }
 }
 
-export class ColumnDef {
+export class ColumnDef implements Serializable<ColumnDef> {
     name: string;
     dataType: string;
     charMaxLen: number = 0;
@@ -90,12 +160,46 @@ export class ColumnDef {
     variable: string; // placeholder for SQL variable names
     dirType: COL_DIR_TYPE;
     ordinal: number;
+    dbObjId: number;    // I don't know how to get around without duplicating the parent's field when coding in D3
+    instance: number;   // db obj instance
 
     x: number;   // these coordinates are for connecting lines in flow diagram
     y: number;
     width: number; 
     height: number;
 
+    public deserialize(input) {
+        this.name = input.name;
+        this.dataType = input.dataType;
+        this.charMaxLen = input.charMaxLen;
+        this.precision = input.precision;
+        this.scale = input.scale;
+        this.nullable = input.nullable;
+        this.colDefault = input.colDefault;
+        this.include = input.include;
+        this.fkConstraintID = input.fkConstraintID;
+        this.fkTable = input.fkTable;
+        this.fkColumn = input.fkColumn;
+        this.fkSchema = input.fkSchema;
+        this.isIdentity = input.isIdentity;
+        this.variable = input.variable;
+        this.dirType = input.dirType;
+        this.ordinal = input.ordinal;
+        this.x = input.x;
+        this.y = input.y;
+        this.width = input.width;
+        this.height = input.height;
+        this.dbObjId = input.dbObjId;
+        this.instance = input.instance;
+        this.plugIn = [];
+        input.plugIn.forEach(obj => {
+            let realPlug: any = new gen[obj.__name__](); // all the components within the module "gen" is accessible through [] indexer.
+            // Object.assign can't seem to handle string to date conversion
+            Object.assign(realPlug, obj);
+            this.plugIn.push(realPlug);
+        });
+        return this;
+    }    
     public get cleanName(): string {
         return this.name.replace(/[\$ #@]/g, '_');
     }
@@ -116,24 +220,41 @@ export class ColumnDef {
             isIdentity?: boolean;
             dirType?: COL_DIR_TYPE;
             ordinal?: number;
+            dbObjId: number;
         }) {
         this.x = 0; this.y = 0;
+        this.instance = 1;
         if (fields) Object.assign(this, fields);
     }
 }
-export class ProjectStruct {
+export class ProjectStruct implements Serializable<ProjectStruct> {
     connection: ConnectionConfig;
     filePath: string = "";
     selectedObjs: { [objType: string]: DBObjDef[] } = {};
     outputMaps: OutputMap[] = [];
+
+    public deserialize(input) {
+        this.connection = new ConnectionConfig().deserialize(input.connection);
+        this.filePath = input.filePath;
+        for (let ot of [OBJ_TYPE.TB, OBJ_TYPE.VW, OBJ_TYPE.SP, OBJ_TYPE.SQL]) {
+            input.selectedObjs[ot].forEach(o => {
+                let dbObj: DBObjDef = new DBObjDef().deserialize(o);
+                this.selectedObjs[ot].push(dbObj);
+            });
+        }
+        input.outputMaps.forEach(m => {
+            this.outputMaps.push(new OutputMap().deserialize(m));
+        });
+        return this;
+    }
     constructor() {
-        this.connection = {
+        this.connection = new ConnectionConfig({
             serverName: 'DELL',
             databaseName: 'AdventureWorks2014',
             userName: 'sa',
             password: "LongLive1",
             verified: false
-        }
+        });
         this.selectedObjs[OBJ_TYPE.TB] = [];
         this.selectedObjs[OBJ_TYPE.VW] = [];
         this.selectedObjs[OBJ_TYPE.SP] = [];
@@ -183,7 +304,7 @@ export class ProjectService {
     }
     // find all the columns of an object that have been used for mapping (output). We need this list to draw the rect and connect the line.
     // I don't intend to draw every columns even if they don't participate in mapping
-    getMappedSourceColumns(objId:number, instance:number): ColumnDef[] {
+    getMappedOutputColumns(objId:number, instance:number): ColumnDef[] {
         let colArr:ColumnDef[] = [];
         for (let o of this.project.outputMaps) {
             if (o.dbObjectId == objId && o.instance == instance) {
@@ -197,7 +318,8 @@ export class ProjectService {
         }
         return colArr;
     }
-    getMappableSourceColumns(objId:number, instance:number): ColumnDef[] {
+    // to be displayed on the mapping dropdown dialog 
+    getMappableOutputColumns(objId:number, instance:number): ColumnDef[] {
         let obj = this.getDBObjInstance(objId, instance);
         return obj.columns[COL_DIR_TYPE.RSLTSET].concat(obj.columns[COL_DIR_TYPE.TBLVW_COL]).concat(obj.columns[COL_DIR_TYPE.OUT_PARAM]).concat(obj.columns[COL_DIR_TYPE.RET_VAL]).concat(obj.columns[COL_DIR_TYPE.IN_PARAM]);
     }

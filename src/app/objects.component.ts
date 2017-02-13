@@ -16,7 +16,7 @@ declare var require: (moduleId: string) => any;
     template: `	
         <div class="flexbox-parent">
             <div class="flexbox-item header">
-                <h3>Choose one or more tables</h3>
+                <h3>Choose one or more database objects</h3>
             </div>
             <div class="flexbox-item fill-area content flexbox-item-grow">
                 <div class="fill-area-content flexbox-item-grow" style="display:flex; flex-direction:row; padding: 5px">
@@ -160,7 +160,8 @@ export class ObjectsComponent extends BaseComponent {
                             precision: row['precision'],
                             scale: row['scale'],
                             dirType: COL_DIR_TYPE.RSLTSET,
-                            ordinal: row['column_ordinal']
+                            ordinal: row['column_ordinal'],
+                            dbObjId: dbObj.id
                         });
                         dbObj.columns[COL_DIR_TYPE.RSLTSET].push(cf);
                     }
@@ -189,10 +190,11 @@ export class ObjectsComponent extends BaseComponent {
         this.tmpSqlVars.forEach(v => {
             if (!colArr.find(c => c.name == v)) {
                 colArr.push(new ColumnDef({
-                name: v,
-                dataType: 'nvarchar(max)',
-                include: true,
-                dirType: COL_DIR_TYPE.IN_PARAM
+                    name: v,
+                    dataType: 'nvarchar(max)',
+                    include: true,
+                    dirType: COL_DIR_TYPE.IN_PARAM,
+                    dbObjId: objId
                 }));
             }
         });

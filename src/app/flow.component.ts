@@ -17,6 +17,21 @@ class OutputMapAttribute {
     outputName: string;     // this combined dirType : column name
 }
 
+interface SrcTargetLine {
+    srcObjId: number;
+    srcInstance: number;
+    targetObjId: number;
+    targetInstance: number;
+    srcDirType: COL_DIR_TYPE;
+    srcColName: string;
+    targetDirType: COL_DIR_TYPE;
+    targetColName: string;
+    x1: number;
+    y1: number;
+    x2: number;
+    y2: number;
+}
+
 @Component({
     template: `	
         <div class="flexbox-parent">
@@ -30,6 +45,7 @@ class OutputMapAttribute {
             <div class="flexbox-item footer">
                 <button style="margin-top:30px" class='btn btn-primary nav-btn' (click)="back()">Back</button>
                 <button style="margin-top:30px" class='btn btn-primary nav-btn' (click)="next()">Next</button>
+                <button style="margin-top:30px" class='btn btn-warning nav-btn' (click)="drawFlow()">Redraw</button>
             </div>
         </div>
 
@@ -44,12 +60,12 @@ class OutputMapAttribute {
             <div class="form-group">
                 <label>Database Object instance</label>
                 <select required [ngModel]="outputMapping.dbObjInstance" (ngModelChange)="mappingObjChanged($event)" class="form-control"> 
-                    <option *ngFor="let obj of merged" [value]="obj.id + ':' + obj.instance">{{obj.name + ':' + obj.instance}}</option>
+                    <option *ngFor="let obj of mergedDbObjs" [value]="obj.id + ':' + obj.instance">{{obj.name + ':' + obj.instance}}</option>
                 </select>
             </div>
             <div class="form-group">
                 <select required [(ngModel)]="outputMapping.outputName" class="form-control"> 
-                    <option *ngFor="let col of mappableSourceColumns" [value]="col.dirType + ':' +  col.name">{{ col.dirType + ' - ' + col.name}}</option>
+                    <option *ngFor="let col of mappableOutputColumns" [value]="col.dirType + ':' +  col.name">{{ col.dirType + ' - ' + col.name}}</option>
                 </select>
             </div>
       </div>
@@ -83,30 +99,30 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
     globalListenFunc: Function;
     objects: { [objType: string]: DBObjDef[] };
     svgContainer: any;
-    merged: DBObjDef[];
+    mergedDbObjs: DBObjDef[];
     outputMapping: OutputMapAttribute = new OutputMapAttribute();
-    mappableSourceColumns: ColumnDef[] = [];
+    mappableOutputColumns: ColumnDef[] = [];
     currColDef: ColumnDef;
-    
+
     constructor(router: Router, ngZone: NgZone, wizardStateService: WizardStateService, dataService: SampleDataService, projectService: ProjectService,
         public el: ElementRef, public renderer: Renderer) {
         super(router, ngZone, wizardStateService, dataService, projectService);
     }
     private mappingObjChanged(value) {
         this.outputMapping.dbObjInstance = value;
-        let objId:number, instance:number;
+        let objId: number, instance: number;
         [objId, instance] = value.split(":").map(Number);
-        this.mappableSourceColumns = this.projectService.getMappableSourceColumns(objId, instance);
+        this.mappableOutputColumns = this.projectService.getMappableOutputColumns(objId, instance);
     }
     private moveUp(index: number) {
-        var b = this.merged[index].sequence;
-        this.merged[index].sequence = this.merged[index - 1].sequence;
-        this.merged[index - 1].sequence = b;
+        var b = this.mergedDbObjs[index].sequence;
+        this.mergedDbObjs[index].sequence = this.mergedDbObjs[index - 1].sequence;
+        this.mergedDbObjs[index - 1].sequence = b;
     }
     private moveDown(index: number) {
-        var b = this.merged[index].sequence;
-        this.merged[index].sequence = this.merged[index + 1].sequence;
-        this.merged[index + 1].sequence = b;
+        var b = this.mergedDbObjs[index].sequence;
+        this.mergedDbObjs[index].sequence = this.mergedDbObjs[index + 1].sequence;
+        this.mergedDbObjs[index + 1].sequence = b;
     }
     private findExistingOutputMap(objId: number, instance: number, dirType: COL_DIR_TYPE, colName: string): OutputMap {
         let map: OutputMap = this.projectService.outputMaps.find(o => {
@@ -135,14 +151,14 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
         [dirType, colName] = this.outputMapping.outputName.split(':');
         newMap = this.findExistingOutputMap(objId, instance, dirType, colName);
         if (!newMap) {
-            newMap = {
+            newMap = new OutputMap({
                 id: fnGetLargeRandomNumber(),
                 dbObjectId: objId,
                 instance: instance,
                 dirType: dirType,
                 outputName: colName,
                 refCount: 1
-            };
+            });
             this.projectService.outputMaps.push(newMap);
             cmdGen.outputMappingId = newMap.id;
         }
@@ -168,7 +184,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
         this.wizardStateService.projectChange({ type: TRON_EVENT.refresh });
         this.router.navigate(['/generate']);
     }
-    private getColumnDirClass(dirType: COL_DIR_TYPE):string {
+    private getColumnDirClass(dirType: COL_DIR_TYPE): string {
         switch (dirType) {
             case COL_DIR_TYPE.IN_PARAM:
                 return "btn-primary";
@@ -205,17 +221,12 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             .style("fill", "orange");
 
         this.svgContainer.append("text")
-            .attr("x", 10)
-            .attr("y", 10)
-            .attr("color", "#888")
-            .text("Sequence");
-        this.svgContainer.append("text")
-            .attr("x", 110)
+            .attr("x", 35)
             .attr("y", 10)
             .attr("color", "#888")
             .text("Group");
         this.svgContainer.append("text")
-            .attr("x", 200)
+            .attr("x", 110)
             .attr("y", 10)
             .attr("color", "#888")
             .text("Database Object");
@@ -228,30 +239,40 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             .attr("strok-width", 1);
     }
     private drawFlow() {
-        let rightPos: { [objId:number]:number } = {};
-        this.merged.sort((a, b) => a.sequence - b.sequence);
+        let rightPos: { [objId: number]: number } = {};
+        this.mergedDbObjs.sort((a, b) => a.sequence - b.sequence);
+        // SX is the x of the db object rect; 
+        let sx: number = 100;
+        let szTxtRows = 80;
 
         let colBtnHeight: number = 25;
         // find width of the object with the longest name
-        let maxObjWidth: number = Math.max.apply(Math, this.merged.map(m => this.getTextWidth(m.name, 12, "arial"))) + 20;
+        let maxObjWidth: number = Math.max.apply(Math, this.mergedDbObjs.map(m => this.getTextWidth(m.name, 12, "arial"))) + 20;
         maxObjWidth = Math.max(maxObjWidth, 300);
-        let maxY = this.merged.length * 120; // calculate the upperbound of rangeRound.
+        let maxY = this.mergedDbObjs.length * 120; // calculate the upperbound of rangeRound.
         // yband to calculate the y position for each dbobject, using id as a marker
-        let yband = d3.scaleBand().rangeRound([40, maxY]).domain(this.merged.map(m => String(m.id)));
+        let yband = d3.scaleBand().rangeRound([40, maxY]).domain(this.mergedDbObjs.map(m => String(m.id)));
 
-        let selection = this.svgContainer.selectAll(".selectedObjs")
-            .data(this.merged)
-            .enter();
-        let sx: number = 200;
+        this.svgContainer.selectAll(".rowsHeaderText")
+            .enter().append("text")
+            .attr("class", "rowsHeaderText")
+            .attr("x", sx + 10 + maxObjWidth)
+            .attr("y", 10)
+            .attr("color", "#888")
+            .text("# Rows");
+
+        // Following typical D3 enter, exit, update patterns
+        let selectObjTypeTitleRect = this.svgContainer.selectAll(".selectObjTypeTitleRect");            // initially empty; but during redraw, it won't be
+        let updateSel = selectObjTypeTitleRect.data(this.mergedDbObjs, d => d.id + ':' + d.instance);   // UPDATE selection
+        updateSel.exit().remove();
         // the rectangle and text display for each selected object
         // This is the small label in the topleft
-        selection.append('rect')
+        updateSel.enter().append('rect')        // ENTER selection
             .attr('rx', 2)
             .attr('ry', 2)
-            .attr("x", sx + 5) // set up the connection point origin
-            .attr("y", d => yband(d.id) - 13)
             .attr("width", 94)
             .attr("height", 15)
+            .attr("class", "selectObjTypeTitleRect")
             .style("fill", d => {
                 switch (d.objType) {
                     case OBJ_TYPE.TB:
@@ -263,144 +284,266 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
                     case OBJ_TYPE.SQL:
                         return "Goldenrod";
                 }
-            });
+            })
+            .merge(updateSel) // this is merging the UPDATE + ENTER selection; remember that D3 selection is immutable
+            .attr("x", sx + 5) // set up the connection point origin
+            .attr("y", d => yband(d.id) - 13);
+
+        let selectObjTypeTitleText = this.svgContainer.selectAll(".selectObjTypeTitleText");
+        updateSel = selectObjTypeTitleText.data(this.mergedDbObjs, d => d.id + ':' + d.instance);   // UPDATE selection
+        updateSel.exit().remove();
         // this is the word TABLE, VIEW, ...
-        selection.append('text')
-            .attr("x", sx + 11)
-            .attr("y", d => yband(d.id) - 3)
+        updateSel.enter().append('text')
+            .attr("class", "selectObjTypeTitleText")
             .style("fill", "#fff")
             .style("stroke-width", 1)
             .style("font-size", "10px")
             .style("font-family", "arial")
             .style("text-anchor", "start")
-            .text(d => this.getObjectTypeName(d.objType));
+            .text(d => this.getObjectTypeName(d.objType))
+            .merge(updateSel)
+            .attr("x", sx + 11)
+            .attr("y", d => yband(d.id) - 3);
 
+        let selectDbObjRect = this.svgContainer.selectAll(".selectDbObjRect");
+        updateSel = selectDbObjRect.data(this.mergedDbObjs, d => d.id + ':' + d.instance);   // UPDATE selection
+        let selMergedObj = updateSel.enter();  // need a UPDATE + ENTER selection for later combining with columndef children
         // this is the main shape of the DB object
-        selection.append('rect')
+        selMergedObj.append('rect')
+            .attr("class", "selectDbObjRect")
             .attr('rx', 5)
             .attr('ry', 5)
-            .attr("x", d => { d.x = sx + maxObjWidth; return sx; }) // set up the connection point origin
-            .attr("y", d => { d.y = yband(d.id) + 15; return yband(d.id); })
             .attr("width", maxObjWidth)
             .attr("height", 30)
             .style("fill", '#FFF')
-            .style("stroke", '#888');
+            .style("stroke", '#888')
+            .style('cursor', 'pointer')
+            .call(d3.drag().on("start", () => { console.log('dragging started') }))
+            .merge(updateSel)
+            .attr("x", d => { d.x = sx + maxObjWidth; return sx; }) // set up the connection point origin
+            .attr("y", d => { d.y = yband(d.id) + 15; return yband(d.id); });
+
+        let selectDbObjText = this.svgContainer.selectAll(".selectDbObjText");
+        updateSel = selectDbObjText.data(this.mergedDbObjs, d => d.id + ':' + d.instance);   // UPDATE selection
         // DB Object label
-        selection.append('text')
-            .attr("x", sx + 10)
-            .attr("y", d => yband(d.id) + 20)
+        updateSel.enter().append('text')
+            .attr("class", "selectDbObjText")
             .style("fill", "#888")
             .style("stroke-width", 1)
             .style("font-size", "12px")
             .style("font-family", "arial")
             .style("text-anchor", "start")
-            .text(d => d.name);
+            .style('cursor', 'pointer')
+            .text(d => d.name)
+            .merge(updateSel)
+            .attr("x", sx + 10)
+            .attr("y", d => yband(d.id) + 20);
 
         // HTML elements are wrapped inside foreignObject
-        let fo1 = selection.append("foreignObject")
-            .attr("x", sx - 170)
-            .attr("y", d => yband(d.id))
+        // these are group checkboxes
+        let selectGroupCheckbox = this.svgContainer.selectAll(".selectGroupCheckbox");
+        updateSel = selectGroupCheckbox.data(this.mergedDbObjs, d => d.id + ':' + d.instance);   // UPDATE selection
+        updateSel.enter().append("foreignObject")
+            .attr("class", "selectGroupCheckbox")
             .attr("width", 120)
-            .attr("height", d => d.height = 20);
-        let div1 = fo1.append("xhtml:div")
-            .append("div")
-            .style("position", "relative")
+            .attr("height", d => d.height = 20)
             .html((d, i) =>
-                `<button id="btnUp_${i}" data-index='${i}' class="btn btn-xs btn-info" style="position:absolute; top:3px;">
-                        <i id="iconUp_${i}" data-index='${i}' class="fa fa-arrow-up" aria-hidden="true"></i></button>
-                     <button id="btnDown_${i}" data-index='${i}' class="btn btn-xs btn-info" style="position:absolute; top:3px; left:30px">
-                        <i id="iconDown_${i}" data-index='${i}' class="fa fa-arrow-down" aria-hidden="true"></i></button>
-                     <input id="chkInclude_${i}" style="position:absolute; left:100px; top:5px" class="flowChkGrouping" type="checkbox">`);
+                `<input id="chkInclude_${i}" class="flowChkGrouping" type="checkbox">`)
+            .merge(updateSel)
+            .attr("x", sx - 50)
+            .attr("y", d => yband(d.id));
 
-        // Now draw the buttons that represent mappable target columnDefs
-        fo1.each(r => {
-            let cx: number = 10; // (incrShiftX += 10);
-            let objId = r.id;
-            this.svgContainer
-                // for all the columns that are to be wired from other commands, lay them out as buttons
-                .selectAll('.mappableTarget')
-                .data(this.projectService.getMappableTargetColumns(r.id, r.instance))
-                .enter().append("foreignObject")
-                .attr('x', d => {
-                    let x2 = sx + maxObjWidth + 10 + cx;
-                    d.width = this.getTextWidth(d.name, 11, "arial");
-                    d.x = x2 + d.width / 2 + 3;
-                    cx += (30 + d.width);
-                    rightPos[objId] = cx; // remember the rightmost position
-                    return x2;
-                })
-                .attr('y', d => { let y = yband(objId) + 3; d.y = y; return y; })
-                .attr('width', d => d.width)
-                .attr('height', colBtnHeight)
-                .html(d => `<button id="btnMap_${fnGetCleanName(d.name)}_${r.objType}" data-obj-id="${objId}" data-obj-inst="${r.instance}" data-col-type="${d.dirType}" class="btn btn-xs flowBtnColumn ${this.getColumnDirClass(d.dirType)}" >${d.name}</button>`);
-        });
-        // Draw the shapes that represent mapped output column (source)
-        selection.each(r => {
-            let objId = r.id;
-            let cx: number = rightPos[objId] || 10;
-            this.svgContainer
-                .selectAll('.mappedOutput')
-                .data(this.projectService.getMappedSourceColumns(r.id, r.instance))
-                .enter().append("rect")
-                .attr('x', d => {
-                    let x2 = sx + maxObjWidth + 10 + cx;
-                    d.width = this.getTextWidth(d.name, 12, "arial") + 3;
-                    d.x = x2 + d.width / 2;
-                    cx += (30 + d.width);
-                    return x2;
-                })
-                .attr('rx', 2)
-                .attr('ry', 2)
-                .attr('y', d => d.y = yband(objId) + 4)
-                .attr('width', d => this.getTextWidth(d.name, 12, "arial") + 3)
-                .attr('height', d => d.height = 20)
-                .style("fill", 'coral')
-                .style("stroke", 'brown');
-            cx = 10;
-            this.svgContainer
-                .selectAll('.mappedOutputText')
-                .data(this.projectService.getMappedSourceColumns(r.id, r.instance))
-                .enter().append("text")
-                .attr('x', d => {
-                    return d.x - d.width / 2 + 3;
-                })
-                .attr('y', d => { let y = yband(objId) + 18; d.y = y; return y; })
-                .style("fill", "#FFF")
-                .style("stroke-width", 1)
-                .style("font-size", "11px") // I use 12px to calculate the width, just so that it has some margin
-                .style("font-family", "arial")
-                .style("text-anchor", "start")
-                .text(d => d.name);
-        });
+        // the "# rows" textbox
+        let selectRowsTextbox = this.svgContainer.selectAll(".selectRowsTextbox");
+        updateSel = selectRowsTextbox.data(this.mergedDbObjs, d => d.id + ':' + d.instance);   // UPDATE selection
+        updateSel.enter().append("foreignObject")
+            .attr("class", "selectRowsTextbox")
+            .attr("width", szTxtRows)
+            .attr("height", d => d.height = 20)
+            .html((d, i) =>
+                `<input class="form-control input-sm" id="txtRows_${i}" type="text" style="width:${szTxtRows}px">`)
+            .merge(updateSel)
+            .attr("x", sx + maxObjWidth + 10)
+            .attr("y", d => yband(d.id));
+
+        // Using nested selection (columndef objects), draw the buttons that represent mappable target columnDefs
+        let targetColSelection = selMergedObj
+            .selectAll('.mappableTarget')
+            .data((d, i) => {
+                rightPos[d.id] = sx + maxObjWidth + szTxtRows + 20;
+                return this.projectService.getMappableTargetColumns(d.id, d.instance);
+            },
+            (c: ColumnDef) => c.dbObjId + ':' + c.instance + ':' + c.dirType + ':' + c.name);
+        targetColSelection.enter()
+            // for all the columns that are to be wired from other commands, lay them out as buttons
+            .append("foreignObject")
+            .attr("class", "mappableTarget")
+            .attr('height', colBtnHeight)
+            .html((c: ColumnDef, i, j) => {
+                let o: DBObjDef = this.projectService.getDBObjInstance(c.dbObjId, c.instance);
+                let btn = `<button id="btnMap_${fnGetCleanName(c.name)}_${o.objType}" data-obj-id="${c.dbObjId}" data-obj-inst="${o.instance}" data-col-type="${c.dirType}" class="btn btn-xs flowBtnColumn ${this.getColumnDirClass(c.dirType)}" >${c.name}</button>`;
+                return btn;
+            })
+            .merge(targetColSelection)
+            .attr('x', (c: ColumnDef) => {
+                let tmpX = rightPos[c.dbObjId];
+                c.width = this.getTextWidth(c.name, 11, "arial") + 6;
+                c.x = tmpX + c.width / 2 + 3;
+                rightPos[c.dbObjId] += (30 + c.width);
+                return tmpX;
+            })
+            .attr('y', (c: ColumnDef) => {
+                return c.y = yband(String(c.dbObjId)) + 3;
+            });
+
+        // This should also be resulting in an UPDATE selection
+        let mappedColSelection = selMergedObj
+            .selectAll('.mappedOutput')
+            .data((d, i) => {
+                return this.projectService.getMappedOutputColumns(d.id, d.instance);
+            });
+        mappedColSelection.enter()
+            .append("rect")
+            .attr('rx', 2)
+            .attr('ry', 2)
+            .attr('width', d => { return d.width = this.getTextWidth(d.name, 11, "arial") + 10; })
+            .attr('height', d => d.height = 20)
+            .attr("class", "mappedOutput")
+            .style("fill", 'coral')
+            .style("stroke", 'brown')
+            .merge(mappedColSelection)
+            .attr('x', (c: ColumnDef) => {
+                let tmpX = rightPos[c.dbObjId];
+                c.x = tmpX + c.width / 2;   // cx is the center of the rect!!
+                //console.log(c.name + ' cx: ' + c.x);
+                //console.log(c.name + ' width: ' + c.width);
+                rightPos[c.dbObjId] += (30 + c.width);
+                return tmpX;
+            })
+            .attr('y', (c: ColumnDef) => {
+                return c.y = yband(String(c.dbObjId)) + 4;
+            });
+
+        let mappedColTextSelection = selMergedObj
+            .selectAll('.mappedOutputText')
+            .data((d, i) => {
+                return this.projectService.getMappedOutputColumns(d.id, d.instance);
+            });
+
+        mappedColTextSelection.enter()
+            .append("text")
+            .attr("class", "mappedOutputText")
+            .style("fill", "#FFF")
+            .style("stroke-width", 1)
+            .style("font-size", "11px") // I use 12px to calculate the width, just so that it has some margin
+            .style("font-family", "arial")
+            .style("text-anchor", "middle")
+            .text((c: ColumnDef) => c.name)
+            .merge(mappedColTextSelection)
+            .attr('x', (c: ColumnDef) => {
+                //console.log(c.name + ' based on 11px font: ' + this.getTextWidth(c.name, 11, "arial"));
+                //console.log(c.name + ' text x: ' + c.x);
+                return c.x;
+            })
+            .attr('y', (c: ColumnDef) => {
+                return c.y + 14;
+            })
 
         // draw connection lines
         let lineFactory = d3.line().curve(d3.curveBasis);
-        for (let dbObj of this.merged) {
-            let cols: ColumnDef[] = this.projectService.getAllColumnsByObj(dbObj.id, dbObj.instance)
+        let connectors: SrcTargetLine[] = [];
+        let series: any[] = []; // series represent the group of connector lines
 
-            for (let col of cols.filter(c => { return (c.plugIn.length > 0 && c.plugIn[0].constructor.name == "CommandOutputGenerator") })) {
-                let mapId: number = (col.plugIn[0] as CommandOutputGenerator).outputMappingId;
-                if (mapId) {
-                    // find the outputMap object to reconnect src and col
-                    let outMap: OutputMap = this.projectService.outputMaps.find(o => o.id == mapId);
-                    let srcCol = this.projectService.getColumnFromDBObj(outMap.dbObjectId, outMap.instance, outMap.dirType, outMap.outputName);
-                    if (srcCol) {
+        this.projectService.getAllObjects().forEach(o => {
+            this.projectService.getMappableTargetColumns(o.id, o.instance).forEach(target => {
+                let cmdGen: CommandOutputGenerator = target.plugIn[0] as CommandOutputGenerator;
+                if (cmdGen.outputMappingId) {
+                    let outMap: OutputMap = this.projectService.outputMaps.find(p => p.id == cmdGen.outputMappingId);
+                    let src: ColumnDef = this.projectService.getColumnFromDBObj(outMap.dbObjectId, outMap.instance, outMap.dirType, outMap.outputName);
+                    connectors.push({
+                        srcObjId: outMap.dbObjectId,
+                        srcInstance: outMap.instance,
+                        srcDirType: src.dirType,
+                        srcColName: src.name,
+                        targetObjId: o.id,
+                        targetInstance: o.instance,
+                        targetDirType: target.dirType,
+                        targetColName: target.name,
+                        x1: src.x, y1: src.y,
+                        x2: target.x, y2: target.y
+                    });
+                    series.push([{ x: src.x, y: src.y + 22 }, { x: src.x, y: (src.y + target.y) / 2 }, { x: target.x, y: (src.y + target.y) / 2 }, { x: target.x, y: target.y - 8 }]);
+                }
+            });
+        });
+
+        var lineFunction = d3.line()
+            .x(function (d: any) { return d.x })
+            .y(function (d: any) { return d.y })
+            .curve(d3.curveBasis);
+        let selPath = this.svgContainer.selectAll(".connectorLine")
+            .data(series);
+        selPath
+            .enter().append("path")
+            .attr("class", "connectorLine")
+            .attr('z', '0')
+            .attr('fill', 'none')
+            .attr('stroke', 'orange')
+            .attr('marker-end', 'url(#triangle)')
+            .merge(selPath)
+            .attr("d", lineFunction);
+        /*
+                let selPath = this.svgContainer.selectAll(".connectorLine")
+                    .data(connectors, d =>
+                        d.srcObjId + ':' +
+                        d.srcInstance + ':' +
+                        d.srcDirType + ':' +
+                        d.srcColName + ':' +
+                        d.targetObjId + ':' +
+                        d.targetInstance + ':' +
+                        d.targetDirType + ':' +
+                        d.targetColName);
+                selPath.enter().append('path')
+                    .attr('class', 'connectorLine')
+                    .attr('z', '0')
+                    .attr('fill', 'none')
+                    .attr('stroke', 'orange')
+                    .attr('marker-end', 'url(#triangle)')
+                    .merge(selPath)
+                    .attr('d', lineFactory)
+                    .datum(d => {
                         // don't understand why srcCol.y + height is too much
-                        let points_a = [[srcCol.x, srcCol.y + 8], [srcCol.x, (srcCol.y + col.y) / 2], [col.x, (srcCol.y + col.y) / 2],
+                        let points_a = [[d.x1, d.y1 + 8], [d.x1, (d.y1 + d.y2) / 2], [d.x2, (d.y1 + d.y2) / 2], [d.x2, d.y2 - 4]];
                         // srcCol must be above target col
-                        [col.x, col.y - 4]];
-                        this.svgContainer.append('path')
-                            .datum(points_a)
-                            .attr('d', lineFactory)
-                            .attr('z', '0')
-                            .attr('fill', 'none')
-                            .attr('stroke', 'orange')
-                            .attr('marker-end', 'url(#triangle)');
+                        return points_a;
+                    });
+        */
+        /*        
+                // draw connection lines
+                let lineFactory = d3.line().curve(d3.curveBasis);
+                for (let dbObj of this.mergedDbObjs) {
+                    let cols: ColumnDef[] = this.projectService.getAllColumnsByObj(dbObj.id, dbObj.instance)
+        
+                    for (let col of cols.filter(c => { return (c.plugIn.length > 0 && c.plugIn[0].constructor.name == "CommandOutputGenerator") })) {
+                        let mapId: number = (col.plugIn[0] as CommandOutputGenerator).outputMappingId;
+                        if (mapId) {
+                            // find the outputMap object to reconnect src and col
+                            let outMap: OutputMap = this.projectService.outputMaps.find(o => o.id == mapId);
+                            let srcCol = this.projectService.getColumnFromDBObj(outMap.dbObjectId, outMap.instance, outMap.dirType, outMap.outputName);
+                            if (srcCol) {
+                                // don't understand why srcCol.y + height is too much
+                                let points_a = [[srcCol.x, srcCol.y + 8], [srcCol.x, (srcCol.y + col.y) / 2], [col.x, (srcCol.y + col.y) / 2],
+                                // srcCol must be above target col
+                                [col.x, col.y - 4]];
+                                this.svgContainer.append('path')
+                                    .datum(points_a)
+                            }
+                        }
+                        let cmdGen: CommandOutputGenerator = col.plugIn[0] as CommandOutputGenerator;
                     }
                 }
-                let cmdGen: CommandOutputGenerator = col.plugIn[0] as CommandOutputGenerator;
-            }
-        }
+        */
+
     }
     private redrawObjects() {
         d3.select("svg").remove();
@@ -418,9 +561,9 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             //console.log(e.target.id);
             if (e.target.id.startsWith("btnDown_") || e.target.id.startsWith("iconDown_")) {
                 let i: number = +$(e.target).data("index"); // force it number
-                if (i < this.merged.length - 1) {
-                    let obj1: DBObjDef = this.merged[i];
-                    let obj2: DBObjDef = this.merged[i + 1];
+                if (i < this.mergedDbObjs.length - 1) {
+                    let obj1: DBObjDef = this.mergedDbObjs[i];
+                    let obj2: DBObjDef = this.mergedDbObjs[i + 1];
                     [obj1.sequence, obj2.sequence] = [obj2.sequence, obj1.sequence];
                 }
                 this.redrawObjects();
@@ -428,8 +571,8 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             if (e.target.id.startsWith("btnUp_") || e.target.id.startsWith("iconUp_")) {
                 let i: number = +$(e.target).data("index"); // force it number
                 if (i > 0) {
-                    let obj1: DBObjDef = this.merged[i];
-                    let obj2: DBObjDef = this.merged[i - 1];
+                    let obj1: DBObjDef = this.mergedDbObjs[i];
+                    let obj2: DBObjDef = this.mergedDbObjs[i - 1];
                     [obj1.sequence, obj2.sequence] = [obj2.sequence, obj1.sequence];
                 }
                 this.redrawObjects();
@@ -452,9 +595,9 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
         });
 
         this.objects = this.projectService.selectedObjs;
-        this.merged = [];
-        Object.keys(this.objects).forEach(objType => this.merged = this.merged.concat(this.objects[objType]));
-        this.merged.sort((a, b) => a.sequence - b.sequence);
+        this.mergedDbObjs = [];
+        Object.keys(this.objects).forEach(objType => this.mergedDbObjs = this.mergedDbObjs.concat(this.objects[objType]));
+        this.mergedDbObjs.sort((a, b) => a.sequence - b.sequence);
 
         this.drawHeader();
         this.drawFlow();

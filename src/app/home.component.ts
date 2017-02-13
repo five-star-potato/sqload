@@ -54,7 +54,7 @@ export class HomeComponent extends BaseComponent implements OnInit {
         document.getElementById("divProjectTitle").style.display = "";
         this.router.navigate(['/connect']);
     }
-
+/*
     private loadColsPlugins(cols:any[]) {
         if (cols) {
             for (let i = cols.length - 1; i >= 0; i--) {
@@ -71,32 +71,17 @@ export class HomeComponent extends BaseComponent implements OnInit {
             }
         }
     }
+*/
     private openProject() {
         this.getOpenProjectFn()()
             .then(result => {
                 // fix the loaded project file. Make sure its in zone.run, otherwise all databinding will file when you hit tables or columns page.
                 this.ngZone.run(() => {
-                    let project: ProjectStruct = this.projectService.project;
                     let fileData = JSON.parse(result.data, this.reviver);
                     let data = fileData.project;
                     document.getElementById("projectTitle").innerHTML = result.filename;
-                    project.connection.serverName = data.connection.serverName;
-                    project.connection.databaseName = data.connection.databaseName;
-                    project.connection.userName = data.connection.userName;
-                    project.connection.password = data.connection.password;
-                    project.connection.verified = data.connection.verified;
-                    project.outputMaps = data.outputMaps;
-                    
-                    project.selectedObjs = data.selectedObjs;
-                    for (let objType in project.selectedObjs) {
-                        data.selectedObjs[objType].forEach(obj => {
-                            this.loadColsPlugins(obj.columns[COL_DIR_TYPE.TBLVW_COL]);
-                            this.loadColsPlugins(obj.columns[COL_DIR_TYPE.IN_PARAM]);
-                            this.loadColsPlugins(obj.columns[COL_DIR_TYPE.OUT_PARAM]);
-                            this.loadColsPlugins(obj.columns[COL_DIR_TYPE.RET_VAL]);
-                            this.loadColsPlugins(obj.columns[COL_DIR_TYPE.RSLTSET]);
-                        });
-                    }
+                    let project: ProjectStruct = new ProjectStruct().deserialize(data);
+                    this.projectService.project = project;
                     this.wizardStateService.projectChange({ type: TRON_EVENT.refresh });
                     document.getElementById("divProjectTitle").style.display = "";
                     this.router.navigate(['/connect']);
