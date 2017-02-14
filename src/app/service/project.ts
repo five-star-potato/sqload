@@ -36,8 +36,7 @@ export class OutputMap implements Serializable<OutputMap> {
             outputName: string;
             dirType: COL_DIR_TYPE;
             refCount: number;
-        }) 
-    {
+        }) {
         if (fields) Object.assign(this, fields);
     }
 }
@@ -64,8 +63,7 @@ export class ConnectionConfig implements Serializable<ConnectionConfig> {
             userName: string;
             password: string
             verified: boolean;
-        }) 
-    {
+        }) {
         if (fields) Object.assign(this, fields);
     }
 }
@@ -133,13 +131,13 @@ export class DBObjDef implements Serializable<DBObjDef> {
         this.columns[COL_DIR_TYPE.RET_VAL] = [];
         if (fields) Object.assign(this, fields);
     }
-    isTableOrView():boolean {
+    isTableOrView(): boolean {
         return (this.objType == OBJ_TYPE.TB || this.objType == OBJ_TYPE.VW);
     }
-    isSQL():boolean {
+    isSQL(): boolean {
         return (this.objType == OBJ_TYPE.SQL);
     }
-    isSP():boolean {
+    isSP(): boolean {
         return (this.objType == OBJ_TYPE.SP);
     }
 }
@@ -147,7 +145,7 @@ export class DBObjDef implements Serializable<DBObjDef> {
 export class GroupDef implements Serializable<GroupDef> {
     id: number;
     members: Set<DBObjDef> = new Set<DBObjDef>();
-    
+
     public deserialize(input) {
         this.id = input.id;
         this.members = input.members.slice();
@@ -182,7 +180,7 @@ export class ColumnDef implements Serializable<ColumnDef> {
 
     x: number;   // these coordinates are for connecting lines in flow diagram
     y: number;
-    width: number; 
+    width: number;
     height: number;
 
     public deserialize(input) {
@@ -216,7 +214,7 @@ export class ColumnDef implements Serializable<ColumnDef> {
             this.plugIn.push(realPlug);
         });
         return this;
-    }    
+    }
     public get cleanName(): string {
         return this.name.replace(/[\$ #@]/g, '_');
     }
@@ -260,12 +258,16 @@ export class ProjectStruct implements Serializable<ProjectStruct> {
                 this.selectedObjs[ot].push(dbObj);
             });
         }
-        input.outputMaps.forEach(m => {
-            this.outputMaps.push(new OutputMap().deserialize(m));
-        });
-        input.groups.forEach(g => {
-            this.groups.push(new GroupDef().deserialize(g));
-        });
+        if (input.outputMaps) {
+            input.outputMaps.forEach(m => {
+                this.outputMaps.push(new OutputMap().deserialize(m));
+            });
+        }
+        if (input.groups) {
+            input.groups.forEach(g => {
+                this.groups.push(new GroupDef().deserialize(g));
+            });
+        }
         return this;
     }
     constructor() {
@@ -287,7 +289,7 @@ export class ProjectStruct implements Serializable<ProjectStruct> {
 export class ProjectService {
     project: ProjectStruct = new ProjectStruct();
 
-    getDBObjInstance(objId:number, instance:number): DBObjDef {
+    getDBObjInstance(objId: number, instance: number): DBObjDef {
         let i: DBObjDef;
         i = this.selectedObjs[OBJ_TYPE.TB].find(o => o.id == objId && o.instance == instance);
         if (i) return i;
@@ -299,7 +301,7 @@ export class ProjectService {
         if (i) return i;
         return null;
     }
-    getDBObj(objId:number): DBObjDef {
+    getDBObj(objId: number): DBObjDef {
         let i: DBObjDef;
         i = this.selectedObjs[OBJ_TYPE.TB].find(o => o.id == objId);
         if (i) return i;
@@ -311,10 +313,10 @@ export class ProjectService {
         if (i) return i;
         return null;
     }
-    getColumnFromDBObj(objId:number, instance:number, dirType: COL_DIR_TYPE, colName): ColumnDef {
+    getColumnFromDBObj(objId: number, instance: number, dirType: COL_DIR_TYPE, colName): ColumnDef {
         return this.getAllColumnsByObj(objId, instance).find(c => c.name == colName && c.dirType == dirType);
     }
-    getMappableTargetColumns(objId:number, instance:number): ColumnDef[] {
+    getMappableTargetColumns(objId: number, instance: number): ColumnDef[] {
         let obj = this.getDBObjInstance(objId, instance);
         let tmp = obj.columns[COL_DIR_TYPE.IN_PARAM].concat(obj.columns[COL_DIR_TYPE.TBLVW_COL])
             .filter(d => {
@@ -326,8 +328,8 @@ export class ProjectService {
     }
     // find all the columns of an object that have been used for mapping (output). We need this list to draw the rect and connect the line.
     // I don't intend to draw every columns even if they don't participate in mapping
-    getMappedOutputColumns(objId:number, instance:number): ColumnDef[] {
-        let colArr:ColumnDef[] = [];
+    getMappedOutputColumns(objId: number, instance: number): ColumnDef[] {
+        let colArr: ColumnDef[] = [];
         for (let o of this.project.outputMaps) {
             if (o.dbObjectId == objId && o.instance == instance) {
                 let dbObj = this.getDBObjInstance(objId, instance);
@@ -341,11 +343,11 @@ export class ProjectService {
         return colArr;
     }
     // to be displayed on the mapping dropdown dialog 
-    getMappableOutputColumns(objId:number, instance:number): ColumnDef[] {
+    getMappableOutputColumns(objId: number, instance: number): ColumnDef[] {
         let obj = this.getDBObjInstance(objId, instance);
         return obj.columns[COL_DIR_TYPE.RSLTSET].concat(obj.columns[COL_DIR_TYPE.TBLVW_COL]).concat(obj.columns[COL_DIR_TYPE.OUT_PARAM]).concat(obj.columns[COL_DIR_TYPE.RET_VAL]).concat(obj.columns[COL_DIR_TYPE.IN_PARAM]);
     }
-    getAllColumnsByObj(objId:number, instance:number): ColumnDef[] {
+    getAllColumnsByObj(objId: number, instance: number): ColumnDef[] {
         let obj = this.getDBObjInstance(objId, instance);
         return obj.columns[COL_DIR_TYPE.IN_PARAM]
             .concat(obj.columns[COL_DIR_TYPE.TBLVW_COL])
@@ -353,8 +355,8 @@ export class ProjectService {
             .concat(obj.columns[COL_DIR_TYPE.RET_VAL])
             .concat(obj.columns[COL_DIR_TYPE.RSLTSET]);
     }
-    getAllObjects():DBObjDef[] {
-        var allObj:DBObjDef[] = [];
+    getAllObjects(): DBObjDef[] {
+        var allObj: DBObjDef[] = [];
         for (let objType of OBJECT_TYPES_LIST) {
             allObj = allObj.concat(this.selectedObjs[objType]);
         }
@@ -363,7 +365,7 @@ export class ProjectService {
     createNewProject() {
         this.project = new ProjectStruct();
     }
-    mergeGroup(target:GroupDef, src:GroupDef) {
+    mergeGroup(target: GroupDef, src: GroupDef) {
         let newSet: Set<DBObjDef> = new Set([...target.members, ...src.members]);
         target.members = newSet;
         // removed source groups
