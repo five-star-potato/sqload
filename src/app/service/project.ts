@@ -83,7 +83,8 @@ export class DBObjDef implements Serializable<DBObjDef> {
     columns: { [dirType: string]: ColumnDef[] } = {}
     sql: string;
     fromStmtStartPos?: number; // the position of the word "from" in the SQL; in order to insert INTO ##tmpTbl for storing results
-
+    isDrag: boolean = false;
+    
     public deserialize(input) {
         this.id = input.id;
         this.name = input.name;

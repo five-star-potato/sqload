@@ -103,6 +103,8 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
     outputMapping: OutputMapAttribute = new OutputMapAttribute();
     mappableOutputColumns: ColumnDef[] = [];
     currColDef: ColumnDef;
+    dragDbObj: DBObjDef;
+    maxObjWidth: number;
 
     constructor(router: Router, ngZone: NgZone, wizardStateService: WizardStateService, dataService: SampleDataService, projectService: ProjectService,
         public el: ElementRef, public renderer: Renderer) {
@@ -207,7 +209,34 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
     private drawHeader() {
         this.svgContainer = d3.select("#divFlow").append("svg")
             .attr("width", 2000)
-            .attr("height", 2000);
+            .attr("height", 2000)
+            .call(d3.drag()
+                .on("start", () => {
+                    console.log('drag started!!!');
+                    console.log(d3.event);
+                    this.mergedDbObjs.forEach(o => {
+                        let dx = d3.event.x, dy = d3.event.y;
+                        if (dx >= o.x && dx <= (o.x + this.maxObjWidth) && dy >= o.y && dy <= (o.y + 30)) {
+                            console.log("drag subject found:");
+                            console.log(o);
+                            this.dragDbObj = o;
+                            o.isDrag = true;
+                        }
+                    })
+                })
+                .on("drag", () => {
+                    if (this.dragDbObj) {
+                        this.dragDbObj.x = d3.event.x;
+                        this.dragDbObj.y = d3.event.y;
+                        this.drawFlow();
+                    }
+                })
+                .on("end", () => {
+                    this.dragDbObj.isDrag = false;
+                    this.dragDbObj = null;
+                    this.drawFlow();
+                })
+            );
 
         this.svgContainer.append("svg:defs").append("svg:marker")
             .attr("id", "triangle")
@@ -247,16 +276,22 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
 
         let colBtnHeight: number = 25;
         // find width of the object with the longest name
-        let maxObjWidth: number = Math.max.apply(Math, this.mergedDbObjs.map(m => this.getTextWidth(m.name, 12, "arial"))) + 20;
-        maxObjWidth = Math.max(maxObjWidth, 300);
+        this.maxObjWidth = Math.max.apply(Math, this.mergedDbObjs.map(m => this.getTextWidth(m.name, 12, "arial"))) + 20;
+        this.maxObjWidth = Math.max(this.maxObjWidth, 300);
         let maxY = this.mergedDbObjs.length * 120; // calculate the upperbound of rangeRound.
         // yband to calculate the y position for each dbobject, using id as a marker
         let yband = d3.scaleBand().rangeRound([40, maxY]).domain(this.mergedDbObjs.map(m => String(m.id)));
+        this.mergedDbObjs.forEach(o => {
+            // preset the y
+            if (!o.isDrag)
+                o.y = yband(String(o.id));
+        });
 
         this.svgContainer.selectAll(".rowsHeaderText")
+            .data([1])  // fake it so only draw once
             .enter().append("text")
             .attr("class", "rowsHeaderText")
-            .attr("x", sx + 10 + maxObjWidth)
+            .attr("x", sx + 10 + this.maxObjWidth)
             .attr("y", 10)
             .attr("color", "#888")
             .text("# Rows");
@@ -287,7 +322,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             })
             .merge(updateSel) // this is merging the UPDATE + ENTER selection; remember that D3 selection is immutable
             .attr("x", sx + 5) // set up the connection point origin
-            .attr("y", d => yband(d.id) - 13);
+            .attr("y", d => d.y - 13);
 
         let selectObjTypeTitleText = this.svgContainer.selectAll(".selectObjTypeTitleText");
         updateSel = selectObjTypeTitleText.data(this.mergedDbObjs, d => d.id + ':' + d.instance);   // UPDATE selection
@@ -303,7 +338,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             .text(d => this.getObjectTypeName(d.objType))
             .merge(updateSel)
             .attr("x", sx + 11)
-            .attr("y", d => yband(d.id) - 3);
+            .attr("y", d => d.y - 3);
 
         let selectDbObjRect = this.svgContainer.selectAll(".selectDbObjRect");
         updateSel = selectDbObjRect.data(this.mergedDbObjs, d => d.id + ':' + d.instance);   // UPDATE selection
@@ -313,15 +348,14 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             .attr("class", "selectDbObjRect")
             .attr('rx', 5)
             .attr('ry', 5)
-            .attr("width", maxObjWidth)
+            .attr("width", this.maxObjWidth)
             .attr("height", 30)
             .style("fill", '#FFF')
             .style("stroke", '#888')
             .style('cursor', 'pointer')
-            .call(d3.drag().on("start", () => { console.log('dragging started') }))
             .merge(updateSel)
-            .attr("x", d => { d.x = sx + maxObjWidth; return sx; }) // set up the connection point origin
-            .attr("y", d => { d.y = yband(d.id) + 15; return yband(d.id) /* + Math.random() * 10 */; });
+            .attr("x", d => { return d.x = sx; }) // set up the connection point origin
+            .attr("y", d => { return d.y; });
 
         let selectDbObjText = this.svgContainer.selectAll(".selectDbObjText");
         updateSel = selectDbObjText.data(this.mergedDbObjs, d => d.id + ':' + d.instance);   // UPDATE selection
@@ -337,7 +371,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             .text(d => d.name)
             .merge(updateSel)
             .attr("x", sx + 10)
-            .attr("y", d => yband(d.id) + 20);
+            .attr("y", d => d.y + 20);
 
         // HTML elements are wrapped inside foreignObject
         // these are group checkboxes
@@ -363,14 +397,14 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             .html((d, i) =>
                 `<input class="form-control input-sm" id="txtRows_${i}" type="text" style="width:${szTxtRows}px">`)
             .merge(updateSel)
-            .attr("x", sx + maxObjWidth + 10)
+            .attr("x", sx + this.maxObjWidth + 10)
             .attr("y", d => yband(d.id));
 
         // Using nested selection (columndef objects), draw the buttons that represent mappable target columnDefs
         let targetColSelection = selMergedObj
             .selectAll('.mappableTarget')
             .data((d, i) => {
-                rightPos[d.id] = sx + maxObjWidth + szTxtRows + 20;
+                rightPos[d.id] = sx + this.maxObjWidth + szTxtRows + 20;
                 return this.projectService.getMappableTargetColumns(d.id, d.instance);
             },
             (c: ColumnDef) => c.dbObjId + ':' + c.instance + ':' + c.dirType + ':' + c.name);
@@ -452,7 +486,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
                 if (cmdGen.outputMappingId) {
                     let outMap: OutputMap = this.projectService.outputMaps.find(p => p.id == cmdGen.outputMappingId);
                     let src: ColumnDef = this.projectService.getColumnFromDBObj(outMap.dbObjectId, outMap.instance, outMap.dirType, outMap.outputName);
-                    series.push([{ x: src.x, y: src.y + 22 }, { x: src.x, y: (src.y + target.y) / 2}, { x: target.x, y: (src.y + target.y) / 2 }, { x: target.x, y: target.y - 8 }]);
+                    series.push([{ x: src.x, y: src.y + 22 }, { x: src.x, y: (src.y + target.y) / 2 }, { x: target.x, y: (src.y + target.y) / 2 }, { x: target.x, y: target.y - 8 }]);
                     lineIds.push(
                         outMap.dbObjectId + ':' +
                         outMap.instance + ':' +
@@ -461,7 +495,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
                         o.id + ':' +
                         o.instance + ':' +
                         target.dirType + ':' +
-                        target.name              
+                        target.name
                     );
                 }
             });
@@ -482,58 +516,6 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             .attr('marker-end', 'url(#triangle)')
             .merge(selPath)
             .attr("d", lineFunction);
-        /*
-                let selPath = this.svgContainer.selectAll(".connectorLine")
-                    .data(connectors, d =>
-                        d.srcObjId + ':' +
-                        d.srcInstance + ':' +
-                        d.srcDirType + ':' +
-                        d.srcColName + ':' +
-                        d.targetObjId + ':' +
-                        d.targetInstance + ':' +
-                        d.targetDirType + ':' +
-                        d.targetColName);
-                selPath.enter().append('path')
-                    .attr('class', 'connectorLine')
-                    .attr('z', '0')
-                    .attr('fill', 'none')
-                    .attr('stroke', 'orange')
-                    .attr('marker-end', 'url(#triangle)')
-                    .merge(selPath)
-                    .attr('d', lineFactory)
-                    .datum(d => {
-                        // don't understand why srcCol.y + height is too much
-                        let points_a = [[d.x1, d.y1 + 8], [d.x1, (d.y1 + d.y2) / 2], [d.x2, (d.y1 + d.y2) / 2], [d.x2, d.y2 - 4]];
-                        // srcCol must be above target col
-                        return points_a;
-                    });
-        */
-        /*        
-                // draw connection lines
-                let lineFactory = d3.line().curve(d3.curveBasis);
-                for (let dbObj of this.mergedDbObjs) {
-                    let cols: ColumnDef[] = this.projectService.getAllColumnsByObj(dbObj.id, dbObj.instance)
-        
-                    for (let col of cols.filter(c => { return (c.plugIn.length > 0 && c.plugIn[0].constructor.name == "CommandOutputGenerator") })) {
-                        let mapId: number = (col.plugIn[0] as CommandOutputGenerator).outputMappingId;
-                        if (mapId) {
-                            // find the outputMap object to reconnect src and col
-                            let outMap: OutputMap = this.projectService.outputMaps.find(o => o.id == mapId);
-                            let srcCol = this.projectService.getColumnFromDBObj(outMap.dbObjectId, outMap.instance, outMap.dirType, outMap.outputName);
-                            if (srcCol) {
-                                // don't understand why srcCol.y + height is too much
-                                let points_a = [[srcCol.x, srcCol.y + 8], [srcCol.x, (srcCol.y + col.y) / 2], [col.x, (srcCol.y + col.y) / 2],
-                                // srcCol must be above target col
-                                [col.x, col.y - 4]];
-                                this.svgContainer.append('path')
-                                    .datum(points_a)
-                            }
-                        }
-                        let cmdGen: CommandOutputGenerator = col.plugIn[0] as CommandOutputGenerator;
-                    }
-                }
-        */
-
     }
     private redrawObjects() {
         d3.select("svg").remove();
@@ -547,41 +529,44 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
 
     ngOnInit() {
         this.globalListenFunc = this.renderer.listenGlobal("body", "click", (e) => {
-            //console.log('event hit');
-            //console.log(e.target.id);
-            if (e.target.id.startsWith("btnDown_") || e.target.id.startsWith("iconDown_")) {
-                let i: number = +$(e.target).data("index"); // force it number
-                if (i < this.mergedDbObjs.length - 1) {
-                    let obj1: DBObjDef = this.mergedDbObjs[i];
-                    let obj2: DBObjDef = this.mergedDbObjs[i + 1];
-                    [obj1.sequence, obj2.sequence] = [obj2.sequence, obj1.sequence];
+            this.ngZone.run(() => {
+                //console.log('event hit');
+                //console.log(e.target.id);
+                if (e.target.id.startsWith("btnDown_") || e.target.id.startsWith("iconDown_")) {
+                    let i: number = +$(e.target).data("index"); // force it number
+                    if (i < this.mergedDbObjs.length - 1) {
+                        let obj1: DBObjDef = this.mergedDbObjs[i];
+                        let obj2: DBObjDef = this.mergedDbObjs[i + 1];
+                        [obj1.sequence, obj2.sequence] = [obj2.sequence, obj1.sequence];
+                    }
+                    this.redrawObjects();
                 }
-                this.redrawObjects();
-            }
-            if (e.target.id.startsWith("btnUp_") || e.target.id.startsWith("iconUp_")) {
-                let i: number = +$(e.target).data("index"); // force it number
-                if (i > 0) {
-                    let obj1: DBObjDef = this.mergedDbObjs[i];
-                    let obj2: DBObjDef = this.mergedDbObjs[i - 1];
-                    [obj1.sequence, obj2.sequence] = [obj2.sequence, obj1.sequence];
+                if (e.target.id.startsWith("btnUp_") || e.target.id.startsWith("iconUp_")) {
+                    let i: number = +$(e.target).data("index"); // force it number
+                    if (i > 0) {
+                        let obj1: DBObjDef = this.mergedDbObjs[i];
+                        let obj2: DBObjDef = this.mergedDbObjs[i - 1];
+                        [obj1.sequence, obj2.sequence] = [obj2.sequence, obj1.sequence];
+                    }
+                    this.redrawObjects();
                 }
-                this.redrawObjects();
-            }
-            if (e.target.id.startsWith("btnMap_")) {
-                let objId = $(e.target).data("obj-id");
-                let inst = $(e.target).data("obj-inst");
-                let dirType = $(e.target).data("col-type");
-                let colName = $(e.target).html();
-                this.clearOutputMapping();
-                this.currColDef = this.projectService.getDBObjInstance(objId, inst).columns[dirType].find(c => c.name == colName);
-                let mapId: number = (this.currColDef.plugIn[0] as CommandOutputGenerator).outputMappingId;
-                if (mapId) {
-                    let outMap: OutputMap = this.projectService.outputMaps.find(o => o.id == mapId);
-                    this.outputMapping.dbObjInstance = outMap.dbObjectId + ":" + outMap.instance;
-                    this.outputMapping.outputName = outMap.dirType + ":" + outMap.outputName;
+                if (e.target.id.startsWith("btnMap_")) {
+                    let objId = $(e.target).data("obj-id");
+                    let inst = $(e.target).data("obj-inst");
+                    let dirType = $(e.target).data("col-type");
+                    let colName = $(e.target).html();
+                    this.clearOutputMapping();
+                    this.currColDef = this.projectService.getDBObjInstance(objId, inst).columns[dirType].find(c => c.name == colName);
+                    let cmdGen: CommandOutputGenerator = (this.currColDef.plugIn[0] as CommandOutputGenerator);
+                    if (cmdGen && cmdGen.outputMappingId) {
+                        let outMap: OutputMap = this.projectService.outputMaps.find(o => o.id == cmdGen.outputMappingId);
+                        this.mappableOutputColumns = this.projectService.getMappableOutputColumns(outMap.dbObjectId, outMap.instance);
+                        this.outputMapping.dbObjInstance = outMap.dbObjectId + ":" + outMap.instance;
+                        this.outputMapping.outputName = outMap.dirType + ":" + outMap.outputName;
+                    }
+                    $("#modalOutputMapping").modal('show');
                 }
-                $("#modalOutputMapping").modal('show');
-            }
+            });
         });
 
         this.objects = this.projectService.selectedObjs;
