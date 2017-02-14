@@ -13,8 +13,14 @@ declare var require: (moduleId: string) => any;
 var appConf = require('../app.conf');
 
 class OutputMapAttribute {
+    id: number;
     dbObjInstance: string;  // this combined objId : instance
     outputName: string;     // this combined dirType : column name
+    clear() {
+        this.id = null;
+        this.dbObjInstance = null;
+        this.outputName = null;
+    }
 }
 
 interface SrcTargetLine {
@@ -70,7 +76,8 @@ interface SrcTargetLine {
             </div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-primary" [disabled]="checkMappingDisabled()" data-dismiss="modal" (click)="saveOutputMappingChanges()">Save changes</button>
+        <button type="button" class="btn btn-danger" [disabled]="!outputMapping.id" data-dismiss="modal" (click)="deleteOutputMapping()">Delete mapping</button>
+        <button type="button" class="btn btn-primary" [disabled]="checkMappingDisabled()" data-dismiss="modal" (click)="saveOutputMappingChanges()">Save mapping</button>
         <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
       </div>
     </div>
@@ -119,16 +126,6 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
         [objId, instance] = value.split(":").map(Number);
         this.mappableOutputColumns = this.projectService.getMappableOutputColumns(objId, instance);
     }
-    private moveUp(index: number) {
-        var b = this.mergedDbObjs[index].sequence;
-        this.mergedDbObjs[index].sequence = this.mergedDbObjs[index - 1].sequence;
-        this.mergedDbObjs[index - 1].sequence = b;
-    }
-    private moveDown(index: number) {
-        var b = this.mergedDbObjs[index].sequence;
-        this.mergedDbObjs[index].sequence = this.mergedDbObjs[index + 1].sequence;
-        this.mergedDbObjs[index + 1].sequence = b;
-    }
     private findExistingOutputMap(objId: number, instance: number, dirType: COL_DIR_TYPE, colName: string): OutputMap {
         let map: OutputMap = this.projectService.outputMaps.find(o => {
             return (o.dbObjectId === objId && o.instance === instance && o.dirType == dirType && o.outputName == colName);
@@ -140,6 +137,11 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             return false;
         else
             return true;
+    }
+    private deleteOutputMapping() {
+        this.projectService.removeOutputMapping(this.outputMapping.id);
+        this.outputMapping.clear();
+        this.drawFlow();
     }
     private saveOutputMappingChanges() {
         let newMap: OutputMap;
@@ -180,6 +182,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
                 this.projectService.outputMaps.splice(i, 1);
             }
         }
+        this.outputMapping.clear();
         this.redrawObjects();
     }
     back() {
@@ -389,6 +392,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
 
         let selectDbObjText = this.svgContainer.selectAll(".selectDbObjText");
         updateSel = selectDbObjText.data(this.mergedDbObjs, d => d.id + ':' + d.instance);   // UPDATE selection
+        updateSel.exit().remove();
         // DB Object label
         updateSel.enter().append('text')
             .attr("class", "selectDbObjText")
@@ -407,6 +411,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
         // these are group checkboxes
         let selectGroupCheckbox = this.svgContainer.selectAll(".selectGroupCheckbox");
         updateSel = selectGroupCheckbox.data(this.mergedDbObjs, d => d.id + ':' + d.instance);   // UPDATE selection
+        updateSel.exit().remove();
         updateSel.enter().append("foreignObject")
             .attr("class", "selectGroupCheckbox")
             .attr("width", 120)
@@ -420,6 +425,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
         // the "# rows" textbox
         let selectRowsTextbox = this.svgContainer.selectAll(".selectRowsTextbox");
         updateSel = selectRowsTextbox.data(this.mergedDbObjs, d => d.id + ':' + d.instance);   // UPDATE selection
+        updateSel.exit().remove();
         updateSel.enter().append("foreignObject")
             .attr("class", "selectRowsTextbox")
             .attr("width", szTxtRows)
@@ -430,7 +436,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             .attr("x", sx + this.maxObjWidth + 10)
             .attr("y", d => yband(d.id));
 
-        // instead of using nested data, it's simpler to flatten it
+        // instead of using nested data, it's simpler to flatten the mappable target as one collection
         let allMappableTarget: ColumnDef[] = []
         this.mergedDbObjs.forEach(o => {
             rightPos[o.id] = sx + this.maxObjWidth + szTxtRows + 20 + shiftRight;
@@ -440,6 +446,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
         // Using nested selection (columndef objects), draw the buttons that represent mappable target columnDefs
         let targetColSelection = this.svgContainer.selectAll('.mappableTarget')
             .data(allMappableTarget, (c: ColumnDef) => c.dbObjId + ':' + c.instance + ':' + c.dirType + ':' + c.name);
+        targetColSelection.exit().remove();
         targetColSelection.enter()
             // for all the columns that are to be wired from other commands, lay them out as buttons
             .append("foreignObject")
@@ -470,6 +477,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
         // This should also be resulting in an UPDATE selection
         let mappedColSelection = this.svgContainer.selectAll('.mappedOutput')
             .data(allMappedOutput, (c: ColumnDef) => c.dbObjId + ':' + c.instance + ':' + c.dirType + ':' + c.name);
+        mappedColSelection.exit().remove();
         mappedColSelection.enter()
             .append("rect")
             .attr('rx', 2)
@@ -494,6 +502,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
 
         let mappedColTextSelection = this.svgContainer.selectAll('.mappedOutputText')
             .data(allMappedOutput, (c: ColumnDef) => c.dbObjId + ':' + c.instance + ':' + c.dirType + ':' + c.name); selMergedObjs
+        mappedColTextSelection.exit().remove();
         mappedColTextSelection.enter()
             .append("text")
             .attr("class", "mappedOutputText")
@@ -545,6 +554,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             .curve(d3.curveBasis);
         let selPath = this.svgContainer.selectAll(".connectorLine")
             .data(series, (d, i) => lineIds[i]);
+        selPath.exit().remove();
         selPath
             .enter().append("path")
             .attr("class", "connectorLine")
@@ -619,6 +629,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
                     this.mappableOutputColumns = this.projectService.getMappableOutputColumns(outMap.dbObjectId, outMap.instance);
                     this.outputMapping.dbObjInstance = outMap.dbObjectId + ":" + outMap.instance;
                     this.outputMapping.outputName = outMap.dirType + ":" + outMap.outputName;
+                    this.outputMapping.id = outMap.id;
                 }
                 $("#modalOutputMapping").modal('show');
             }

@@ -1,6 +1,7 @@
 import * as gen from '../generator/generators.component';
 import { Injectable } from "@angular/core";
 import { DataGenerator } from '../include';
+import { CommandOutputGenerator  } from '../generator/generators.component';
 import { OBJ_TYPE, COL_DIR_TYPE, OBJECT_TYPES_LIST } from "../constants";
 
 //import { TRON_GLOBAL, TRON_EVENT } from '../constants';
@@ -371,6 +372,19 @@ export class ProjectService {
         // removed source groups
         let srcIndex = this.project.groups.findIndex(g => g.id == src.id);
         this.project.groups.splice(srcIndex, 1);
+    }
+    removeOutputMapping(mapId: number) {
+        let i = this.project.outputMaps.findIndex(m => m.id == mapId);
+        let outMap = this.project.outputMaps[i];
+        for (let o of this.getAllObjects()) {
+            let colDefs:ColumnDef[] = this.getMappableTargetColumns(o.id, o.instance);
+            colDefs.filter(c => {
+                let cmdGen = (c.plugIn[0] as CommandOutputGenerator);
+                if (cmdGen.outputMappingId == mapId)
+                    cmdGen.outputMappingId = null;
+            });
+        }
+        this.project.outputMaps.splice(i, 1);
     }
     get connection(): ConnectionConfig {
         return this.project.connection;
