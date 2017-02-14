@@ -104,7 +104,9 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
     mappableOutputColumns: ColumnDef[] = [];
     currColDef: ColumnDef;
     dragDbObj: DBObjDef;
+    dragdx:number; dragdy:number; // offset to the dragged object when first dragged
     maxObjWidth: number;
+    //breakpt: boolean = false;
 
     constructor(router: Router, ngZone: NgZone, wizardStateService: WizardStateService, dataService: SampleDataService, projectService: ProjectService,
         public el: ElementRef, public renderer: Renderer) {
@@ -217,6 +219,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
                     this.mergedDbObjs.forEach(o => {
                         let dx = d3.event.x, dy = d3.event.y;
                         if (dx >= o.x && dx <= (o.x + this.maxObjWidth) && dy >= o.y && dy <= (o.y + 30)) {
+                            this.dragdx = dx - o.x; this.dragdy = dy - o.y;
                             console.log("drag subject found:");
                             console.log(o);
                             this.dragDbObj = o;
@@ -226,15 +229,26 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
                 })
                 .on("drag", () => {
                     if (this.dragDbObj) {
-                        this.dragDbObj.x = d3.event.x;
-                        this.dragDbObj.y = d3.event.y;
+                        this.dragDbObj.x = d3.event.x - this.dragdx;
+                        this.dragDbObj.y = d3.event.y - this.dragdy;
+                        //console.log("dx dy:" + this.dragDbObj.x + " " + this.dragDbObj.y);
+                        for (let o of this.mergedDbObjs) {
+                            if (o.id != this.dragDbObj.id) {
+                                if (Math.abs(o.y - this.dragDbObj.y) < 10) {
+                                    [o.sequence, this.dragDbObj.sequence] = [this.dragDbObj.sequence, o.sequence];
+                                    break;
+                                }
+                            }
+                        };
                         this.drawFlow();
                     }
                 })
                 .on("end", () => {
-                    this.dragDbObj.isDrag = false;
-                    this.dragDbObj = null;
-                    this.drawFlow();
+                    if (this.dragDbObj) {
+                        this.dragDbObj.isDrag = false;
+                        this.dragDbObj = null;
+                        this.drawFlow();
+                    }
                 })
             );
 
@@ -248,6 +262,16 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             .append("path")
             .attr("d", "M 0 0 12 6 0 12 3 6")
             .style("fill", "orange");
+        this.svgContainer.append("svg:defs").append("svg:marker")
+            .attr("id", "disabled_triangle")
+            .attr("refX", 6)
+            .attr("refY", 6)
+            .attr("markerWidth", 30)
+            .attr("markerHeight", 30)
+            .attr("orient", "auto")
+            .append("path")
+            .attr("d", "M 0 0 12 6 0 12 3 6")
+            .style("fill", "#ccc");
 
         this.svgContainer.append("text")
             .attr("x", 35)
@@ -268,6 +292,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             .attr("strok-width", 1);
     }
     private drawFlow() {
+        let shiftRight:number = 0;
         let rightPos: { [objId: number]: number } = {};
         this.mergedDbObjs.sort((a, b) => a.sequence - b.sequence);
         // SX is the x of the db object rect; 
@@ -283,8 +308,10 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
         let yband = d3.scaleBand().rangeRound([40, maxY]).domain(this.mergedDbObjs.map(m => String(m.id)));
         this.mergedDbObjs.forEach(o => {
             // preset the y
-            if (!o.isDrag)
+            if (!o.isDrag) {
                 o.y = yband(String(o.id));
+                console.log(o.name + ":" + o.y);
+            }
         });
 
         this.svgContainer.selectAll(".rowsHeaderText")
@@ -342,9 +369,11 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
 
         let selectDbObjRect = this.svgContainer.selectAll(".selectDbObjRect");
         updateSel = selectDbObjRect.data(this.mergedDbObjs, d => d.id + ':' + d.instance);   // UPDATE selection
-        let selMergedObj = updateSel.enter();  // need a UPDATE + ENTER selection for later combining with columndef children
+        updateSel.exit().remove();
+        let enterSelection = updateSel.enter();  // need a UPDATE + ENTER selection for later combining with columndef children
+        let selMergedObjs = enterSelection.merge(updateSel);
         // this is the main shape of the DB object
-        selMergedObj.append('rect')
+        updateSel.enter().append('rect')
             .attr("class", "selectDbObjRect")
             .attr('rx', 5)
             .attr('ry', 5)
@@ -400,14 +429,16 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             .attr("x", sx + this.maxObjWidth + 10)
             .attr("y", d => yband(d.id));
 
+        // instead of using nested data, it's simpler to flatten it
+        let allMappableTarget:ColumnDef[] = []
+        this.mergedDbObjs.forEach(o => {
+            rightPos[o.id] = sx + this.maxObjWidth + szTxtRows + 20 + shiftRight;
+            shiftRight += 20;
+            allMappableTarget = allMappableTarget.concat(this.projectService.getMappableTargetColumns(o.id, o.instance));
+        });
         // Using nested selection (columndef objects), draw the buttons that represent mappable target columnDefs
-        let targetColSelection = selMergedObj
-            .selectAll('.mappableTarget')
-            .data((d, i) => {
-                rightPos[d.id] = sx + this.maxObjWidth + szTxtRows + 20;
-                return this.projectService.getMappableTargetColumns(d.id, d.instance);
-            },
-            (c: ColumnDef) => c.dbObjId + ':' + c.instance + ':' + c.dirType + ':' + c.name);
+        let targetColSelection = this.svgContainer.selectAll('.mappableTarget')
+            .data(allMappableTarget, (c: ColumnDef) => c.dbObjId + ':' + c.instance + ':' + c.dirType + ':' + c.name);
         targetColSelection.enter()
             // for all the columns that are to be wired from other commands, lay them out as buttons
             .append("foreignObject")
@@ -430,12 +461,14 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
                 return c.y = yband(String(c.dbObjId)) + 3;
             });
 
+        // Preparing to draw the mapped output colums (source)
+        let allMappedOutput:ColumnDef[] = []
+        this.mergedDbObjs.forEach(o => {
+            allMappedOutput = allMappedOutput.concat(this.projectService.getMappedOutputColumns(o.id, o.instance));
+        });
         // This should also be resulting in an UPDATE selection
-        let mappedColSelection = selMergedObj
-            .selectAll('.mappedOutput')
-            .data((d, i) => {
-                return this.projectService.getMappedOutputColumns(d.id, d.instance);
-            });
+        let mappedColSelection = this.svgContainer.selectAll('.mappedOutput')
+            .data(allMappedOutput, (c: ColumnDef) => c.dbObjId + ':' + c.instance + ':' + c.dirType + ':' + c.name);
         mappedColSelection.enter()
             .append("rect")
             .attr('rx', 2)
@@ -458,12 +491,8 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
                 return c.y = yband(String(c.dbObjId)) + 4;
             });
 
-        let mappedColTextSelection = selMergedObj
-            .selectAll('.mappedOutputText')
-            .data((d, i) => {
-                return this.projectService.getMappedOutputColumns(d.id, d.instance);
-            });
-
+        let mappedColTextSelection = this.svgContainer.selectAll('.mappedOutputText')
+            .data(allMappedOutput, (c: ColumnDef) => c.dbObjId + ':' + c.instance + ':' + c.dirType + ':' + c.name);selMergedObjs
         mappedColTextSelection.enter()
             .append("text")
             .attr("class", "mappedOutputText")
@@ -480,13 +509,17 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
         // draw connection lines
         let series: any[] = []; // series represent the group of connector lines
         let lineIds: string[] = []; // don't know how to embedded a unique id in the series
+        let lineAttr: any[] = [];
         this.projectService.getAllObjects().forEach(o => {
             this.projectService.getMappableTargetColumns(o.id, o.instance).forEach(target => {
                 let cmdGen: CommandOutputGenerator = target.plugIn[0] as CommandOutputGenerator;
                 if (cmdGen.outputMappingId) {
                     let outMap: OutputMap = this.projectService.outputMaps.find(p => p.id == cmdGen.outputMappingId);
                     let src: ColumnDef = this.projectService.getColumnFromDBObj(outMap.dbObjectId, outMap.instance, outMap.dirType, outMap.outputName);
-                    series.push([{ x: src.x, y: src.y + 22 }, { x: src.x, y: (src.y + target.y) / 2 }, { x: target.x, y: (src.y + target.y) / 2 }, { x: target.x, y: target.y - 8 }]);
+                    series.push([{ x: src.x, y: src.y + (target.y > src.y ? 22 : 0) }, 
+                                 { x: src.x, y: (src.y + target.y) / 2 }, { x: target.x, y: (src.y + target.y) / 2 }, 
+                                 { x: target.x, y: target.y + (target.y > src.y ? -8 : 30) }]);
+                    // this is to uniquely identify each line, using src and target attributes
                     lineIds.push(
                         outMap.dbObjectId + ':' +
                         outMap.instance + ':' +
@@ -497,6 +530,10 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
                         target.dirType + ':' +
                         target.name
                     );
+                    if (target.y > src.y)
+                        lineAttr.push({ 'stroke': 'orange', 'stroke-dasharray': 'none', 'marker-end': 'url(#triangle)' });
+                    else // these lines should be removed because they are upside down
+                lineAttr.push({ 'stroke': '#ccc', 'stroke-dasharray': [3,3], 'marker-end': 'url(#disabled_triangle)' });
                 }
             });
         });
@@ -512,10 +549,11 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             .attr("class", "connectorLine")
             .attr('z', '0')
             .attr('fill', 'none')
-            .attr('stroke', 'orange')
-            .attr('marker-end', 'url(#triangle)')
             .merge(selPath)
-            .attr("d", lineFunction);
+            .attr('marker-end', (d, i) => lineAttr[i]['marker-end'])
+            .attr("d", lineFunction)
+            .attr('stroke', (d, i) => lineAttr[i]['stroke'])
+            .attr('stroke-dasharray', (d, i) => lineAttr[i]['stroke-dasharray']);
     }
     private redrawObjects() {
         d3.select("svg").remove();
