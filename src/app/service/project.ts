@@ -84,7 +84,8 @@ export class DBObjDef implements Serializable<DBObjDef> {
     sql: string;
     fromStmtStartPos?: number; // the position of the word "from" in the SQL; in order to insert INTO ##tmpTbl for storing results
     isDrag: boolean = false;
-    
+    groupId: number;
+
     public deserialize(input) {
         this.id = input.id;
         this.name = input.name;
@@ -96,6 +97,7 @@ export class DBObjDef implements Serializable<DBObjDef> {
         this.y = input.y;
         this.rowcount = input.rowcount;
         this.sql = input.sql;
+        this.groupId = input.groupId;
         this.fromStmtStartPos = input.fromStmtStartPos;
         this.columns[COL_DIR_TYPE.TBLVW_COL] = [];
         this.columns[COL_DIR_TYPE.IN_PARAM] = [];
@@ -139,6 +141,20 @@ export class DBObjDef implements Serializable<DBObjDef> {
     }
     isSP():boolean {
         return (this.objType == OBJ_TYPE.SP);
+    }
+}
+
+export class GroupDef implements Serializable<GroupDef> {
+    id: number;
+    members: Set<DBObjDef> = new Set<DBObjDef>();
+    
+    public deserialize(input) {
+        this.id = input.id;
+        this.members = input.members.slice();
+        return this;
+    }
+    toSortedArray() {
+        return [...this.members].sort(m => m.sequence);
     }
 }
 
@@ -233,6 +249,7 @@ export class ProjectStruct implements Serializable<ProjectStruct> {
     filePath: string = "";
     selectedObjs: { [objType: string]: DBObjDef[] } = {};
     outputMaps: OutputMap[] = [];
+    groups: GroupDef[] = [];
 
     public deserialize(input) {
         this.connection = new ConnectionConfig().deserialize(input.connection);
@@ -245,6 +262,9 @@ export class ProjectStruct implements Serializable<ProjectStruct> {
         }
         input.outputMaps.forEach(m => {
             this.outputMaps.push(new OutputMap().deserialize(m));
+        });
+        input.groups.forEach(g => {
+            this.groups.push(new GroupDef().deserialize(g));
         });
         return this;
     }
@@ -262,6 +282,7 @@ export class ProjectStruct implements Serializable<ProjectStruct> {
         this.selectedObjs[OBJ_TYPE.SQL] = [];
     }
 }
+
 @Injectable()
 export class ProjectService {
     project: ProjectStruct = new ProjectStruct();
@@ -341,6 +362,13 @@ export class ProjectService {
     }
     createNewProject() {
         this.project = new ProjectStruct();
+    }
+    mergeGroup(target:GroupDef, src:GroupDef) {
+        let newSet: Set<DBObjDef> = new Set([...target.members, ...src.members]);
+        target.members = newSet;
+        // removed source groups
+        let srcIndex = this.project.groups.findIndex(g => g.id == src.id);
+        this.project.groups.splice(srcIndex, 1);
     }
     get connection(): ConnectionConfig {
         return this.project.connection;
