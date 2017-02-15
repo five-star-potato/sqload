@@ -8,6 +8,22 @@ import { OBJ_TYPE, COL_DIR_TYPE, OBJECT_TYPES_LIST } from "../constants";
 interface Serializable<T> {
     deserialize(input: Object): T;
 }
+export class DbObjIdentifier implements Serializable<DbObjIdentifier> {
+    dbObjectId: number;
+    instance: number;
+    public deserialize(input) {
+        this.dbObjectId = input.dbObjectId;
+        this.instance = input.instance;
+        return this;
+    }
+    public constructor(
+        fields?: {
+            dbObjectId: number;
+            instance: number;
+        }) {
+        if (fields) Object.assign(this, fields);
+    }
+}
 export class OutputMap implements Serializable<OutputMap> {
     id: number;
     dbObjectId: number;
@@ -145,16 +161,20 @@ export class DBObjDef implements Serializable<DBObjDef> {
 
 export class GroupDef implements Serializable<GroupDef> {
     id: number;
-    members: Set<DBObjDef> = new Set<DBObjDef>();
+    members: DbObjIdentifier[] = []; // trouble serializing set
 
     public deserialize(input) {
         this.id = input.id;
-        this.members = input.members.slice();
+        if (input.members) {
+             input.members.forEach(m => {
+                 this.members.push(new DbObjIdentifier().deserialize(m));
+             })
+        }
         return this;
     }
-    toSortedArray() {
-        return [...this.members].sort(m => m.sequence);
-    }
+    //toSortedArray() {
+    //    return [...this.members].sort(m => m.sequence);
+    //}
 }
 
 export class ColumnDef implements Serializable<ColumnDef> {
@@ -367,7 +387,7 @@ export class ProjectService {
         this.project = new ProjectStruct();
     }
     mergeGroup(target: GroupDef, src: GroupDef) {
-        let newSet: Set<DBObjDef> = new Set([...target.members, ...src.members]);
+        let newSet: DbObjIdentifier[] = [...target.members, ...src.members];
         target.members = newSet;
         // removed source groups
         let srcIndex = this.project.groups.findIndex(g => g.id == src.id);
@@ -375,15 +395,6 @@ export class ProjectService {
     }
     removeOutputMapping(mapId: number) {
         let i = this.project.outputMaps.findIndex(m => m.id == mapId);
-        let outMap = this.project.outputMaps[i];
-        for (let o of this.getAllObjects()) {
-            let colDefs:ColumnDef[] = this.getMappableTargetColumns(o.id, o.instance);
-            colDefs.filter(c => {
-                let cmdGen = (c.plugIn[0] as CommandOutputGenerator);
-                if (cmdGen.outputMappingId == mapId)
-                    cmdGen.outputMappingId = null;
-            });
-        }
         this.project.outputMaps.splice(i, 1);
     }
     get connection(): ConnectionConfig {
@@ -397,6 +408,9 @@ export class ProjectService {
     }
     get outputMaps(): OutputMap[] {
         return this.project.outputMaps;
+    }
+    get groups(): GroupDef[] {
+        return this.project.groups;
     }
     get serverName(): string {
         return this.project.connection.serverName;
