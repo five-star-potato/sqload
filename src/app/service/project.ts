@@ -61,6 +61,7 @@ export class OutputMap implements Serializable<OutputMap> {
 export class ConnectionConfig implements Serializable<ConnectionConfig> {
     serverName: string;
     databaseName: string;
+    instanceName: string;
     userName: string;
     password?: string
     verified: boolean;
@@ -68,6 +69,7 @@ export class ConnectionConfig implements Serializable<ConnectionConfig> {
     public deserialize(input) {
         this.serverName = input.serverName;
         this.databaseName = input.databaseName;
+        this.instanceName = input.instanceName;
         this.userName = input.userName;
         this.password = input.password;
         this.verified = input.verified;
@@ -77,6 +79,7 @@ export class ConnectionConfig implements Serializable<ConnectionConfig> {
         fields?: {
             serverName: string;
             databaseName: string;
+            instanceName: string;
             userName: string;
             password: string
             verified: boolean;
@@ -294,7 +297,8 @@ export class ProjectStruct implements Serializable<ProjectStruct> {
     }
     constructor() {
         this.connection = new ConnectionConfig({
-            serverName: 'DELL',
+            serverName: '192.168.0.14',
+            instanceName: "SQLExpress",
             databaseName: 'AdventureWorks2014',
             userName: 'sa',
             password: "LongLive1",
@@ -450,6 +454,9 @@ export class ProjectService {
     get serverName(): string {
         return this.project.connection.serverName;
     }
+    get instanceName(): string {
+        return this.project.connection.instanceName;
+    }
     get databaseName(): string {
         return this.project.connection.databaseName;
     }
@@ -462,6 +469,12 @@ export class ProjectService {
     set serverName(val: string) {
         if (val !== this.project.connection.serverName) {
             this.project.connection.serverName = val;
+            this.project.connection.verified = false;
+        }
+    }
+    set instanceName(val: string) {
+        if (val !== this.project.connection.instanceName) {
+            this.project.connection.instanceName = val;
             this.project.connection.verified = false;
         }
     }
