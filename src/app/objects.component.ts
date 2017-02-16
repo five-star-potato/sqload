@@ -149,7 +149,7 @@ export class ObjectsComponent extends BaseComponent {
     }
     private getFirstResultSet(dbObj:DBObjDef)  {
         dbObj.columns[COL_DIR_TYPE.RSLTSET] = [];
-        this.getSQL2Fn()(this.projectService.connection, `exec sp_describe_first_result_set N'${dbObj.sql.replace("'", "''")}'`)
+        this.getSQL2Fn(this.projectService.connection, `exec sp_describe_first_result_set N'${dbObj.sql.replace("'", "''")}'`)
             .then(res => {
                 res.forEach((row) => {
                     if (row['is_hidden'] == '0') {
@@ -168,7 +168,7 @@ export class ObjectsComponent extends BaseComponent {
                 });
             })
             .catch(err => {
-                this.getMsgBoxFn()("Get First Result Set Error", err.toString());
+                this.fnMsgBox("Get First Result Set Error", err.toString());
             });
     }
     private async parseSQL(dbObj:DBObjDef) {
@@ -295,10 +295,14 @@ export class ObjectsComponent extends BaseComponent {
         merged.sort((a, b) => {
             let s1 = a.sequence || Number.MAX_VALUE;
             let s2 = b.sequence || Number.MAX_VALUE;
-            return s1 - s2;
+            if (s1 != s2)
+                return s1 - s2;
+            else {
+                return a.name < b.name ? -1 : (a.name > b.name ? 1 : 0);
+            }
         });
-        let seq:number = 1; // make sure don't start with 0 as 0 is false
-        merged.forEach(m => m.sequence = seq++);
+        let seq:number = 0; // make sure don't start with 0 as 0 is false
+        merged.forEach(m => m.sequence = (seq += 1000));
     }
     // need to update the sequence # for all the objects that were not selected before
     updateGlobalObjectsSelection() {
@@ -323,7 +327,7 @@ export class ObjectsComponent extends BaseComponent {
         this.objects[OBJ_TYPE.SQL] = this.projectService.selectedObjs[OBJ_TYPE.SQL].slice(0);
 
         //electron.ipcRenderer.send("message");
-        this.getSQL2Fn()(this.projectService.connection, "SELECT object_id, SCHEMA_NAME(schema_id) [Schema], RTRIM(name) [name], RTRIM(type) [type] FROM sys.objects WHERE type in ('U', 'V', 'P') ORDER BY 4, 2, 3")
+        this.getSQL2Fn(this.projectService.connection, "SELECT object_id, SCHEMA_NAME(schema_id) [Schema], RTRIM(name) [name], RTRIM(type) [type] FROM sys.objects WHERE type in ('U', 'V', 'P') ORDER BY 4, 2, 3")
             .then(res => {
                 this.ngZone.run(() => {
                     let i: number = 0;
@@ -334,18 +338,8 @@ export class ObjectsComponent extends BaseComponent {
                             return t.name == objName;
                         });
 
-                        if (sel) { // previously selected table
-                            this.objects[objType].push(new DBObjDef({
-                                id: row["object_id"],
-                                name: objName,
-                                objType: objType,
-                                sequence: sel.sequence,
-                                instance: sel.instance,
-                                selected: true,
-                                x: sel.x,
-                                y: sel.y,
-                                rowcount: sel.rowcount
-                            }));
+                        if (sel) { // previously selected db obj
+                            this.objects[objType].push(sel);
                         }
                         else {
                             this.objects[objType].push(new DBObjDef({
@@ -358,7 +352,7 @@ export class ObjectsComponent extends BaseComponent {
                 });
             })
             .catch(err => {
-                this.getMsgBoxFn()("Loading Database Objects Error", err.toString());
+                this.fnMsgBox("Loading Database Objects Error", err.toString());
             });
     }
 }

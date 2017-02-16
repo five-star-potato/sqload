@@ -106,7 +106,6 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
     globalListenFunc1: Function; // storing the func pointer for calling to destroy it
     globalListenFunc2: Function;
     objects: { [objType: string]: DBObjDef[] };
-    svgContainer: any;
     mergedDbObjs: DBObjDef[];
     outputMapping: OutputMapAttribute = new OutputMapAttribute();
     mappableOutputColumns: ColumnDef[] = [];
@@ -115,6 +114,10 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
     dragdx: number; dragdy: number; // offset to the dragged object when first dragged
     maxObjWidth: number;
     //breakpt: boolean = false;
+
+    //D3 related
+    svgContainer: any;
+    tran1:any;
 
     constructor(router: Router, ngZone: NgZone, wizardStateService: WizardStateService, dataService: SampleDataService, projectService: ProjectService,
         public el: ElementRef, public renderer: Renderer) {
@@ -162,13 +165,21 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
         [srcObjId, srcInst] = this.outputMapping.dbObjInstance.split(':').map(Number);
         let srcObj:DBObjDef = this.projectService.getDBObjInstance(srcObjId, srcInst);
         let targetObj:DBObjDef = this.projectService.getDBObjInstance(this.currColDef.dbObjId, this.currColDef.instance);
-        if (!srcObj.groupId && !targetObj.groupId) { // none of are in a group yet - create new group
-            let grp:GroupDef = new GroupDef();
-            grp.id = fnGetLargeRandomNumber();
-            grp.members.push(new DbObjIdentifier({ dbObjectId: srcObj.id, instance: srcObj.instance }));
-            grp.members.push(new DbObjIdentifier({ dbObjectId: targetObj.id, instance: targetObj.instance }));
-            srcObj.groupId = targetObj.groupId = grp.id; 
-            this.projectService.groups.push(grp);
+
+        try {
+            if (srcObj.groupId && !targetObj.groupId) { // if the src obj is already in a group
+                let grp:GroupDef = this.projectService.groups.find(g => g.id == srcObj.groupId);
+                this.projectService.joinDbObjToGroup(targetObj, grp);
+            }
+            else if (!srcObj.groupId && !targetObj.groupId){ // neither object is in a group
+                this.projectService.formGroup(targetObj, srcObj);
+            }
+            else {  // both objects are in groups (same or different groups?)
+
+            }
+        }
+        catch (ex) {
+            this.fnMsgBox("error", ex.toString());
         }
     }
     private saveOutputMappingChanges() {
@@ -378,7 +389,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             .data([1])  // fake it so only draw once
             .enter().append("text")
             .attr("class", "rowsHeaderText")
-            .attr("x", sx + 10 + this.maxObjWidth)
+            .attr("x", sx + 20 + this.maxObjWidth)
             .attr("y", 10)
             .attr("color", "#888")
             .text("# Rows");
@@ -617,6 +628,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             .attr('z', '0')
             .attr('fill', 'none')
             .merge(selPath)
+            .transition(this.tran1)
             .attr('marker-end', (d, i) => lineAttr[i]['marker-end'])
             .attr("d", lineFunction)
             .attr('stroke', (d, i) => lineAttr[i]['stroke'])
@@ -633,6 +645,10 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
     }
 
     ngOnInit() {
+        this.tran1 = d3.transition("tran1")
+            .duration(750)
+            .ease(d3.easeLinear);
+        
         this.globalListenFunc2 = this.renderer.listenGlobal("body", "change", (e) => {
             //this.ngZone.run(() => {
             if (!e.target.id)

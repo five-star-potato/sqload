@@ -25,22 +25,22 @@ export abstract class BaseComponent {
    }
     abstract back(): void;
     abstract next(): void;
-    protected getSQL2Fn():any {
+    get getSQL2Fn():any {
         return this.remote.getGlobal(TRON_GLOBAL.fnExecSQL2);
     }
-    protected getVerifyConnFn():any {
+    get fnVerifyConn():any {
         return this.remote.getGlobal(TRON_GLOBAL.fnVerifyConnection);
     }
-    protected getSaveProjectFn():any {
+    get fnSaveProject():any {
         return this.remote.getGlobal(TRON_GLOBAL.fnSaveProject);
     }
-    protected getOpenProjectFn():any {
+    get fnOpenProject():any {
         return this.remote.getGlobal(TRON_GLOBAL.fnOpenProject);
     }
-    protected getWriteSqlToFileFn():any {
+    get fnWriteSqlToFile():any {
         return this.remote.getGlobal(TRON_GLOBAL.fnWriteSqlToFile);
     }
-    protected getMsgBoxFn():any {
+    get fnMsgBox():any {
         return this.remote.getGlobal(TRON_GLOBAL.fnMsgBox);
     }
     protected getObjectTypeName(t:string) {

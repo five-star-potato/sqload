@@ -236,7 +236,7 @@ export class GenerateComponent extends BaseComponent {
         if (rowCnt < obj.rowcount) {
             this.overallProgress = Math.ceil(this.runningRowCnt * 100 / this.totalRowCnt);
             console.log("overall progress: " + this.overallProgress.toString());
-            this.getWriteSqlToFileFn()(this.fileSubDir, this.projectService.connection, fnGetCleanName(obj.name), rowCnt, [...this.declareStmts, ...this.stmts]);
+            this.fnWriteSqlToFile(this.fileSubDir, this.projectService.connection, fnGetCleanName(obj.name), rowCnt, [...this.declareStmts, ...this.stmts]);
             this.stmts = [];
             setTimeout(this.generateDataForRow.bind(this, colArr, fkConstraints, colNames, variables, obj, objProgress, objIndex, rowCnt), 100);
         }
@@ -247,7 +247,7 @@ export class GenerateComponent extends BaseComponent {
             }
             else {
                 this.overallProgress = 100;
-                this.getWriteSqlToFileFn()(this.fileSubDir, this.projectService.connection, fnGetCleanName(obj.name), rowCnt, [...this.declareStmts, ...this.stmts]);
+                this.fnWriteSqlToFile(this.fileSubDir, this.projectService.connection, fnGetCleanName(obj.name), rowCnt, [...this.declareStmts, ...this.stmts]);
                 this.stmts = [];
                 this.wizardStateService.hideSpinning();
             }
@@ -372,7 +372,7 @@ export class GenerateComponent extends BaseComponent {
         */
         this.cleanUnusedPlugin();
         let projectContent = fnStringifyNoCircular(this.projectService);
-        this.getSaveProjectFn()(projectContent);
+        this.fnSaveProject(projectContent);
     }
     ngOnInit() {
         this.allObjects = this.projectService.getAllObjects();

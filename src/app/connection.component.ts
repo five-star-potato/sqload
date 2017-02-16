@@ -75,7 +75,7 @@ export class ConnectionComponent extends BaseComponent implements OnInit, AfterV
     }
     next() {
         this.wizardStateService.showSpinning('connect');
-        this.getVerifyConnFn()(this.projectService.connection)
+        this.fnVerifyConn(this.projectService.connection)
             .then(result => {
                 this.ngZone.run(() => {
                     this.projectService.connection.verified = true;
@@ -84,7 +84,7 @@ export class ConnectionComponent extends BaseComponent implements OnInit, AfterV
                 })
             })
             .catch(err => {
-                this.getMsgBoxFn()("Database Connection Error", err.toString());
+                this.fnMsgBox("Database Connection Error", err.toString());
             })
             .then(() => {
                 this.wizardStateService.hideSpinning();

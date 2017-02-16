@@ -204,7 +204,7 @@ export class ColumnsComponent extends BaseComponent implements AfterViewInit {
             JOIN INFORMATION_SCHEMA.COLUMNS ic ON t.name = ic.TABLE_NAME AND c.name = ic.COLUMN_NAME AND SCHEMA_NAME(t.schema_id) = ic.TABLE_SCHEMA
             WHERE c.object_id in (${objIdsWithoutColumn.join()}) AND c.is_computed <> 1 AND c.is_identity <> 1
             order by ic.TABLE_SCHEMA, ic.TABLE_NAME, c.column_id`;
-        await this.getSQL2Fn()(this.projectService.connection, sql)
+        await this.getSQL2Fn(this.projectService.connection, sql)
             .then(res => {
                 this.ngZone.run(() => {
                     let i: number = 0;
@@ -243,7 +243,7 @@ export class ColumnsComponent extends BaseComponent implements AfterViewInit {
                 });
             })
             .catch(err => {
-                this.getMsgBoxFn()("Loading Table Columns Error", err.toString());
+                this.fnMsgBox("Loading Table Columns Error", err.toString());
             });
     }
     private async loadViewColumnDefs(objIdsWithoutColumns:number[]) {
@@ -255,7 +255,7 @@ export class ColumnsComponent extends BaseComponent implements AfterViewInit {
             WHERE t.object_id in (${objIdsWithoutColumns.join()}) AND c.is_computed <> 1 AND c.is_identity <> 1
             order by ic.TABLE_SCHEMA, ic.TABLE_NAME, c.column_id
             `;
-        await this.getSQL2Fn()(this.projectService.connection, sql)
+        await this.getSQL2Fn(this.projectService.connection, sql)
             .then(res => {
                 this.ngZone.run(() => {
                     let i: number = 0;
@@ -284,7 +284,7 @@ export class ColumnsComponent extends BaseComponent implements AfterViewInit {
                 });
             })            
             .catch(err => {
-                this.getMsgBoxFn()("Loading View Columns Error", err.toString());
+                this.fnMsgBox("Loading View Columns Error", err.toString());
             });
     }
     private async loadSPColumnDefs(objIdsWithoutColumns:number[]) {
@@ -295,7 +295,7 @@ export class ColumnsComponent extends BaseComponent implements AfterViewInit {
             WHERE t.object_id in (${objIdsWithoutColumns.join()})
             order by ic.SPECIFIC_SCHEMA, ic.SPECIFIC_NAME, ic.ORDINAL_POSITION
         `;
-        await this.getSQL2Fn()(this.projectService.connection, sql)
+        await this.getSQL2Fn(this.projectService.connection, sql)
             .then(res => {
                 this.ngZone.run(() => {
                     let i: number = 0;
@@ -324,7 +324,7 @@ export class ColumnsComponent extends BaseComponent implements AfterViewInit {
                 });
             })
             .catch(err => {
-                this.getMsgBoxFn()("Loading SP Columns Error", err.toString());
+                this.fnMsgBox("Loading SP Columns Error", err.toString());
             });
     }
     private getObjsWithoutColumnsLoaded(objType:string):number[] {

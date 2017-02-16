@@ -1,6 +1,6 @@
 import * as gen from '../generator/generators.component';
 import { Injectable } from "@angular/core";
-import { DataGenerator } from '../include';
+import { DataGenerator, fnGetLargeRandomNumber } from '../include';
 import { CommandOutputGenerator  } from '../generator/generators.component';
 import { OBJ_TYPE, COL_DIR_TYPE, OBJECT_TYPES_LIST } from "../constants";
 
@@ -140,6 +140,7 @@ export class DBObjDef implements Serializable<DBObjDef> {
             y?: number;
             rowcount?: number;
             sql?: string;
+            groupId?: number;
         }) {
         this.columns[COL_DIR_TYPE.TBLVW_COL] = [];
         this.columns[COL_DIR_TYPE.IN_PARAM] = [];
@@ -397,6 +398,40 @@ export class ProjectService {
         let i = this.project.outputMaps.findIndex(m => m.id == mapId);
         this.project.outputMaps.splice(i, 1);
     }
+    formGroup(target:DBObjDef, src:DBObjDef) {
+        let grp:GroupDef = new GroupDef();
+        grp.id = fnGetLargeRandomNumber();
+        if (target.groupId || src.groupId)
+            throw 'group is already defined';
+        grp.members.push(new DbObjIdentifier({dbObjectId: target.id, instance: target.instance}));
+        grp.members.push(new DbObjIdentifier({dbObjectId: src.id, instance: src.instance}));
+
+        // get them close enough the squeeze out others that happened to be in between
+        target.sequence = src.sequence + 1;
+
+        this.project.groups.push(grp);
+        this.resequenceDbObjs();
+    }
+    resequenceDbObjs() {
+        let seqNr:number = 0;
+        let dbObjs:DBObjDef[] = this.getAllObjects();
+        dbObjs.sort((a,b) => (a.sequence - b.sequence));
+        for (let o of dbObjs){
+            o.sequence = (seqNr += 1000);
+        }
+    }
+    joinDbObjToGroup(dbObj:DBObjDef, grp:GroupDef) {
+        let maxSeq = Math.max.apply(Math, grp.members.map(m => {
+            let o = this.getDBObjInstance(m.dbObjectId, m.instance);
+            return o.sequence;
+        }));
+        dbObj.sequence = maxSeq + 1;
+        dbObj.groupId = grp.id;
+        this.resequenceDbObjs();
+    }
+
+
+    // Properties
     get connection(): ConnectionConfig {
         return this.project.connection;
     }

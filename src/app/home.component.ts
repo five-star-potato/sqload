@@ -73,7 +73,7 @@ export class HomeComponent extends BaseComponent implements OnInit {
     }
 */
     private openProject() {
-        this.getOpenProjectFn()()
+        this.fnOpenProject()
             .then(result => {
                 // fix the loaded project file. Make sure its in zone.run, otherwise all databinding will file when you hit tables or columns page.
                 this.ngZone.run(() => {
