@@ -19,6 +19,11 @@ import { ConnectionConfig, ProjectService } from "./service/project";
             </div>
 
             <div class="form-group">
+                <label for="instanceName">Instance Name</label> 
+                <input type="text" [(ngModel)]="this.projectService.instanceName" ngControl="instanceName" name="instanceName" id="instanceName" class="form-control" placeholder="Server" />
+            </div>
+
+            <div class="form-group">
                 <label for="databaseName">Database Name</label> 
                 <input type="text" [(ngModel)]="this.projectService.databaseName"  ngControl="databaseName" name="databaseName" id="databaseName" required class="form-control" placeholder="Database Name" />
             </div>

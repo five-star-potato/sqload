@@ -7,7 +7,7 @@ var verifyConnection = function(connection) {
         password: connection.password,
         server: connection.serverName,
         // If you are on Microsoft Azure, you need this:  
-        options: { encrypt: true, database: connection.databaseName }
+        options: { database: connection.databaseName, instanceName: connection.instanceName }
     };
     var connection = new Connection(config);
     return new Promise(function(resolve, reject){
@@ -29,7 +29,7 @@ var execSQL2 = function(connection, sqlStmt) {
         password: connection.password,
         server: connection.serverName,
         // If you are on Microsoft Azure, you need this:  
-        options: { encrypt: true, database: connection.databaseName }
+        options: { database: connection.databaseName, instanceName: connection.instanceName }
     };
     var connection = new Connection(config);
     return new Promise(function(resolve, reject) {
