@@ -335,14 +335,19 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             .attr("stroke", "#DDD")
             .attr("strok-width", 1);
     }
-    private drawFlow() {
+    private drawFlow(animate:boolean = true) {
         let shiftRight: number = 0;
         let rightPos: { [objId: number]: number } = {};
         this.mergedDbObjs.sort((a, b) => a.sequence - b.sequence);
         // SX is the x of the db object rect; 
         let sx: number = 100;
         let szTxtRows = 80;
-
+/*
+        if (animate)
+            this.tran1.duration(400);
+        else 
+            this.tran1.duration(0);
+*/
         let colBtnHeight: number = 25;
         // find width of the object with the longest name
         this.maxObjWidth = Math.max.apply(Math, this.mergedDbObjs.map(m => this.getTextWidth(m.name, 12, "arial"))) + 20;
@@ -381,6 +386,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             .style("stroke", '#339966')
             .style('stroke-dasharray', [3,3])
             .merge(updateSel)
+            //.transition(this.tran1)
             .attr("x", sx - 10) // set up the connection point origin
             .attr("y", d => { return d.minY - 20; })
             .attr("height", d => d.maxY - d.minY + 60);
@@ -525,6 +531,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
                 return btn;
             })
             .merge(targetColSelection)
+            //.transition(this.tran1)
             .attr('x', (c: ColumnDef) => {
                 let tmpX = rightPos[c.dbObjId];
                 c.width = this.getTextWidth(c.name, 11, "arial") + 6;
@@ -555,6 +562,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             .style("fill", 'coral')
             .style("stroke", 'brown')
             .merge(mappedColSelection)
+            //.transition(this.tran1)
             .attr('x', (c: ColumnDef) => {
                 let tmpX = rightPos[c.dbObjId];
                 c.x = tmpX + c.width / 2;   // cx is the center of the rect!!
@@ -580,6 +588,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             .style("text-anchor", "middle")
             .text((c: ColumnDef) => c.name)
             .merge(mappedColTextSelection)
+            //.transition(this.tran1)
             .attr('x', (c: ColumnDef) => c.x)
             .attr('y', (c: ColumnDef) => c.y + 14);
 
@@ -628,7 +637,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             .attr('z', '0')
             .attr('fill', 'none')
             .merge(selPath)
-            .transition(this.tran1)
+            //.transition(this.tran1)
             .attr('marker-end', (d, i) => lineAttr[i]['marker-end'])
             .attr("d", lineFunction)
             .attr('stroke', (d, i) => lineAttr[i]['stroke'])
@@ -646,7 +655,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
 
     ngOnInit() {
         this.tran1 = d3.transition("tran1")
-            .duration(750)
+            .duration(400)
             .ease(d3.easeLinear);
         
         this.globalListenFunc2 = this.renderer.listenGlobal("body", "change", (e) => {
@@ -714,7 +723,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
         this.mergedDbObjs.sort((a, b) => a.sequence - b.sequence);
 
         this.drawHeader();
-        this.drawFlow();
+        this.drawFlow(false);
     }
     ngOnDestroy() {
         this.globalListenFunc1();

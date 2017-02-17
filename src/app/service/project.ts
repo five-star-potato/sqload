@@ -409,7 +409,7 @@ export class ProjectService {
             throw 'group is already defined';
         grp.members.push(new DbObjIdentifier({dbObjectId: target.id, instance: target.instance}));
         grp.members.push(new DbObjIdentifier({dbObjectId: src.id, instance: src.instance}));
-
+        target.groupId = src.groupId = grp.id;
         // get them close enough the squeeze out others that happened to be in between
         target.sequence = src.sequence + 1;
 
@@ -431,9 +431,9 @@ export class ProjectService {
         }));
         dbObj.sequence = maxSeq + 1;
         dbObj.groupId = grp.id;
+        grp.members.push(new DbObjIdentifier({ dbObjectId: dbObj.id, instance: dbObj.instance }));
         this.resequenceDbObjs();
     }
-
 
     // Properties
     get connection(): ConnectionConfig {
