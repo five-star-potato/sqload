@@ -446,8 +446,7 @@ export class ProjectService {
     findEdgeObjInGroup(grpId: number, minmax: string = "min"):DBObjDef {
         let grp:GroupDef = this.project.groups.find(g => g.id == grpId);
         let dbObj:DBObjDef;
-        for (let objId of grp.members) {
-            let a:DBObjDef = this.getDBObjInstance(objId.dbObjectId, objId.instance);
+        this.forEachGroupMember(grp, a => {
             if (dbObj) {
                 if (minmax == "min") {
                     if (a.sequence < dbObj.sequence)
@@ -460,9 +459,20 @@ export class ProjectService {
             }
             else 
                 dbObj = a;
-        }
+        });
         return dbObj;
     }
+    public forEachGroupMember(grp:GroupDef, callback: (o:DBObjDef) => any):void {
+        let dbObjs:DBObjDef[] = [];
+        // can I assume all the members are sorted by sequence?
+        for (let objId of grp.members) {
+            let a:DBObjDef = this.getDBObjInstance(objId.dbObjectId, objId.instance);
+            dbObjs.push(a);
+        }
+        dbObjs.sort(o => o.sequence);
+        dbObjs.forEach(o => callback(o));
+    }
+
     // Properties
     get connection(): ConnectionConfig {
         return this.project.connection;

@@ -261,45 +261,82 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
                 .on("start", () => {
                     console.log('drag started!!!');
                     console.log(d3.event);
+                    let dx = d3.event.sourceEvent.offsetX, dy = d3.event.sourceEvent.offsetY;
                     this.mergedDbObjs.forEach(o => {
-                        let dx = d3.event.sourceEvent.offsetX, dy = d3.event.sourceEvent.offsetY;
                         if (dx >= o.x && dx <= (o.x + this.maxObjWidth) && dy >= o.y && dy <= (o.y + 30)) {
                             this.dragdx = dx - o.x; this.dragdy = dy - o.y;
-                            console.log("drag subject found:");
-                            console.log(o);
+                            //console.log("drag subject found:");
+                            //console.log(o);
                             this.dragDbObj = o;
                             o.isDrag = true;
                         }
-                        else { // drag group?
-
-                        }
-                    })
+                    });
+                    if (!this.dragDbObj) {
+                        this.projectService.groups.forEach(g => {
+                            if (dx >= g.x && dx <= (g.x + g.width) && dy >= g.y && dy <= (g.y + g.height)) {
+                                this.dragdx = dx - g.x; this.dragdy = dy - g.y;
+                                console.log("drag group found:");
+                                console.log(g);
+                                this.dragGrp = g;
+                                g.isDrag = true;
+                            }
+                        })
+                    }
                 })
                 .on("drag", () => {
                     if (this.dragDbObj) {
-                        this.dragDbObj.x = d3.event.sourceEvent.offsetX - this.dragdx;
+                        //this.dragDbObj.x = d3.event.sourceEvent.offsetX - this.dragdx;
                         this.dragDbObj.y = d3.event.sourceEvent.offsetY - this.dragdy;
                         //console.log("dx dy:" + this.dragDbObj.x + " " + this.dragDbObj.y);
-                        for (let o of this.mergedDbObjs) {
-                            if (o.id != this.dragDbObj.id) {
-                                if (Math.abs(o.y - this.dragDbObj.y) < 10) {
-                                    // Complex maneuver between db objs and db objs, db objs and groups, groups and groups
-                                    // I'm not merging db obj into a group ... yet
-                                    // Object to Object
-                                    if ((!this.dragDbObj.groupId && !o.groupId) || (this.dragDbObj.groupId && o.groupId && this.dragDbObj.groupId == o.groupId))
-                                        [o.sequence, this.dragDbObj.sequence] = [this.dragDbObj.sequence, o.sequence];
-                                    else if (!this.dragDbObj.groupId && o.groupId) {
-                                        let minmax: string = (this.dragDbObj.sequence > o.sequence ? "min" : "max"); // dragging from below "min" or dragging from above "max"; counterintuitive ...
-                                        let edgeObj: DBObjDef = this.projectService.findEdgeObjInGroup(o.groupId, minmax);
-                                        if (edgeObj === o) { // same obj
-                                            this.dragDbObj.sequence = o.sequence + (minmax == "min" ? -1 : 1);
-                                            this.projectService.resequenceDbObjs();
-                                        }
+                        for (let o of this.mergedDbObjs.filter(d => d.id != this.dragDbObj.id)) {
+                            if (Math.abs(o.y - this.dragDbObj.y) < 10) {
+                                // Complex maneuver between db objs and db objs, db objs and groups, groups and groups
+                                // I'm not merging db obj into a group ... yet
+                                // Object to Object
+                                if ((!this.dragDbObj.groupId && !o.groupId) || (this.dragDbObj.groupId && o.groupId && this.dragDbObj.groupId == o.groupId))
+                                    [o.sequence, this.dragDbObj.sequence] = [this.dragDbObj.sequence, o.sequence];
+                                else if (!this.dragDbObj.groupId && o.groupId) {
+                                    let minmax: string = (this.dragDbObj.sequence > o.sequence ? "min" : "max"); // dragging from below "min" or dragging from above "max"; counterintuitive ...
+                                    let edgeObj: DBObjDef = this.projectService.findEdgeObjInGroup(o.groupId, minmax);
+                                    if (edgeObj === o) { // same obj
+                                        this.dragDbObj.sequence = o.sequence + (minmax == "min" ? -1 : 1);
+                                        this.projectService.resequenceDbObjs();
                                     }
-                                    break;
                                 }
+                                break;
                             }
                         };
+                        this.drawFlow();
+                    }
+                    if (this.dragGrp) {
+                        let oldy:number = this.dragGrp.y;
+                        this.dragGrp.y = d3.event.sourceEvent.offsetY - this.dragdy;
+                        let deltaY = this.dragGrp.y - oldy;
+                        // for all its group members, it should move too
+                        this.projectService.forEachGroupMember(this.dragGrp, a => {
+                            a.y += deltaY
+                            a.isDrag = true;
+                        });
+                        // switching position with objects that are not in group
+                        for (let o of this.mergedDbObjs.filter(d => !d.groupId)) {
+                            // assuming the group is dragging downward
+                            if (Math.abs(o.y - this.dragGrp.y) < 10) {
+                                let seq = o.sequence;
+                                this.projectService.forEachGroupMember(this.dragGrp, a => {
+                                    a.sequence = ++seq;
+                                });                            
+                                break;
+                            }
+                            else if (Math.abs(o.y - (this.dragGrp.y + this.dragGrp.height)) < 10) {
+                                let seq = o.sequence;
+                                this.projectService.forEachGroupMember(this.dragGrp, a => {
+                                    a.sequence = ++seq;
+                                });                            
+                                this.projectService.resequenceDbObjs();
+                                break;
+                            }
+
+                        }
                         this.drawFlow();
                     }
                 })
@@ -307,9 +344,13 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
                     if (this.dragDbObj) {
                         this.dragDbObj.isDrag = false;
                         this.dragDbObj = null;
-                        this.drawFlow();
                     }
-
+                    if (this.dragGrp) {
+                        this.projectService.forEachGroupMember(this.dragGrp, o => o.isDrag = false);
+                        this.dragGrp.isDrag = false;
+                        this.dragGrp = null;
+                    }
+                    this.drawFlow();
                 })
             );
 
@@ -370,40 +411,43 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             // preset the y
             if (!o.isDrag) {
                 o.y = yband(o.id + ":" + o.instance);
-                console.log(o.name + ":" + o.y);
+                //console.log(o.name + ":" + o.y);
             }
         });
 
         // Draw group boundaries
-        //let grpBoundaries: any[] = [];
         for (let grp of this.projectService.groups) {
-            let minY = Number.MAX_VALUE; let maxY = Number.MIN_VALUE;
-            for (let objId of grp.members) {
-                minY = Math.min(minY, yband(objId.dbObjectId + ":" + objId.instance));
-                maxY = Math.max(maxY, yband(objId.dbObjectId + ":" + objId.instance));
+            if (!grp.isDrag) {
+                let minY = Number.MAX_VALUE; let maxY = Number.MIN_VALUE;
+                for (let objId of grp.members) {
+                    minY = Math.min(minY, yband(objId.dbObjectId + ":" + objId.instance));
+                    maxY = Math.max(maxY, yband(objId.dbObjectId + ":" + objId.instance));
+                }
+                grp.x = sx - 10; grp.y = minY;
+                grp.y = minY - 20;
+                grp.width = this.maxObjWidth + 20;
+                grp.height = maxY - minY + 60;
             }
-            grp.x = sx - 10; grp.y = minY; 
-            grp.y = minY - 20;
-            grp.width = this.maxObjWidth + 20;
-            grp.height = maxY - minY + 60;
-            //grpBoundaries.push({ id: grp.id, x: grp.x, y: grp.y, width: grp.width, minY: minY, maxY: maxY });
         }
         let selectGroupBoundary = this.svgContainer.selectAll(".groupBoundary");
         let updateSel = selectGroupBoundary.data(this.projectService.groups, d => d.id);   // UPDATE selection
         updateSel.exit().remove();
-        // this is the word TABLE, VIEW, ...
         updateSel.enter().append('rect')
             .attr("class", "groupBoundary")
             .attr('rx', 5)
             .attr('ry', 5)
             .attr("width", d => d.width)
-            .style("fill", 'none')
+            .style("fill", '#FFF')
             .style("stroke", '#339966')
             .style('stroke-dasharray', [3, 3])
+            .style('cursor', 'pointer')
             .merge(updateSel)
             //.transition(this.tran1)
             .attr("x", d => d.x) // set up the connection point origin
-            .attr("y", d => d.y )
+            .attr("y", d => {
+                console.log("group y: " + d.y);
+                return d.y;
+            })
             .attr("height", d => d.height);
 
         this.svgContainer.selectAll(".rowsHeaderText")
@@ -464,7 +508,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
         updateSel.exit().remove();
         let enterSelection = updateSel.enter();  // need a UPDATE + ENTER selection for later combining with columndef children
         let selMergedObjs = enterSelection.merge(updateSel);
-        // this is the main shape of the DB object
+        // ************** this is the main shape of the DB object
         updateSel.enter().append('rect')
             .attr("class", "selectDbObjRect")
             .attr('rx', 5)
