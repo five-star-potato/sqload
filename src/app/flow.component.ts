@@ -111,13 +111,14 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
     mappableOutputColumns: ColumnDef[] = [];
     currColDef: ColumnDef;
     dragDbObj: DBObjDef;
+    dragGrp: GroupDef;
     dragdx: number; dragdy: number; // offset to the dragged object when first dragged
     maxObjWidth: number;
     //breakpt: boolean = false;
 
     //D3 related
     svgContainer: any;
-    tran1:any;
+    tran1: any;
 
     constructor(router: Router, ngZone: NgZone, wizardStateService: WizardStateService, dataService: SampleDataService, projectService: ProjectService,
         public el: ElementRef, public renderer: Renderer) {
@@ -161,17 +162,17 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
         $("#modalOutputMapping").modal('hide');
     }
     private boundOutputTargetIntoGroup() {
-        let srcObjId:number, srcInst:number;
+        let srcObjId: number, srcInst: number;
         [srcObjId, srcInst] = this.outputMapping.dbObjInstance.split(':').map(Number);
-        let srcObj:DBObjDef = this.projectService.getDBObjInstance(srcObjId, srcInst);
-        let targetObj:DBObjDef = this.projectService.getDBObjInstance(this.currColDef.dbObjId, this.currColDef.instance);
+        let srcObj: DBObjDef = this.projectService.getDBObjInstance(srcObjId, srcInst);
+        let targetObj: DBObjDef = this.projectService.getDBObjInstance(this.currColDef.dbObjId, this.currColDef.instance);
 
         try {
             if (srcObj.groupId && !targetObj.groupId) { // if the src obj is already in a group
-                let grp:GroupDef = this.projectService.groups.find(g => g.id == srcObj.groupId);
+                let grp: GroupDef = this.projectService.groups.find(g => g.id == srcObj.groupId);
                 this.projectService.joinDbObjToGroup(targetObj, grp);
             }
-            else if (!srcObj.groupId && !targetObj.groupId){ // neither object is in a group
+            else if (!srcObj.groupId && !targetObj.groupId) { // neither object is in a group
                 this.projectService.formGroup(targetObj, srcObj);
             }
             else {  // both objects are in groups (same or different groups?)
@@ -221,7 +222,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
         }
         this.boundOutputTargetIntoGroup();
         this.outputMapping.clear();
-        
+
         this.redrawObjects();
         $("#modalOutputMapping").modal('hide');
     }
@@ -269,6 +270,9 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
                             this.dragDbObj = o;
                             o.isDrag = true;
                         }
+                        else { // drag group?
+
+                        }
                     })
                 })
                 .on("drag", () => {
@@ -279,7 +283,19 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
                         for (let o of this.mergedDbObjs) {
                             if (o.id != this.dragDbObj.id) {
                                 if (Math.abs(o.y - this.dragDbObj.y) < 10) {
-                                    [o.sequence, this.dragDbObj.sequence] = [this.dragDbObj.sequence, o.sequence];
+                                    // Complex maneuver between db objs and db objs, db objs and groups, groups and groups
+                                    // I'm not merging db obj into a group ... yet
+                                    // Object to Object
+                                    if ((!this.dragDbObj.groupId && !o.groupId) || (this.dragDbObj.groupId && o.groupId && this.dragDbObj.groupId == o.groupId))
+                                        [o.sequence, this.dragDbObj.sequence] = [this.dragDbObj.sequence, o.sequence];
+                                    else if (!this.dragDbObj.groupId && o.groupId) {
+                                        let minmax: string = (this.dragDbObj.sequence > o.sequence ? "min" : "max"); // dragging from below "min" or dragging from above "max"; counterintuitive ...
+                                        let edgeObj: DBObjDef = this.projectService.findEdgeObjInGroup(o.groupId, minmax);
+                                        if (edgeObj === o) { // same obj
+                                            this.dragDbObj.sequence = o.sequence + (minmax == "min" ? -1 : 1);
+                                            this.projectService.resequenceDbObjs();
+                                        }
+                                    }
                                     break;
                                 }
                             }
@@ -293,6 +309,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
                         this.dragDbObj = null;
                         this.drawFlow();
                     }
+
                 })
             );
 
@@ -335,19 +352,13 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             .attr("stroke", "#DDD")
             .attr("strok-width", 1);
     }
-    private drawFlow(animate:boolean = true) {
+    private drawFlow() {
         let shiftRight: number = 0;
         let rightPos: { [objId: number]: number } = {};
         this.mergedDbObjs.sort((a, b) => a.sequence - b.sequence);
         // SX is the x of the db object rect; 
         let sx: number = 100;
         let szTxtRows = 80;
-/*
-        if (animate)
-            this.tran1.duration(400);
-        else 
-            this.tran1.duration(0);
-*/
         let colBtnHeight: number = 25;
         // find width of the object with the longest name
         this.maxObjWidth = Math.max.apply(Math, this.mergedDbObjs.map(m => this.getTextWidth(m.name, 12, "arial"))) + 20;
@@ -364,32 +375,36 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
         });
 
         // Draw group boundaries
-        let grpBoundaries: any[] = [];
+        //let grpBoundaries: any[] = [];
         for (let grp of this.projectService.groups) {
             let minY = Number.MAX_VALUE; let maxY = Number.MIN_VALUE;
             for (let objId of grp.members) {
                 minY = Math.min(minY, yband(objId.dbObjectId + ":" + objId.instance));
                 maxY = Math.max(maxY, yband(objId.dbObjectId + ":" + objId.instance));
             }
-            grpBoundaries.push({ id: grp.id, minY: minY, maxY: maxY });
+            grp.x = sx - 10; grp.y = minY; 
+            grp.y = minY - 20;
+            grp.width = this.maxObjWidth + 20;
+            grp.height = maxY - minY + 60;
+            //grpBoundaries.push({ id: grp.id, x: grp.x, y: grp.y, width: grp.width, minY: minY, maxY: maxY });
         }
         let selectGroupBoundary = this.svgContainer.selectAll(".groupBoundary");
-        let updateSel = selectGroupBoundary.data(grpBoundaries, d => d.id);   // UPDATE selection
+        let updateSel = selectGroupBoundary.data(this.projectService.groups, d => d.id);   // UPDATE selection
         updateSel.exit().remove();
         // this is the word TABLE, VIEW, ...
         updateSel.enter().append('rect')
             .attr("class", "groupBoundary")
             .attr('rx', 5)
             .attr('ry', 5)
-            .attr("width", this.maxObjWidth + 20)
+            .attr("width", d => d.width)
             .style("fill", 'none')
             .style("stroke", '#339966')
-            .style('stroke-dasharray', [3,3])
+            .style('stroke-dasharray', [3, 3])
             .merge(updateSel)
             //.transition(this.tran1)
-            .attr("x", sx - 10) // set up the connection point origin
-            .attr("y", d => { return d.minY - 20; })
-            .attr("height", d => d.maxY - d.minY + 60);
+            .attr("x", d => d.x) // set up the connection point origin
+            .attr("y", d => d.y )
+            .attr("height", d => d.height);
 
         this.svgContainer.selectAll(".rowsHeaderText")
             .data([1])  // fake it so only draw once
@@ -657,7 +672,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
         this.tran1 = d3.transition("tran1")
             .duration(400)
             .ease(d3.easeLinear);
-        
+
         this.globalListenFunc2 = this.renderer.listenGlobal("body", "change", (e) => {
             //this.ngZone.run(() => {
             if (!e.target.id)
@@ -723,7 +738,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
         this.mergedDbObjs.sort((a, b) => a.sequence - b.sequence);
 
         this.drawHeader();
-        this.drawFlow(false);
+        this.drawFlow();
     }
     ngOnDestroy() {
         this.globalListenFunc1();

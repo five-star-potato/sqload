@@ -166,6 +166,11 @@ export class DBObjDef implements Serializable<DBObjDef> {
 export class GroupDef implements Serializable<GroupDef> {
     id: number;
     members: DbObjIdentifier[] = []; // trouble serializing set
+    x: number = 0;
+    y: number = 0;
+    width: number = 0;
+    height: number = 0;
+    isDrag: boolean = false;
 
     public deserialize(input) {
         this.id = input.id;
@@ -391,16 +396,18 @@ export class ProjectService {
     createNewProject() {
         this.project = new ProjectStruct();
     }
+    removeOutputMapping(mapId: number) {
+        let i = this.project.outputMaps.findIndex(m => m.id == mapId);
+        this.project.outputMaps.splice(i, 1);
+    }
+
+    // Group related functions
     mergeGroup(target: GroupDef, src: GroupDef) {
         let newSet: DbObjIdentifier[] = [...target.members, ...src.members];
         target.members = newSet;
         // removed source groups
         let srcIndex = this.project.groups.findIndex(g => g.id == src.id);
         this.project.groups.splice(srcIndex, 1);
-    }
-    removeOutputMapping(mapId: number) {
-        let i = this.project.outputMaps.findIndex(m => m.id == mapId);
-        this.project.outputMaps.splice(i, 1);
     }
     formGroup(target:DBObjDef, src:DBObjDef) {
         let grp:GroupDef = new GroupDef();
@@ -417,6 +424,7 @@ export class ProjectService {
         this.resequenceDbObjs();
     }
     resequenceDbObjs() {
+        // the purpose of resequencing is to put "gaps" between db objects so that dragging and dropping can be easily done by setting a new sequence number in between gaps
         let seqNr:number = 0;
         let dbObjs:DBObjDef[] = this.getAllObjects();
         dbObjs.sort((a,b) => (a.sequence - b.sequence));
@@ -434,7 +442,27 @@ export class ProjectService {
         grp.members.push(new DbObjIdentifier({ dbObjectId: dbObj.id, instance: dbObj.instance }));
         this.resequenceDbObjs();
     }
-
+    // find the bottom (max) or top (min) objects within a group
+    findEdgeObjInGroup(grpId: number, minmax: string = "min"):DBObjDef {
+        let grp:GroupDef = this.project.groups.find(g => g.id == grpId);
+        let dbObj:DBObjDef;
+        for (let objId of grp.members) {
+            let a:DBObjDef = this.getDBObjInstance(objId.dbObjectId, objId.instance);
+            if (dbObj) {
+                if (minmax == "min") {
+                    if (a.sequence < dbObj.sequence)
+                        dbObj = a;
+                }
+                else { //max
+                    if (a.sequence > dbObj.sequence)
+                        dbObj = a;
+                }
+            }
+            else 
+                dbObj = a;
+        }
+        return dbObj;
+    }
     // Properties
     get connection(): ConnectionConfig {
         return this.project.connection;
