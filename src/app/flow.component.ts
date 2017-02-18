@@ -321,7 +321,8 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
                         for (let o of this.mergedDbObjs.filter(d => !d.groupId)) {
                             // assuming the group is dragging downward
                             if (Math.abs(o.y - this.dragGrp.y) < 10) {
-                                let seq = o.sequence;
+                                let cnt = this.dragGrp.members.length;
+                                let seq = o.sequence - cnt - 1; // should be enough?
                                 this.projectService.forEachGroupMember(this.dragGrp, a => {
                                     a.sequence = ++seq;
                                 });                            
