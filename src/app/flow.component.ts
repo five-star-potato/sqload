@@ -292,10 +292,13 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
                             if (Math.abs(o.y - this.dragDbObj.y) < 10) {
                                 // Complex maneuver between db objs and db objs, db objs and groups, groups and groups
                                 // I'm not merging db obj into a group ... yet
-                                // Object to Object
-                                if ((!this.dragDbObj.groupId && !o.groupId) || (this.dragDbObj.groupId && o.groupId && this.dragDbObj.groupId == o.groupId))
+                                // Object to Object (no group) or within the same group
+                                if ((!this.dragDbObj.groupId && !o.groupId) || (this.dragDbObj.groupId && o.groupId && this.dragDbObj.groupId == o.groupId)) {
                                     [o.sequence, this.dragDbObj.sequence] = [this.dragDbObj.sequence, o.sequence];
-                                else if (!this.dragDbObj.groupId && o.groupId) {
+                                    if (this.dragDbObj.groupId)
+                                        this.projectService.sortGroupMember(this.dragDbObj.groupId);
+                                }
+                                else if (!this.dragDbObj.groupId && o.groupId) { // swapping the position of one object with a group
                                     let minmax: string = (this.dragDbObj.sequence > o.sequence ? "min" : "max"); // dragging from below "min" or dragging from above "max"; counterintuitive ...
                                     let edgeObj: DBObjDef = this.projectService.findEdgeObjInGroup(o.groupId, minmax);
                                     if (edgeObj === o) { // same obj
@@ -561,6 +564,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             .html((d, i) =>
                 `<input id="chkInclude_${i}" class="flowChkGrouping" type="checkbox">`)
             .merge(updateSel)
+            .style("display", d => this.projectService.isFirstObjInGroup(d) || !d.groupId ? "" : "none" )
             .attr("x", sx - 50)
             .attr("y", d => yband(d.id + ":" + d.instance));
 

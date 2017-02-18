@@ -462,8 +462,24 @@ export class ProjectService {
         });
         return dbObj;
     }
-    public forEachGroupMember(grp:GroupDef, callback: (o:DBObjDef) => any):void {
+    public sortGroupMember(grpOrId: number | GroupDef) {
         let dbObjs:DBObjDef[] = [];
+        let grp:GroupDef;
+
+        // can I assume all the members are sorted by sequence?
+        if (typeof(grpOrId) == "number")
+            grp = this.project.groups.find(g => g.id == grpOrId);
+        else 
+            grp = grpOrId;  
+        for (let objId of grp.members) {
+            let a:DBObjDef = this.getDBObjInstance(objId.dbObjectId, objId.instance);
+            dbObjs.push(a);
+        }
+        dbObjs.sort((a,b) => (a.sequence - b.sequence));
+        grp.members = dbObjs.map(o => new DbObjIdentifier({dbObjectId: o.id, instance: o.instance}));
+    }
+    public forEachGroupMember(grp:GroupDef, callback: (o:DBObjDef) => any):void {
+/*        let dbObjs:DBObjDef[] = [];
         // can I assume all the members are sorted by sequence?
         for (let objId of grp.members) {
             let a:DBObjDef = this.getDBObjInstance(objId.dbObjectId, objId.instance);
@@ -471,8 +487,19 @@ export class ProjectService {
         }
         dbObjs.sort(o => o.sequence);
         dbObjs.forEach(o => callback(o));
+*/
+        for (let objId of grp.members) {
+            let a:DBObjDef = this.getDBObjInstance(objId.dbObjectId, objId.instance);
+            callback(a);
+        }
     }
+    public isFirstObjInGroup(obj:DBObjDef) {
+        if (!obj.groupId) return false;
 
+        let grp = this.project.groups.find(g => g.id == obj.groupId);
+        let a:DBObjDef = this.getDBObjInstance(grp.members[0].dbObjectId, grp.members[0].instance);
+        return (obj == a);
+    }
     // Properties
     get connection(): ConnectionConfig {
         return this.project.connection;
