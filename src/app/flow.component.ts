@@ -309,7 +309,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
                         this.drawFlow();
                     }
                     if (this.dragGrp) {
-                        let oldy:number = this.dragGrp.y;
+                        let oldy: number = this.dragGrp.y;
                         this.dragGrp.y = d3.event.sourceEvent.offsetY - this.dragdy;
                         let deltaY = this.dragGrp.y - oldy;
                         // for all its group members, it should move too
@@ -318,26 +318,35 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
                             a.isDrag = true;
                         });
                         // switching position with objects that are not in group
-                        for (let o of this.mergedDbObjs.filter(d => !d.groupId)) {
+                        for (let o of this.mergedDbObjs) {
                             // assuming the group is dragging downward
+                            let cnt = this.dragGrp.members.length;
                             if (Math.abs(o.y - this.dragGrp.y) < 10) {
-                                let cnt = this.dragGrp.members.length;
+                                if (o.groupId) { // if o doesn't belong in a group, just switch position
+                                    let edgeObj: DBObjDef = this.projectService.findEdgeObjInGroup(o.groupId, "min");
+                                    if (edgeObj != o) { // same obj; we're hitting the top object of another group
+                                        continue;
+                                    }
+                                }
                                 let seq = o.sequence - cnt - 1; // should be enough?
                                 this.projectService.forEachGroupMember(this.dragGrp, a => {
                                     a.sequence = ++seq;
-                                });                            
-                                break;
+                                });
                             }
                             else if (Math.abs(o.y - (this.dragGrp.y + this.dragGrp.height)) < 10) {
+                                if (o.groupId) {
+                                    let edgeObj: DBObjDef = this.projectService.findEdgeObjInGroup(o.groupId, "max");
+                                    if (edgeObj != o) { // same obj; we're hitting the bottom  object of another group
+                                        continue;
+                                    }
+                                }
                                 let seq = o.sequence;
                                 this.projectService.forEachGroupMember(this.dragGrp, a => {
                                     a.sequence = ++seq;
-                                });                            
-                                this.projectService.resequenceDbObjs();
-                                break;
+                                });
                             }
-
                         }
+                        this.projectService.resequenceDbObjs();
                         this.drawFlow();
                     }
                 })
@@ -405,7 +414,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
         // find width of the object with the longest name
         this.maxObjWidth = Math.max.apply(Math, this.mergedDbObjs.map(m => this.getTextWidth(m.name, 12, "arial"))) + 20;
         this.maxObjWidth = Math.max(this.maxObjWidth, 300);
-        let maxY = this.mergedDbObjs.length * 120; // calculate the upperbound of rangeRound.
+        let maxY = this.mergedDbObjs.length * 100; // calculate the upperbound of rangeRound.
         // yband to calculate the y position for each dbobject, using id:instance as a marker
         let yband = d3.scaleBand().rangeRound([50, maxY]).domain(this.mergedDbObjs.map(o => o.id + ":" + o.instance));
         this.mergedDbObjs.forEach(o => {
