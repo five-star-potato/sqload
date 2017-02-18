@@ -403,6 +403,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             .attr("x", 110)
             .attr("y", 10)
             .attr("color", "#888")
+
             .text("Database Object");
         this.svgContainer.append("line")
             .attr("x1", 0)
@@ -413,11 +414,11 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             .attr("strok-width", 1);
 
         this.svgContainer.append("foreignObject")
-            .html(`<button title="Group" class="btn btn-xs btn-info" id="btnGroup"><i class="fa fa-object-group" aria-hidden="true"></i></button>`)
+            .html(`<button title="Group" class="btn btn-xs btn-info" id="btnGroup"><i id="icoGroup" class="fa fa-object-group" aria-hidden="true"></i></button>`)
             .attr("x", 30)
             .attr("y", 20);
         this.svgContainer.append("foreignObject")
-            .html(`<button title="Ungroup" class="btn btn-xs btn-warning" id="btnUngroup"><i class="fa fa-object-ungroup" aria-hidden="true"></i></button>`)
+            .html(`<button title="Ungroup" class="btn btn-xs btn-warning" id="btnUngroup"><i id="icoUngroup"  class="fa fa-object-ungroup" aria-hidden="true"></i></button>`)
             .attr("x", 60)
             .attr("y", 20);
             
@@ -769,10 +770,10 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
 
             console.log('event hit');
             console.log(e.target);
-            if (e.target.id == "btnGroup") {
+            if (e.target.id == "btnGroup" || e.target.id == "icoGroup") {
                 console.log("grouping button")
             }
-            if (e.target.id == "btnUngroup") {
+            if (e.target.id == "btnUngroup" || e.target.id == "icoUngroup") {
                 console.log("unggrouping button")
             }
             if (e.target.id.startsWith("btnMap_")) {
