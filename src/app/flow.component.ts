@@ -388,6 +388,12 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             .attr("d", "M 0 0 12 6 0 12 3 6")
             .style("fill", "#ccc");
 
+        this.svgContainer.append("g")
+            .attr("x", 35)
+            .attr("y", 10)
+            .attr("color", "#888")
+            .text("Group");
+
         this.svgContainer.append("text")
             .attr("x", 35)
             .attr("y", 10)
@@ -399,19 +405,29 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             .attr("color", "#888")
             .text("Database Object");
         this.svgContainer.append("line")
-            .attr("x1", 10)
+            .attr("x1", 0)
             .attr("y1", 15)
             .attr("x2", 1600)
             .attr("y2", 15)
             .attr("stroke", "#DDD")
             .attr("strok-width", 1);
+
+        this.svgContainer.append("foreignObject")
+            .html(`<button title="Group" class="btn btn-xs btn-info" id="btnGroup"><i class="fa fa-object-group" aria-hidden="true"></i></button>`)
+            .attr("x", 30)
+            .attr("y", 20);
+        this.svgContainer.append("foreignObject")
+            .html(`<button title="Ungroup" class="btn btn-xs btn-warning" id="btnUngroup"><i class="fa fa-object-ungroup" aria-hidden="true"></i></button>`)
+            .attr("x", 60)
+            .attr("y", 20);
+            
     }
     private drawFlow() {
         let shiftRight: number = 0;
         let rightPos: { [objId: number]: number } = {};
         this.mergedDbObjs.sort((a, b) => a.sequence - b.sequence);
         // SX is the x of the db object rect; 
-        let sx: number = 100;
+        let sx: number = 120;
         let szTxtRows = 80;
         let colBtnHeight: number = 25;
         // find width of the object with the longest name
@@ -565,7 +581,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
                 `<input id="chkInclude_${i}" class="flowChkGrouping" type="checkbox">`)
             .merge(updateSel)
             .style("display", d => this.projectService.isFirstObjInGroup(d) || !d.groupId ? "" : "none" )
-            .attr("x", sx - 50)
+            .attr("x", sx - 70)
             .attr("y", d => yband(d.id + ":" + d.instance));
 
         // the "# rows" textbox
@@ -579,6 +595,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             .html((d, i) =>
                 `<input class="form-control input-sm" id="txtRows_${i}" data-obj-id="${d.id}" data-obj-inst="${d.instance}"  type="text" style="width:${szTxtRows}px">`)
             .merge(updateSel)
+            .style("display", d => this.projectService.isFirstObjInGroup(d) || !d.groupId ? "" : "none" )
             .attr("x", sx + this.maxObjWidth + 20)
             .attr("y", d => yband(d.id + ":" + d.instance));
 
@@ -752,23 +769,11 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
 
             console.log('event hit');
             console.log(e.target);
-            if (e.target.id.startsWith("btnDown_") || e.target.id.startsWith("iconDown_")) {
-                let i: number = +$(e.target).data("index"); // force it number
-                if (i < this.mergedDbObjs.length - 1) {
-                    let obj1: DBObjDef = this.mergedDbObjs[i];
-                    let obj2: DBObjDef = this.mergedDbObjs[i + 1];
-                    [obj1.sequence, obj2.sequence] = [obj2.sequence, obj1.sequence];
-                }
-                this.redrawObjects();
+            if (e.target.id == "btnGroup") {
+                console.log("grouping button")
             }
-            if (e.target.id.startsWith("btnUp_") || e.target.id.startsWith("iconUp_")) {
-                let i: number = +$(e.target).data("index"); // force it number
-                if (i > 0) {
-                    let obj1: DBObjDef = this.mergedDbObjs[i];
-                    let obj2: DBObjDef = this.mergedDbObjs[i - 1];
-                    [obj1.sequence, obj2.sequence] = [obj2.sequence, obj1.sequence];
-                }
-                this.redrawObjects();
+            if (e.target.id == "btnUngroup") {
+                console.log("unggrouping button")
             }
             if (e.target.id.startsWith("btnMap_")) {
                 let objId = $(e.target).data("obj-id");

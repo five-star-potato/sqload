@@ -371,6 +371,9 @@ export class GenerateComponent extends BaseComponent {
                 let resolvedPromises = await Promise.all(somePromises);
         */
         this.cleanUnusedPlugin();
+        this.projectService.groups.forEach(g => {
+            this.projectService.sortGroupMember(g)
+        });
         let projectContent = fnStringifyNoCircular(this.projectService);
         this.fnSaveProject(projectContent);
     }
