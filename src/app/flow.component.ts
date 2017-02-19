@@ -412,11 +412,11 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             .attr("strok-width", 1);
 
         this.svgContainer.append("foreignObject")
-            .html(`<button title="Group" class="btn btn-xs btn-info" id="btnGroup"><i id="icoGroup" class="fa fa-object-group" aria-hidden="true"></i></button>`)
+            .html(`<button title="Group" class="btn btn-xs btn-blue-gray" id="btnGroup"><i id="icoGroup" class="fa fa-object-group" aria-hidden="true"></i></button>`)
             .attr("x", 30)
             .attr("y", 20);
         this.svgContainer.append("foreignObject")
-            .html(`<button title="Ungroup" class="btn btn-xs btn-warning" id="btnUngroup"><i id="icoUngroup"  class="fa fa-object-ungroup" aria-hidden="true"></i></button>`)
+            .html(`<button title="Ungroup" class="btn btn-xs btn-blue-gray" id="btnUngroup"><i id="icoUngroup"  class="fa fa-object-ungroup" aria-hidden="true"></i></button>`)
             .attr("x", 60)
             .attr("y", 20);
             
@@ -577,7 +577,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             .attr("width", 120)
             .attr("height", d => d.height = 20)
             .html((d, i) =>
-                `<input id="chkInclude_${i}" class="flowChkGrouping" type="checkbox">`)
+                `<input id="chkInclude_${i}" data-obj-id="${d.id}" data-obj-inst="${d.instance}" class="flowChkGrouping" type="checkbox">`)
             .merge(updateSel)
             .style("display", d => this.projectService.isFirstObjInGroup(d) || !d.groupId ? "" : "none" )
             .attr("x", sx - 70)
@@ -742,6 +742,16 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
         this.outputMapping.outputName = undefined;
     }
 
+    private groupDbObjs() {
+        $(".flowChkGrouping").each((i, e) => {
+            if ($(e).prop("checked") && $(e).css('display') == 'none') {
+                let objId = $(e).data("obj-id");
+                let inst = $(e).data("obj-inst");
+                let dbObj = this.projectService.getDBObjInstance(objId, inst);
+
+            }
+        });
+    }
     ngOnInit() {
         this.tran1 = d3.transition("tran1")
             .duration(400)
@@ -769,7 +779,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             console.log('event hit');
             console.log(e.target);
             if (e.target.id == "btnGroup" || e.target.id == "icoGroup") {
-                console.log("grouping button")
+                this.groupDbObjs();
             }
             if (e.target.id == "btnUngroup" || e.target.id == "icoUngroup") {
                 console.log("unggrouping button")
