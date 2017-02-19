@@ -3,7 +3,7 @@ import { Component, NgZone, ElementRef, Renderer, OnDestroy } from "@angular/cor
 import { Router } from '@angular/router';
 import { BaseComponent } from "./base.component";
 import { TRON_GLOBAL, TRON_EVENT, OBJ_TYPE, COL_DIR_TYPE } from './constants';
-import { DataGenerator, fnGetDataTypeDesc, fnGetCleanName, fnGetLargeRandomNumber } from './include';
+import { DataGenerator, fnGetDataTypeDesc, fnGetCleanName, fnGetLargeRandomNumber, fnIsGroup } from './include';
 import * as gen from './generator/generators.component';
 import { WizardStateService } from "./service/wizard-state";
 import { SampleDataService } from "./service/sample-data";
@@ -743,14 +743,31 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
     }
 
     private groupDbObjs() {
+        let chkObjs: (DBObjDef | GroupDef)[];
         $(".flowChkGrouping").each((i, e) => {
-            if ($(e).prop("checked") && $(e).css('display') == 'none') {
+            if ($(e).prop("checked") && $(e).css('display') != 'none') {
                 let objId = $(e).data("obj-id");
                 let inst = $(e).data("obj-inst");
                 let dbObj = this.projectService.getDBObjInstance(objId, inst);
-
+                if (!dbObj.groupId)
+                    chkObjs.push(dbObj);
+                else {
+                    let grp:GroupDef = this.projectService.groups.find(g => g.id == dbObj.groupId);
+                    chkObjs.push(grp);
+                }
             }
         });
+        let newGrp:GroupDef;
+        for (let i = 0; i < chkObjs.length; i++) {
+            let obj = chkObjs[i];
+            if (fnIsGroup(obj)) {
+                if (!newGrp)
+                    newGrp = obj as GroupDef;
+            }
+            else {
+
+            }
+        }
     }
     ngOnInit() {
         this.tran1 = d3.transition("tran1")
