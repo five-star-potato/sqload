@@ -114,6 +114,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
     dragGrp: GroupDef;
     dragdx: number; dragdy: number; // offset to the dragged object when first dragged
     maxObjWidth: number;
+    gfx: any;
     //breakpt: boolean = false;
 
     //D3 related
@@ -176,7 +177,6 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
                 this.projectService.formGroup(targetObj, srcObj);
             }
             else {  // both objects are in groups (same or different groups?)
-
             }
         }
         catch (ex) {
@@ -256,11 +256,15 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
     private drawHeader() {
         this.svgContainer = d3.select("#divFlow").append("svg")
             .attr("width", 2000)
-            .attr("height", 2000)
+            .attr("height", 2000);
+
+        this.gfx = this.svgContainer.append("g")
+            .attr("x", 10)
+            .attr("y", 10)
             .call(d3.drag()
                 .on("start", () => {
-                    console.log('drag started!!!');
-                    console.log(d3.event);
+                    //console.log('drag started!!!');
+                    //console.log(d3.event);
                     let dx = d3.event.sourceEvent.offsetX, dy = d3.event.sourceEvent.offsetY;
                     this.mergedDbObjs.forEach(o => {
                         if (dx >= o.x && dx <= (o.x + this.maxObjWidth) && dy >= o.y && dy <= (o.y + 30)) {
@@ -275,8 +279,8 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
                         this.projectService.groups.forEach(g => {
                             if (dx >= g.x && dx <= (g.x + g.width) && dy >= g.y && dy <= (g.y + g.height)) {
                                 this.dragdx = dx - g.x; this.dragdy = dy - g.y;
-                                console.log("drag group found:");
-                                console.log(g);
+                                //console.log("drag group found:");
+                                //console.log(g);
                                 this.dragGrp = g;
                                 g.isDrag = true;
                             }
@@ -388,12 +392,6 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             .attr("d", "M 0 0 12 6 0 12 3 6")
             .style("fill", "#ccc");
 
-        this.svgContainer.append("g")
-            .attr("x", 35)
-            .attr("y", 10)
-            .attr("color", "#888")
-            .text("Group");
-
         this.svgContainer.append("text")
             .attr("x", 35)
             .attr("y", 10)
@@ -459,7 +457,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
                 grp.height = maxY - minY + 60;
             }
         }
-        let selectGroupBoundary = this.svgContainer.selectAll(".groupBoundary");
+        let selectGroupBoundary = this.gfx.selectAll(".groupBoundary");
         let updateSel = selectGroupBoundary.data(this.projectService.groups, d => d.id);   // UPDATE selection
         updateSel.exit().remove();
         updateSel.enter().append('rect')
@@ -475,7 +473,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             //.transition(this.tran1)
             .attr("x", d => d.x) // set up the connection point origin
             .attr("y", d => {
-                console.log("group y: " + d.y);
+                //console.log("group y: " + d.y);
                 return d.y;
             })
             .attr("height", d => d.height);
@@ -490,7 +488,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             .text("# Rows");
 
         // Following typical D3 enter, exit, update patterns
-        let selectObjTypeTitleRect = this.svgContainer.selectAll(".selectObjTypeTitleRect");            // initially empty; but during redraw, it won't be
+        let selectObjTypeTitleRect = this.gfx.selectAll(".selectObjTypeTitleRect");            // initially empty; but during redraw, it won't be
         updateSel = selectObjTypeTitleRect.data(this.mergedDbObjs, d => d.id + ':' + d.instance);   // UPDATE selection
         updateSel.exit().remove();
         // the rectangle and text display for each selected object
@@ -517,7 +515,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             .attr("x", sx + 5) // set up the connection point origin
             .attr("y", d => d.y - 13);
 
-        let selectObjTypeTitleText = this.svgContainer.selectAll(".selectObjTypeTitleText");
+        let selectObjTypeTitleText = this.gfx.selectAll(".selectObjTypeTitleText");
         updateSel = selectObjTypeTitleText.data(this.mergedDbObjs, d => d.id + ':' + d.instance);   // UPDATE selection
         updateSel.exit().remove();
         // this is the word TABLE, VIEW, ...
@@ -533,7 +531,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             .attr("x", sx + 11)
             .attr("y", d => d.y - 3);
 
-        let selectDbObjRect = this.svgContainer.selectAll(".selectDbObjRect");
+        let selectDbObjRect = this.gfx.selectAll(".selectDbObjRect");
         updateSel = selectDbObjRect.data(this.mergedDbObjs, d => d.id + ':' + d.instance);   // UPDATE selection
         updateSel.exit().remove();
         let enterSelection = updateSel.enter();  // need a UPDATE + ENTER selection for later combining with columndef children
@@ -552,7 +550,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             .attr("x", d => { return d.x = sx; }) // set up the connection point origin
             .attr("y", d => { return d.y; });
 
-        let selectDbObjText = this.svgContainer.selectAll(".selectDbObjText");
+        let selectDbObjText = this.gfx.selectAll(".selectDbObjText");
         updateSel = selectDbObjText.data(this.mergedDbObjs, d => d.id + ':' + d.instance);   // UPDATE selection
         updateSel.exit().remove();
         // DB Object label
