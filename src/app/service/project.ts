@@ -402,11 +402,27 @@ export class ProjectService {
     }
 
     // Group related functions
-    mergeGroup(target: GroupDef, src: GroupDef) {
-        let newSet: DbObjIdentifier[] = [...target.members, ...src.members];
-        target.members = newSet;
+    joinGroups(targetGrpOrId: number | GroupDef, srcGrpOrId: number | GroupDef) {
+        let tarGrp:GroupDef, srcGrp:GroupDef;
+        if (typeof(targetGrpOrId) == "number")
+            tarGrp = this.project.groups.find(g => g.id == targetGrpOrId);
+        else
+            tarGrp = targetGrpOrId;
+        if (typeof(srcGrpOrId) == "number")
+            srcGrp = this.project.groups.find(g => g.id == srcGrpOrId);
+        else
+            srcGrp = srcGrpOrId;
+            
+        // assume the last memeber in tarGrp group has the max seq #
+        let seq = this.getDBObjInstance(tarGrp.members[tarGrp.members.length - 1].dbObjectId, tarGrp.members[tarGrp.members.length - 1].instance).sequence;
+        for (let i = 0; i < srcGrp.members.length - 1; i++) {
+            let obj = this.getDBObjInstance(srcGrp.members[i].dbObjectId, srcGrp.members[i].instance);
+            obj.sequence = ++seq;
+        }
+        let newSet: DbObjIdentifier[] = [...tarGrp.members, ...srcGrp.members];
+        tarGrp.members = newSet;
         // removed source groups
-        let srcIndex = this.project.groups.findIndex(g => g.id == src.id);
+        let srcIndex = this.project.groups.findIndex(g => g.id == srcGrp.id);
         this.project.groups.splice(srcIndex, 1);
     }
     formGroup(target:DBObjDef, src:DBObjDef) {

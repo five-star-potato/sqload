@@ -758,14 +758,26 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             }
         });
         let newGrp:GroupDef;
-        for (let i = 0; i < chkObjs.length; i++) {
+        if (chkObjs.length <= 1) {
+            this.fnMsgBox("You need to select more than one object to group");
+            return;
+        }
+        let obj = chkObjs[0];
+        if (fnIsGroup(obj)) {
+            if (!newGrp)
+                newGrp = obj as GroupDef;
+        }
+        else {
+            newGrp = new GroupDef();
+            newGrp.members.push(new DbObjIdentifier({ dbObjectId: obj.id, instance: obj.instance }));
+        }
+        for (let i = 1; i < chkObjs.length; i++) {
             let obj = chkObjs[i];
             if (fnIsGroup(obj)) {
-                if (!newGrp)
-                    newGrp = obj as GroupDef;
+                this.projectService.mergeGroup(newGrp, obj);
             }
             else {
-
+                this.projectService.joinDbObjToGroup(obj, newGrp);
             }
         }
     }

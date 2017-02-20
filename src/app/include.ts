@@ -40,7 +40,7 @@ export function fnStringifyNoCircular(o:any) {
     return s;    
 }
 // Using a typeguard to check whether it's a group or dbobj
-export function fnIsGroup(obj: DBObjDef | GroupDef) {
+export function fnIsGroup(obj: DBObjDef | GroupDef): obj is GroupDef {
     return (<GroupDef>obj).members !== undefined;
 }
 
