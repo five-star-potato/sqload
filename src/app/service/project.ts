@@ -415,8 +415,9 @@ export class ProjectService {
             
         // assume the last memeber in tarGrp group has the max seq #
         let seq = this.getDBObjInstance(tarGrp.members[tarGrp.members.length - 1].dbObjectId, tarGrp.members[tarGrp.members.length - 1].instance).sequence;
-        for (let i = 0; i < srcGrp.members.length - 1; i++) {
+        for (let i = 0; i < srcGrp.members.length; i++) {
             let obj = this.getDBObjInstance(srcGrp.members[i].dbObjectId, srcGrp.members[i].instance);
+            obj.groupId = tarGrp.id;
             obj.sequence = ++seq;
         }
         let newSet: DbObjIdentifier[] = [...tarGrp.members, ...srcGrp.members];
@@ -430,11 +431,11 @@ export class ProjectService {
         grp.id = fnGetLargeRandomNumber();
         if (target.groupId || src.groupId)
             throw 'group is already defined';
-        grp.members.push(new DbObjIdentifier({dbObjectId: target.id, instance: target.instance}));
-        grp.members.push(new DbObjIdentifier({dbObjectId: src.id, instance: src.instance}));
         target.groupId = src.groupId = grp.id;
         // get them close enough the squeeze out others that happened to be in between
         target.sequence = src.sequence + 1;
+        grp.members.push(new DbObjIdentifier({dbObjectId: src.id, instance: src.instance}));
+        grp.members.push(new DbObjIdentifier({dbObjectId: target.id, instance: target.instance}));
 
         this.project.groups.push(grp);
         this.resequenceDbObjs();

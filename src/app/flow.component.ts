@@ -209,7 +209,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             this.projectService.outputMaps.push(newMap);
             cmdGen.outputMappingId = newMap.id;
         }
-        else if (cmdGen.outputMappingId != newMap.id) {
+        else if (cmdGen.outputMappingId != newMap.id) { 
             cmdGen.outputMappingId = newMap.id;
             newMap.refCount += 1;
         }
@@ -223,7 +223,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
         this.boundOutputTargetIntoGroup();
         this.outputMapping.clear();
 
-        this.redrawObjects();
+        this.drawFlow();
         $("#modalOutputMapping").modal('hide');
     }
     back() {
@@ -460,7 +460,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
         let selectGroupBoundary = this.gfx.selectAll(".groupBoundary");
         let updateSel = selectGroupBoundary.data(this.projectService.groups, d => d.id);   // UPDATE selection
         updateSel.exit().remove();
-        updateSel.enter().append('rect')
+        updateSel.enter().insert('rect',":first-child")
             .attr("class", "groupBoundary")
             .attr('rx', 5)
             .attr('ry', 5)
@@ -742,8 +742,8 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
         this.outputMapping.outputName = undefined;
     }
 
-    private groupDbObjs() {
-        let chkObjs: (DBObjDef | GroupDef)[];
+    private groupObjs() {
+        let chkObjs: (DBObjDef | GroupDef)[] = [];  
         $(".flowChkGrouping").each((i, e) => {
             if ($(e).prop("checked") && $(e).css('display') != 'none') {
                 let objId = $(e).data("obj-id");
@@ -769,17 +769,23 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
         }
         else {
             newGrp = new GroupDef();
+            newGrp.id = fnGetLargeRandomNumber();
             newGrp.members.push(new DbObjIdentifier({ dbObjectId: obj.id, instance: obj.instance }));
+            obj.groupId = newGrp.id;
+            this.projectService.groups.push(newGrp);
+            this.projectService.resequenceDbObjs();
         }
         for (let i = 1; i < chkObjs.length; i++) {
             let obj = chkObjs[i];
             if (fnIsGroup(obj)) {
-                this.projectService.mergeGroup(newGrp, obj);
+                this.projectService.joinGroups(newGrp, obj);
             }
             else {
                 this.projectService.joinDbObjToGroup(obj, newGrp);
             }
+            this.projectService.resequenceDbObjs();
         }
+        this.drawFlow();
     }
     ngOnInit() {
         this.tran1 = d3.transition("tran1")
@@ -808,7 +814,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             console.log('event hit');
             console.log(e.target);
             if (e.target.id == "btnGroup" || e.target.id == "icoGroup") {
-                this.groupDbObjs();
+                this.groupObjs();
             }
             if (e.target.id == "btnUngroup" || e.target.id == "icoUngroup") {
                 console.log("unggrouping button")
