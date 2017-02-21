@@ -741,7 +741,26 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
         this.outputMapping.dbObjInstance = undefined;
         this.outputMapping.outputName = undefined;
     }
-
+    private ungroupObjs() {
+        let chkObjs: GroupDef[] = [];  
+        $(".flowChkGrouping").each((i, e) => {
+            if ($(e).prop("checked") && $(e).css('display') != 'none') {
+                let objId = $(e).data("obj-id");
+                let inst = $(e).data("obj-inst");
+                let dbObj = this.projectService.getDBObjInstance(objId, inst);
+                if (dbObj.groupId) {
+                    let grp:GroupDef = this.projectService.groups.find(g => g.id == dbObj.groupId);
+                    chkObjs.push(grp);
+                }
+                $(e).prop("checked",false);
+            }
+        });
+        for (let i = 1; i < chkObjs.length; i++) {
+            let grp = chkObjs[i];
+            this.projectService.ungroup(grp);
+        }
+        this.drawFlow();
+    }
     private groupObjs() {
         let chkObjs: (DBObjDef | GroupDef)[] = [];  
         $(".flowChkGrouping").each((i, e) => {
@@ -755,6 +774,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
                     let grp:GroupDef = this.projectService.groups.find(g => g.id == dbObj.groupId);
                     chkObjs.push(grp);
                 }
+                $(e).prop("checked",false);
             }
         });
         let newGrp:GroupDef;

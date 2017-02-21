@@ -449,6 +449,13 @@ export class ProjectService {
             o.sequence = (seqNr += 1000);
         }
     }
+    ungroup(grp:GroupDef) {
+        this.forEachGroupMember(grp, a => {
+            a.groupId = undefined;
+        });
+        let grpIndex = this.project.groups.findIndex(g => g.id == grp.id);
+        this.project.groups.splice(grpIndex, 1);
+    }
     joinDbObjToGroup(dbObj:DBObjDef, grp:GroupDef) {
         let maxSeq = Math.max.apply(Math, grp.members.map(m => {
             let o = this.getDBObjInstance(m.dbObjectId, m.instance);
