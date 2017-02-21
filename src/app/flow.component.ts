@@ -755,7 +755,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
                 $(e).prop("checked",false);
             }
         });
-        for (let i = 1; i < chkObjs.length; i++) {
+        for (let i = 0; i < chkObjs.length; i++) {
             let grp = chkObjs[i];
             this.projectService.ungroup(grp);
         }
@@ -837,7 +837,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
                 this.groupObjs();
             }
             if (e.target.id == "btnUngroup" || e.target.id == "icoUngroup") {
-                console.log("unggrouping button")
+                this.ungroupObjs();
             }
             if (e.target.id.startsWith("btnMap_")) {
                 let objId = $(e.target).data("obj-id");
