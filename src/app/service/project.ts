@@ -1,6 +1,6 @@
 import * as gen from '../generator/generators.component';
 import { Injectable } from "@angular/core";
-import { DataGenerator, fnGetLargeRandomNumber } from '../include';
+import { DataGenerator, fnGetLargeRandomNumber, fnStringifyNoCircular } from '../include';
 import { CommandOutputGenerator  } from '../generator/generators.component';
 import { OBJ_TYPE, COL_DIR_TYPE, OBJECT_TYPES_LIST } from "../constants";
 
@@ -503,15 +503,6 @@ export class ProjectService {
         grp.members = dbObjs.map(o => new DbObjIdentifier({dbObjectId: o.id, instance: o.instance}));
     }
     public forEachGroupMember(grp:GroupDef, callback: (o:DBObjDef) => any):void {
-/*        let dbObjs:DBObjDef[] = [];
-        // can I assume all the members are sorted by sequence?
-        for (let objId of grp.members) {
-            let a:DBObjDef = this.getDBObjInstance(objId.dbObjectId, objId.instance);
-            dbObjs.push(a);
-        }
-        dbObjs.sort(o => o.sequence);
-        dbObjs.forEach(o => callback(o));
-*/
         for (let objId of grp.members) {
             let a:DBObjDef = this.getDBObjInstance(objId.dbObjectId, objId.instance);
             callback(a);
@@ -524,6 +515,23 @@ export class ProjectService {
         let a:DBObjDef = this.getDBObjInstance(grp.members[0].dbObjectId, grp.members[0].instance);
         return (obj == a);
     }
+    public copyObj(obj: DBObjDef) {
+        let newObj = new DBObjDef().deserialize(obj);
+        let objs = this.getAllObjects().filter(o => o.id == obj.id);
+        let maxInst = Math.max.apply(Math, objs.map(o => o.instance));
+        let maxSeq = Math.max.apply(Math, objs.map(o => o.sequence));
+        newObj.instance = maxInst + 1;
+        newObj.sequence = maxSeq + 1000;
+        let allCols = this.getAllColumnsByObj(newObj.id, newObj.instance);
+        allCols.forEach(c => {
+            if (c.plugIn.length == 0 || c.plugIn[0].constructor.name != "CommandOutputGenerator") {
+                let cmdGen:CommandOutputGenerator = (c.plugIn[0] as CommandOutputGenerator);
+                cmdGen.outputMappingId = null;
+            }
+        });
+        this.project.selectedObjs[obj.objType].push(newObj);
+    }
+
     // Properties
     get connection(): ConnectionConfig {
         return this.project.connection;

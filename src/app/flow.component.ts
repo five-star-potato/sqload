@@ -412,13 +412,21 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             .attr("strok-width", 1);
 
         this.svgContainer.append("foreignObject")
-            .html(`<button title="Group" class="btn btn-xs btn-blue-gray" id="btnGroup"><i id="icoGroup" class="fa fa-object-group" aria-hidden="true"></i></button>`)
-            .attr("x", 30)
+            .html(`<button title="Group" class="btn btn-xs btn-blue-gray" id="btnGroup" style="width:28px"><i id="icoGroup" class="fa fa-object-group" aria-hidden="true"></i></button>`)
+            .attr("x", 0)
             .attr("y", 20);
         this.svgContainer.append("foreignObject")
-            .html(`<button title="Ungroup" class="btn btn-xs btn-blue-gray" id="btnUngroup"><i id="icoUngroup"  class="fa fa-object-ungroup" aria-hidden="true"></i></button>`)
-            .attr("x", 60)
-            .attr("y", 20);
+            .html(`<button title="Ungroup" class="btn btn-xs btn-blue-gray" id="btnUngroup" style="width:28px"><i id="icoUngroup"  class="fa fa-object-ungroup" aria-hidden="true"></i></button>`)
+            .attr("x", 0)
+            .attr("y", 50);
+        this.svgContainer.append("foreignObject")
+            .html(`<button title="Copy" class="btn btn-xs btn-teal" id="btnCopy" style="width:28px"><i id="icoCopy" class="fa fa-copy" aria-hidden="true"></i></button>`)
+            .attr("x", 0)
+            .attr("y", 80);
+        this.svgContainer.append("foreignObject")
+            .html(`<button title="Remove" class="btn btn-xs btn-deep-orange" id="btnDelete" style="width:28px"><i id="icoDelete"  class="fa fa-times" aria-hidden="true"></i></button>`)
+            .attr("x", 0)
+            .attr("y", 110);
             
     }
     private drawFlow() {
@@ -732,7 +740,22 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             .attr('stroke', (d, i) => lineAttr[i]['stroke'])
             .attr('stroke-dasharray', (d, i) => lineAttr[i]['stroke-dasharray']);
     }
-    private redrawObjects() {
+    private copyObjs() {
+        let chkObjs: GroupDef[] = [];  
+        $(".flowChkGrouping").each((i, e) => {
+            if ($(e).prop("checked") && $(e).css('display') != 'none') {
+                let objId = $(e).data("obj-id");
+                let inst = $(e).data("obj-inst");
+                let dbObj = this.projectService.getDBObjInstance(objId, inst);
+                if (!dbObj.groupId) {
+                    this.projectService.copyObj(dbObj);
+                }
+                $(e).prop("checked",false);
+            }
+        });
+        this.drawFlow();
+    }
+    private redrawObjects() {   
         d3.select("svg").remove();
         this.drawHeader();
         this.drawFlow();
@@ -833,6 +856,12 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
 
             console.log('event hit');
             console.log(e.target);
+            if (e.target.id == "btnDelete" || e.target.id == "icoDelete") {
+                //this.deleteObjs();
+            }
+            if (e.target.id == "btnCopy" || e.target.id == "icoCopy") {
+                this.copyObjs();
+            }
             if (e.target.id == "btnGroup" || e.target.id == "icoGroup") {
                 this.groupObjs();
             }
