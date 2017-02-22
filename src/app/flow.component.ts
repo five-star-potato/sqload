@@ -119,7 +119,6 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
 
     //D3 related
     svgContainer: any;
-    tran1: any;
 
     constructor(router: Router, ngZone: NgZone, wizardStateService: WizardStateService, dataService: SampleDataService, projectService: ProjectService,
         public el: ElementRef, public renderer: Renderer) {
@@ -152,10 +151,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
         let outputMap = this.projectService.outputMaps.find(m => m.id == this.outputMapping.id);
         if (outputMap) {
             (this.currColDef.plugIn[0] as CommandOutputGenerator).outputMappingId = null;
-            outputMap.refCount--;
-            if (outputMap.refCount <= 0) { // if refCount drops to 0, GC it
-                this.projectService.removeOutputMapping(outputMap.id);
-            }
+            this.projectService.reduceOutputMappingRefCount(outputMap);
             this.drawFlow();
         }
         this.outputMapping.clear();
@@ -215,10 +211,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
         }
         //reduce refcount of the old one; if refCount dropped to 0, remove it
         if (oldMap && oldMap.id != newMap.id) {
-            oldMap.refCount -= 1;
-            if (oldMap.refCount <= 0) { // if refCount drops to 0, GC it
-                this.projectService.removeOutputMapping(oldMap.id);
-            }
+            this.projectService.reduceOutputMappingRefCount(oldMap);
         }
         this.boundOutputTargetIntoGroup();
         this.outputMapping.clear();
@@ -291,8 +284,8 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
                     if (this.dragDbObj) {
                         //this.dragDbObj.x = d3.event.sourceEvent.offsetX - this.dragdx;
                         this.dragDbObj.y = d3.event.sourceEvent.offsetY - this.dragdy;
-                        //console.log("dx dy:" + this.dragDbObj.x + " " + this.dragDbObj.y);
-                        for (let o of this.mergedDbObjs.filter(d => d.id != this.dragDbObj.id)) {
+                        // filter out this particular drag object
+                        for (let o of this.mergedDbObjs.filter(d => !(d.id == this.dragDbObj.id && d.instance == this.dragDbObj.instance))) {
                             if (Math.abs(o.y - this.dragDbObj.y) < 10) {
                                 // Complex maneuver between db objs and db objs, db objs and groups, groups and groups
                                 // I'm not merging db obj into a group ... yet
@@ -412,15 +405,15 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             .attr("strok-width", 1);
 
         this.svgContainer.append("foreignObject")
-            .html(`<button title="Group" class="btn btn-xs btn-blue-gray" id="btnGroup" style="width:28px"><i id="icoGroup" class="fa fa-object-group" aria-hidden="true"></i></button>`)
+            .html(`<button title="Group" class="btn btn-xs btn-indigo" id="btnGroup" style="width:28px"><i id="icoGroup" class="fa fa-object-group" aria-hidden="true"></i></button>`)
             .attr("x", 0)
             .attr("y", 20);
         this.svgContainer.append("foreignObject")
-            .html(`<button title="Ungroup" class="btn btn-xs btn-blue-gray" id="btnUngroup" style="width:28px"><i id="icoUngroup"  class="fa fa-object-ungroup" aria-hidden="true"></i></button>`)
+            .html(`<button title="Ungroup" class="btn btn-xs btn-indigo" id="btnUngroup" style="width:28px"><i id="icoUngroup"  class="fa fa-object-ungroup" aria-hidden="true"></i></button>`)
             .attr("x", 0)
             .attr("y", 50);
         this.svgContainer.append("foreignObject")
-            .html(`<button title="Copy" class="btn btn-xs btn-teal" id="btnCopy" style="width:28px"><i id="icoCopy" class="fa fa-copy" aria-hidden="true"></i></button>`)
+            .html(`<button title="Duplicate" class="btn btn-xs btn-teal" id="btnCopy" style="width:28px"><i id="icoCopy" class="fa fa-copy" aria-hidden="true"></i></button>`)
             .attr("x", 0)
             .attr("y", 80);
         this.svgContainer.append("foreignObject")
@@ -432,7 +425,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
     private drawFlow() {
         let shiftRight: number = 0;
         let rightPos: { [objId: number]: number } = {};
-        this.mergedDbObjs.sort((a, b) => a.sequence - b.sequence);
+        this.mergedDbObjs = this.projectService.getAllObjects();;
         // SX is the x of the db object rect; 
         let sx: number = 120;
         let szTxtRows = 80;
@@ -478,7 +471,6 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             .style('stroke-dasharray', [3, 3])
             .style('cursor', 'pointer')
             .merge(updateSel)
-            //.transition(this.tran1)
             .attr("x", d => d.x) // set up the connection point origin
             .attr("y", d => {
                 //console.log("group y: " + d.y);
@@ -570,7 +562,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             .style("font-family", "arial")
             .style("text-anchor", "start")
             .style('cursor', 'pointer')
-            .text(d => d.name)
+            .text(d => `${d.name} (${d.instance})`)
             .merge(updateSel)
             .attr("x", sx + 10)
             .attr("y", d => d.y + 20);
@@ -628,7 +620,6 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
                 return btn;
             })
             .merge(targetColSelection)
-            //.transition(this.tran1)
             .attr('x', (c: ColumnDef) => {
                 let tmpX = rightPos[c.dbObjId];
                 c.width = this.getTextWidth(c.name, 11, "arial") + 6;
@@ -659,7 +650,6 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             .style("fill", 'coral')
             .style("stroke", 'brown')
             .merge(mappedColSelection)
-            //.transition(this.tran1)
             .attr('x', (c: ColumnDef) => {
                 let tmpX = rightPos[c.dbObjId];
                 c.x = tmpX + c.width / 2;   // cx is the center of the rect!!
@@ -685,7 +675,6 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             .style("text-anchor", "middle")
             .text((c: ColumnDef) => c.name)
             .merge(mappedColTextSelection)
-            //.transition(this.tran1)
             .attr('x', (c: ColumnDef) => c.x)
             .attr('y', (c: ColumnDef) => c.y + 14);
 
@@ -698,7 +687,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
                 let cmdGen: CommandOutputGenerator = target.plugIn[0] as CommandOutputGenerator;
                 if (cmdGen.outputMappingId) {
                     let outMap: OutputMap = this.projectService.outputMaps.find(p => p.id == cmdGen.outputMappingId);
-                    let src: ColumnDef = this.projectService.getColumnFromDBObj(outMap.dbObjectId, outMap.instance, outMap.dirType, outMap.outputName);
+                    let src: ColumnDef = this.projectService.getColumnByDBObjDirType(outMap.dbObjectId, outMap.instance, outMap.dirType, outMap.outputName);
                     series.push([{ x: src.x, y: src.y + (target.y > src.y ? 22 : 0) },
                     { x: src.x, y: (src.y + target.y) / 2 }, { x: target.x, y: (src.y + target.y) / 2 },
                     { x: target.x, y: target.y + (target.y > src.y ? -8 : 30) }]);
@@ -734,22 +723,38 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             .attr('z', '0')
             .attr('fill', 'none')
             .merge(selPath)
-            //.transition(this.tran1)
             .attr('marker-end', (d, i) => lineAttr[i]['marker-end'])
             .attr("d", lineFunction)
             .attr('stroke', (d, i) => lineAttr[i]['stroke'])
             .attr('stroke-dasharray', (d, i) => lineAttr[i]['stroke-dasharray']);
     }
-    private copyObjs() {
+    private deleteObjs() {
         let chkObjs: GroupDef[] = [];  
         $(".flowChkGrouping").each((i, e) => {
             if ($(e).prop("checked") && $(e).css('display') != 'none') {
                 let objId = $(e).data("obj-id");
                 let inst = $(e).data("obj-inst");
                 let dbObj = this.projectService.getDBObjInstance(objId, inst);
-                if (!dbObj.groupId) {
-                    this.projectService.copyObj(dbObj);
-                }
+                if (!dbObj.groupId) 
+                    this.projectService.deleteObj(dbObj);
+                else 
+                    this.projectService.deleteGroup(dbObj.groupId);
+                $(e).prop("checked",false);
+            }
+        });
+        this.drawFlow();
+    }
+    private duplicateObjs() {
+        let chkObjs: GroupDef[] = [];  
+        $(".flowChkGrouping").each((i, e) => {
+            if ($(e).prop("checked") && $(e).css('display') != 'none') {
+                let objId = $(e).data("obj-id");
+                let inst = $(e).data("obj-inst");
+                let dbObj = this.projectService.getDBObjInstance(objId, inst);
+                if (!dbObj.groupId) 
+                    this.projectService.duplicateObj(dbObj);
+                else 
+                    this.projectService.duplicateGroup(dbObj.groupId);
                 $(e).prop("checked",false);
             }
         });
@@ -808,7 +813,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
         let obj = chkObjs[0];
         if (fnIsGroup(obj)) {
             if (!newGrp)
-                newGrp = obj as GroupDef;
+                newGrp = obj;
         }
         else {
             newGrp = new GroupDef();
@@ -831,10 +836,6 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
         this.drawFlow();
     }
     ngOnInit() {
-        this.tran1 = d3.transition("tran1")
-            .duration(400)
-            .ease(d3.easeLinear);
-
         this.globalListenFunc2 = this.renderer.listenGlobal("body", "change", (e) => {
             //this.ngZone.run(() => {
             if (!e.target.id)
@@ -857,10 +858,10 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             console.log('event hit');
             console.log(e.target);
             if (e.target.id == "btnDelete" || e.target.id == "icoDelete") {
-                //this.deleteObjs();
+                this.deleteObjs();
             }
             if (e.target.id == "btnCopy" || e.target.id == "icoCopy") {
-                this.copyObjs();
+                this.duplicateObjs();
             }
             if (e.target.id == "btnGroup" || e.target.id == "icoGroup") {
                 this.groupObjs();
@@ -889,9 +890,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
         });
 
         this.objects = this.projectService.selectedObjs;
-        this.mergedDbObjs = [];
-        Object.keys(this.objects).forEach(objType => this.mergedDbObjs = this.mergedDbObjs.concat(this.objects[objType]));
-        this.mergedDbObjs.sort((a, b) => a.sequence - b.sequence);
+        this.mergedDbObjs = this.projectService.getAllObjects();;
 
         this.drawHeader();
         this.drawFlow();

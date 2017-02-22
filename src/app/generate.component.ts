@@ -106,7 +106,7 @@ export class GenerateComponent extends BaseComponent {
         var tbls = this.projectService.selectedObjs['U'];
         tbls.forEach(t => {
             // trim unused plugin; cf.plugins is a list of plugins; only the first one is used. The rest are for users to undo changes only
-            this.projectService.getAllColumnsByObj(t.id, t.instance).forEach((cf: ColumnDef) => {
+            this.projectService.getAllColumnsByObjIdInst(t.id, t.instance).forEach((cf: ColumnDef) => {
                 if (cf.plugIn.length > 1)
                     cf.plugIn.splice(1);
             });
@@ -328,7 +328,7 @@ export class GenerateComponent extends BaseComponent {
         this.progress = [];
         // This is where preprocessing happens. E.g. calling data service to get sample addresses and names
         this.allObjects.forEach(t => {
-            let colArr = this.projectService.getAllColumnsByObj(t.id, t.instance);
+            let colArr = this.projectService.getAllColumnsByObjIdInst(t.id, t.instance);
             colArr.forEach((cf: ColumnDef) => {
                 if (cf.include) {
                     if (cf.plugIn.length > 0) {

@@ -344,8 +344,8 @@ export class ProjectService {
         if (i) return i;
         return null;
     }
-    getColumnFromDBObj(objId: number, instance: number, dirType: COL_DIR_TYPE, colName): ColumnDef {
-        return this.getAllColumnsByObj(objId, instance).find(c => c.name == colName && c.dirType == dirType);
+    getColumnByDBObjDirType(objId: number, instance: number, dirType: COL_DIR_TYPE, colName): ColumnDef {
+        return this.getAllColumnsByObjIdInst(objId, instance).find(c => c.name == colName && c.dirType == dirType);
     }
     getMappableTargetColumns(objId: number, instance: number): ColumnDef[] {
         let obj = this.getDBObjInstance(objId, instance);
@@ -378,8 +378,11 @@ export class ProjectService {
         let obj = this.getDBObjInstance(objId, instance);
         return obj.columns[COL_DIR_TYPE.RSLTSET].concat(obj.columns[COL_DIR_TYPE.TBLVW_COL]).concat(obj.columns[COL_DIR_TYPE.OUT_PARAM]).concat(obj.columns[COL_DIR_TYPE.RET_VAL]).concat(obj.columns[COL_DIR_TYPE.IN_PARAM]);
     }
-    getAllColumnsByObj(objId: number, instance: number): ColumnDef[] {
+    getAllColumnsByObjIdInst(objId: number, instance: number): ColumnDef[] {
         let obj = this.getDBObjInstance(objId, instance);
+        return this.getAllColumnsByObj(obj);
+    }
+    getAllColumnsByObj(obj: DBObjDef): ColumnDef[] {
         return obj.columns[COL_DIR_TYPE.IN_PARAM]
             .concat(obj.columns[COL_DIR_TYPE.TBLVW_COL])
             .concat(obj.columns[COL_DIR_TYPE.OUT_PARAM])
@@ -391,27 +394,32 @@ export class ProjectService {
         for (let objType of OBJECT_TYPES_LIST) {
             allObj = allObj.concat(this.selectedObjs[objType]);
         }
-        return allObj;
+        return allObj.sort((a, b) => a.sequence - b.sequence);
     }
     createNewProject() {
         this.project = new ProjectStruct();
     }
-    removeOutputMapping(mapId: number) {
-        let i = this.project.outputMaps.findIndex(m => m.id == mapId);
-        this.project.outputMaps.splice(i, 1);
-    }
+
 
     // Group related functions
+    reduceOutputMappingRefCount(outMap: OutputMap) {
+        outMap.refCount -= 1;
+        if (outMap.refCount <= 0) {
+            let i = this.project.outputMaps.findIndex(m => m.id == outMap.id);
+            this.project.outputMaps.splice(i, 1);
+        }
+    }
+    private getGroup(grpOrId: number | GroupDef): GroupDef {
+        let grp:GroupDef;
+        if (typeof(grpOrId) == "number")
+            grp = this.project.groups.find(g => g.id == grpOrId);
+        else 
+            grp = grpOrId;  
+        return grp;
+    }
     joinGroups(targetGrpOrId: number | GroupDef, srcGrpOrId: number | GroupDef) {
-        let tarGrp:GroupDef, srcGrp:GroupDef;
-        if (typeof(targetGrpOrId) == "number")
-            tarGrp = this.project.groups.find(g => g.id == targetGrpOrId);
-        else
-            tarGrp = targetGrpOrId;
-        if (typeof(srcGrpOrId) == "number")
-            srcGrp = this.project.groups.find(g => g.id == srcGrpOrId);
-        else
-            srcGrp = srcGrpOrId;
+        let tarGrp:GroupDef = this.getGroup(targetGrpOrId);
+        let srcGrp:GroupDef = this.getGroup(srcGrpOrId);
             
         // assume the last memeber in tarGrp group has the max seq #
         let seq = this.getDBObjInstance(tarGrp.members[tarGrp.members.length - 1].dbObjectId, tarGrp.members[tarGrp.members.length - 1].instance).sequence;
@@ -488,13 +496,7 @@ export class ProjectService {
     }
     public sortGroupMember(grpOrId: number | GroupDef) {
         let dbObjs:DBObjDef[] = [];
-        let grp:GroupDef;
-
-        // can I assume all the members are sorted by sequence?
-        if (typeof(grpOrId) == "number")
-            grp = this.project.groups.find(g => g.id == grpOrId);
-        else 
-            grp = grpOrId;  
+        let grp:GroupDef = this.getGroup(grpOrId);
         for (let objId of grp.members) {
             let a:DBObjDef = this.getDBObjInstance(objId.dbObjectId, objId.instance);
             dbObjs.push(a);
@@ -515,22 +517,66 @@ export class ProjectService {
         let a:DBObjDef = this.getDBObjInstance(grp.members[0].dbObjectId, grp.members[0].instance);
         return (obj == a);
     }
-    public copyObj(obj: DBObjDef) {
+    public duplicateObj(obj: DBObjDef):DBObjDef {
         let newObj = new DBObjDef().deserialize(obj);
         let objs = this.getAllObjects().filter(o => o.id == obj.id);
         let maxInst = Math.max.apply(Math, objs.map(o => o.instance));
-        let maxSeq = Math.max.apply(Math, objs.map(o => o.sequence));
+        
         newObj.instance = maxInst + 1;
-        newObj.sequence = maxSeq + 1000;
-        let allCols = this.getAllColumnsByObj(newObj.id, newObj.instance);
+        newObj.sequence = Number.MAX_VALUE;
+        this.project.selectedObjs[obj.objType].push(newObj);
+        let allCols = this.getAllColumnsByObj(newObj);
         allCols.forEach(c => {
-            if (c.plugIn.length == 0 || c.plugIn[0].constructor.name != "CommandOutputGenerator") {
+            c.instance = newObj.instance; // is this poor design to duplicate the obj instance in the column level?
+            if (c.plugIn.length > 0 && c.plugIn[0].constructor.name == "CommandOutputGenerator") {
                 let cmdGen:CommandOutputGenerator = (c.plugIn[0] as CommandOutputGenerator);
                 cmdGen.outputMappingId = null;
             }
         });
-        this.project.selectedObjs[obj.objType].push(newObj);
+        this.resequenceDbObjs();
+        return newObj;
     }
+    public duplicateGroup(grpOrId: number | GroupDef):GroupDef {
+        let grp:GroupDef = this.getGroup(grpOrId);
+        let newGrp = new GroupDef().deserialize(grp);
+        newGrp.id = fnGetLargeRandomNumber();
+        newGrp.members = [];
+        for (let objId of grp.members) {
+            let obj = this.getDBObjInstance(objId.dbObjectId, objId.instance);
+            let newObj = this.duplicateObj(obj);
+            newObj.groupId = newGrp.id;
+            newGrp.members.push(new DbObjIdentifier({ dbObjectId: newObj.id, instance: newObj.instance }));
+        }
+        this.project.groups.push(newGrp);
+        //this.resequenceDbObjs();
+        return newGrp;
+    }
+    public deleteObj(obj:DBObjDef) {
+        // Assume it is not in a group
+        let index = this.project.selectedObjs[obj.objType].findIndex(o => o.id == obj.id && o.instance == obj.instance);
+        let cols = this.getAllColumnsByObj(obj);
+        cols.forEach(c => {
+            // remove outputmapping if any
+            if (c.plugIn.length > 0 && c.plugIn[0].constructor.name == "CommandOutputGenerator") {
+                let cmdGen = (c.plugIn[0] as CommandOutputGenerator);
+                if (cmdGen.outputMappingId) {
+                    let outMap = this.project.outputMaps.find(o => o.id == cmdGen.outputMappingId);
+                    this.reduceOutputMappingRefCount(outMap);
+                }
+            }
+        });
+        this.project.selectedObjs[obj.objType].splice(index, 1);
+    }
+    public deleteGroup(grpOrId: number | GroupDef) {
+        let grp:GroupDef = this.getGroup(grpOrId);
+        for (let objId of grp.members) {
+            let a:DBObjDef = this.getDBObjInstance(objId.dbObjectId, objId.instance);
+            this.deleteObj(a);
+        }
+        let index = this.project.groups.findIndex(g => g.id == grp.id);
+        this.project.groups.splice(index, 1);
+    }
+
 
     // Properties
     get connection(): ConnectionConfig {
