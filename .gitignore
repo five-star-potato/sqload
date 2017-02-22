@@ -4,3 +4,4 @@ dist
 *.rar
 __TMP.SQL
 *.log.*
+src/app.conf.js
