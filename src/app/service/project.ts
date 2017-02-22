@@ -3,6 +3,8 @@ import { Injectable } from "@angular/core";
 import { DataGenerator, fnGetLargeRandomNumber, fnStringifyNoCircular } from '../include';
 import { CommandOutputGenerator  } from '../generator/generators.component';
 import { OBJ_TYPE, COL_DIR_TYPE, OBJECT_TYPES_LIST } from "../constants";
+declare var require:(moduleId:string) => any;
+var appConf = require('../../app.conf');
 
 //import { TRON_GLOBAL, TRON_EVENT } from '../constants';
 interface Serializable<T> {
@@ -302,11 +304,11 @@ export class ProjectStruct implements Serializable<ProjectStruct> {
     }
     constructor() {
         this.connection = new ConnectionConfig({
-            serverName: '192.168.0.14',
-            instanceName: "SQLExpress",
-            databaseName: 'AdventureWorks2014',
-            userName: 'sa',
-            password: "LongLive1",
+            serverName: appConf.database.serverName,
+            instanceName: appConf.database.instanceName,
+            databaseName: appConf.database.databaseName,
+            userName: appConf.database.userName,
+            password: appConf.database.password,
             verified: false
         });
         this.selectedObjs[OBJ_TYPE.TB] = [];

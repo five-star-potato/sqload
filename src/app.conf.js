@@ -6,6 +6,13 @@ module.exports = {
     dataService : { 
         url: "http://localhost:8081" ,
         token: ""
+    },
+    database : {
+        serverName: '',
+        instanceName: '',
+        databaseName: '',
+        userName: '',
+        password: ''
     }
 
 };
