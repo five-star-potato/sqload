@@ -7,7 +7,8 @@ var ElectronPackager = require("webpack-electron-packager");
 module.exports = {
     devtool: 'source-map',
     entry: {
-        app: path.join(__dirname, "src", "main")
+        app: path.join(__dirname, "src", "main"),
+        vendor: [path.join(__dirname, "src", "vendor"), 'jquery', 'd3'],
     },
     output: {
         path: path.join(__dirname, "dist"),
@@ -15,14 +16,14 @@ module.exports = {
     },
     module: {
         loaders: [
-            { 
-                test: /\.ts$/, 
-                exclude: /node_modules/, 
+            {
+                test: /\.ts$/,
+                exclude: /node_modules/,
                 loader: 'ts'
             },
             {
-                test: /\.css$/, 
-                exclude: /node_modules/, 
+                test: /\.css$/,
+                exclude: /node_modules/,
                 loader: "style-loader!css-loader"
             }
         ]
@@ -44,15 +45,18 @@ module.exports = {
             { from: 'src/jquery-3.1.1.js'},
             { from: 'node_modules/bootstrap/dist/js/bootstrap.min.js'},
             */
-            { from: 'src/css', to: "css"},
+            { from: 'src/css', to: "css" },
             { from: 'node_modules/font-awesome/css/font-awesome.css', to: "css" },
-            { from: 'src/img', to: "img"},
+            { from: 'src/img', to: "img" },
             /* { from: 'node_modules/bootstrap/dist/fonts', to: "fonts" }, */
             { from: 'src/fonts/Plavsky.otf', to: "fonts" },
             /* { from: 'src/fonts/NeoGen.ttf', to: "fonts" }, */
             { from: 'node_modules/font-awesome/fonts', to: "fonts" },
             { from: 'src/app/columns.component.html' }
-        ])
+        ]),
+        new webpack.optimize.CommonsChunkPlugin({
+            name: ['app', 'vendor']
+        }),
         /*,
         new ElectronPackager({
           dir: "./",
