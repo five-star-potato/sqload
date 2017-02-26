@@ -6,7 +6,8 @@ import { BaseComponent } from './base.component';
 import * as gen from './generator/generators.component';
 import { WizardStateService } from "./service/wizard-state";
 import { SampleDataService } from "./service/sample-data";
-import { ProjectService, DBObjDef, ColumnDef } from "./service/project";
+import { DBObjDef, ColumnDef } from "./project-def";
+import { ProjectService } from "./service/project-service";
 
 @Component({
     templateUrl: "./columns.component.html",

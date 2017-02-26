@@ -3,11 +3,12 @@ import { Component, NgZone, ElementRef, Renderer, OnDestroy } from "@angular/cor
 import { Router } from '@angular/router';
 import { BaseComponent } from "./base.component";
 import { TRON_GLOBAL, TRON_EVENT, OBJ_TYPE, COL_DIR_TYPE } from './constants';
-import { DataGenerator, fnGetDataTypeDesc, fnGetCleanName, fnGetLargeRandomNumber, fnIsGroup } from './include';
+import { DataGenerator, fnGetDataTypeDesc, fnGetCleanName, fnGetLargeRandomNumber } from './include';
 import * as gen from './generator/generators.component';
 import { WizardStateService } from "./service/wizard-state";
 import { SampleDataService } from "./service/sample-data";
-import { ColumnDef, DBObjDef, ProjectService, OutputMap, GroupDef, DbObjIdentifier } from "./service/project";
+import { ColumnDef, DBObjDef, OutputMap, GroupDef, DbObjIdentifier } from "./project-def";
+import { ProjectService, fnIsGroup } from './service/project-service';
 import { CommandOutputGenerator } from "./generator/generators.component";
 declare var require: (moduleId: string) => any;
 var appConf = require('../app.conf');

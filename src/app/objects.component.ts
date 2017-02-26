@@ -8,7 +8,8 @@ import { BaseComponent } from './base.component';
 import { OrderBy } from './orderby.component';
 import { WizardStateService } from "./service/wizard-state";
 import { SampleDataService } from "./service/sample-data";
-import { ColumnDef, DBObjDef, ProjectService } from "./service/project";
+import { ColumnDef, DBObjDef } from "./project-def";
+import { ProjectService } from './service/project-service';
 import { fnGetLargeRandomNumber } from './include'
 declare var require: (moduleId: string) => any;
 

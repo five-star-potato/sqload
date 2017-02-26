@@ -1,7 +1,8 @@
 import { Injectable } from "@angular/core";
 import { Subject } from 'rxjs/Subject';
 import { TRON_GLOBAL, TRON_EVENT, OBJ_TYPE, COL_DIR_TYPE } from '../constants';
-import { ProjectStruct, ProjectService, ConnectionConfig, DBObjDef, ColumnDef } from './project';
+import { ProjectStruct, ConnectionConfig, DBObjDef, ColumnDef } from '../project-def';
+import { ProjectService } from './project-service';
 
 @Injectable()
 export class WizardStateService {

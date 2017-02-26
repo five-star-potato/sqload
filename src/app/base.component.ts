@@ -3,7 +3,8 @@ import { Router } from '@angular/router';
 import { TRON_GLOBAL, TRON_EVENT, OBJECT_TYPES_LIST, OBJ_TYPE, COL_DIR_TYPE } from './constants';
 import { WizardStateService } from "./service/wizard-state";
 import { SampleDataService } from "./service/sample-data";
-import { ProjectService, DBObjDef } from "./service/project";
+import { DBObjDef } from "./project-def";
+import { ProjectService } from "./service/project-service";
 
 declare var electron: any;
 

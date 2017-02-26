@@ -1,5 +1,4 @@
-import { TemplateRef } from '@angular/core';
-import { DBObjDef, GroupDef, ColumnDef } from './service/project';
+import { DBObjDef, GroupDef, ColumnDef } from './project-def';
 
 export abstract class DataGenerator {
     __name__:string;    // when serializing the object into JSON string, the name of the subtypes (like ListItemGenerator) will be lost. __name__ helps deserialize it back.
@@ -38,10 +37,6 @@ export function fnStringifyNoCircular(o:any) {
     });
     cache = null; // Enable garbage collection
     return s;    
-}
-// Using a typeguard to check whether it's a group or dbobj
-export function fnIsGroup(obj: DBObjDef | GroupDef): obj is GroupDef {
-    return (<GroupDef>obj).members !== undefined;
 }
 
 export function fnGetLargeRandomNumber() {

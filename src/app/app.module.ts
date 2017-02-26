@@ -14,7 +14,7 @@ import { selectedObjectsPipe } from './pipes.component';
 import { OrderBy } from './orderby.component';
 import { WizardStateService } from "./service/wizard-state";
 import { SampleDataService } from "./service/sample-data";
-import { ProjectService } from "./service/project";
+import { ProjectService } from "./service/project-service";
 import { SampleAddressConfigComponent } from "./sample-address-config.component";
 
 const appRoutes: Routes = [

@@ -5,7 +5,8 @@
   "scripts": {
     "start": "electron .",
     "package": "electron-packager . --platform=win32 --arch=x64 --asar=true",
-    "build": "rimraf sqload-win32-x64 dist && webpack --progress",
+    "build": "rimraf sqload-win32-x64 dist && webpack --progress && webpack --config webpack.worker.js --display-error-details",
+    "buildworker": "webpack --config webpack.worker.js",
     "rimraf": "rimraf",
     "typings": "typings",
     "gulp": "gulp"
@@ -29,7 +30,8 @@
     "typescript": "^2.1.4",
     "typings": "^2.0.0",
     "webpack": "^1.13.3",
-    "webpack-electron-packager": "^1.0.0"
+    "webpack-electron-packager": "^1.0.0",
+    "worker-loader": "^0.7.1"
   },
   "dependencies": {
     "@angular/common": "2.2.1",

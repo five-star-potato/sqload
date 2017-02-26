@@ -6,7 +6,8 @@ import { fnGetDataTypeDesc, fnStringifyNoCircular, fnGetCleanName } from './incl
 import { SampleAddressGenerator, GivenNameGenerator, SurnameGenerator, IntegerGenerator, TextGenerator, DateGenerator, UUIDGenerator, CustomSqlGenerator, CustomValueGenerator, FKGenerator } from './generator/generators.component';
 import { WizardStateService } from "./service/wizard-state";
 import { Address, PersonName, SampleDataService } from "./service/sample-data";
-import { ColumnDef, DBObjDef, ProjectService } from "./service/project";
+import { ColumnDef, DBObjDef,  ProjectStruct } from "./project-def";
+import { ProjectService } from './service/project-service';
 declare var require: (moduleId: string) => any;
 var appConf = require('../app.conf');
 

@@ -6,7 +6,8 @@ import { DataGenerator, fnGetDataTypeDesc } from './include';
 import * as gen from './generator/generators.component';
 import { WizardStateService } from "./service/wizard-state";
 import { SampleDataService } from "./service/sample-data";
-import { ColumnDef, DBObjDef, ProjectService, ProjectStruct } from "./service/project";
+import { ColumnDef, DBObjDef,  ProjectStruct } from "./project-def";
+import { ProjectService } from './service/project-service';
 import { Subscription } from 'rxjs/Subscription';
 import { COL_DIR_TYPE } from './constants';
 

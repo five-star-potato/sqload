@@ -4,7 +4,9 @@ import { TRON_GLOBAL, TRON_EVENT } from "./constants";
 import { BaseComponent } from './base.component';
 import { WizardStateService } from "./service/wizard-state";
 import { SampleDataService } from "./service/sample-data";
-import { ConnectionConfig, ProjectService } from "./service/project";
+import { ConnectionConfig } from "./project-def";
+import { ProjectService, fnIsGroup } from './service/project-service';
+declare var require:(moduleId:string) => any;
 
 @Component({
     template: `
@@ -108,5 +110,12 @@ export class ConnectionComponent extends BaseComponent implements OnInit, AfterV
         this.projectService.connection.verified = false;
         this.wizardStateService.projectChange({ type: TRON_EVENT.refresh });
     }
-    ngOnInit() { }
+    ngOnInit() { 
+        var worker = new Worker("../generator.bundle.js");
+        worker.onmessage = function(event) {
+            console.log("received msg:");
+            console.log(event);
+        }
+        worker.postMessage(this.projectService.project);        
+    }
 }

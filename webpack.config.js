@@ -2,15 +2,16 @@ var webpack = require('webpack');
 var path = require('path');
 var HtmlWebpackPlugin = require('html-webpack-plugin');
 var CopyWebpackPlugin = require('copy-webpack-plugin');
-var ElectronPackager = require("webpack-electron-packager");
+//var ElectronPackager = require("webpack-electron-packager");
 
 module.exports = {
     devtool: 'source-map',
     entry: {
         app: path.join(__dirname, "src", "main"),
-        vendor: [path.join(__dirname, "src", "vendor"), 'jquery', 'd3'],
+        vendor: [path.join(__dirname, "src", "vendor"), 'jquery', 'd3', "bootstrap"]
     },
     output: {
+        publicPath: "",
         path: path.join(__dirname, "dist"),
         filename: '[name].js'
     },
@@ -26,6 +27,11 @@ module.exports = {
                 exclude: /node_modules/,
                 loader: "style-loader!css-loader"
             }
+            /*,
+            { 
+                test: /worker\.js$/,
+                loader: 'worker'
+            }*/
         ]
     },
     resolve: {
@@ -45,6 +51,7 @@ module.exports = {
             { from: 'src/jquery-3.1.1.js'},
             { from: 'node_modules/bootstrap/dist/js/bootstrap.min.js'},
             */
+            //{ from: 'src/app/worker.js'},            
             { from: 'src/css', to: "css" },
             { from: 'node_modules/font-awesome/css/font-awesome.css', to: "css" },
             { from: 'src/img', to: "img" },
@@ -57,12 +64,19 @@ module.exports = {
         new webpack.optimize.CommonsChunkPlugin({
             name: ['app', 'vendor']
         }),
-        /*,
-        new ElectronPackager({
-          dir: "./",
-          arch: "x64",
-          platform: "win32",
-        })
-        */
     ]
+    /*,
+    worker: {
+        output: {
+            filename: "hash.worker.js",
+            chunkFilename: "[id].hash.worker.js"
+        }
+    }
+    /*,
+    new ElectronPackager({
+        dir: "./",
+        arch: "x64",
+        platform: "win32",
+    })
+    */
 };
