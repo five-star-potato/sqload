@@ -1,5 +1,5 @@
 module.exports = {
-     entry: {generator: './src/app/worker/generator.worker.ts'},
+     entry: {renderer: './src/app/worker/renderer.worker.ts'},
      output: {
          path: './dist',
          filename: '[name].bundle.js'

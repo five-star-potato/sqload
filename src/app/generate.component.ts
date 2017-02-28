@@ -95,7 +95,8 @@ export class GenerateComponent extends BaseComponent {
     totalRowCnt: number = 0;
     runningRowCnt: number = 0;
     sampleAdresses = {}; // the assoc array will be { key:  region-country }, values:[] }
-    sampleNames = {};
+    sampleNames = {};    
+    
     progressMsg: string = "";
     lineCount: number = 0;
     fileSubDir: string;

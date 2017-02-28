@@ -1,11 +1,13 @@
 import { Component, OnInit, NgZone, ViewChild, AfterViewInit } from '@angular/core';
 import { Router } from '@angular/router';
-import { TRON_GLOBAL, TRON_EVENT } from "./constants";
+import { TRON_GLOBAL, TRON_EVENT, WORKER_MSG_TYPE } from "./constants";
 import { BaseComponent } from './base.component';
 import { WizardStateService } from "./service/wizard-state";
 import { SampleDataService } from "./service/sample-data";
 import { ConnectionConfig } from "./project-def";
 import { ProjectService, fnIsGroup } from './service/project-service';
+import { WorkerMessage } from './include';
+
 declare var require:(moduleId:string) => any;
 
 @Component({
@@ -111,11 +113,14 @@ export class ConnectionComponent extends BaseComponent implements OnInit, AfterV
         this.wizardStateService.projectChange({ type: TRON_EVENT.refresh });
     }
     ngOnInit() { 
-        var worker = new Worker("../generator.bundle.js");
+        var worker = new Worker("../renderer.bundle.js");
         worker.onmessage = function(event) {
             console.log("received msg:");
             console.log(event);
         }
-        worker.postMessage(this.projectService.project);        
+        let msg = new WorkerMessage();
+        msg.msgType = WORKER_MSG_TYPE.RENDER;
+        msg.data = this.projectService.project;
+        worker.postMessage(msg);        
     }
 }

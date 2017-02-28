@@ -33,4 +33,10 @@ export class COL_DIR_TYPE {
     public static RSLTSET = "RSLTSET";      // Column from Return result set
     public static TBLVW_COL = "TBLVW_COL";  // Table or View Column
 }
+export class WORKER_MSG_TYPE {
+    public static RENDER = "RENDER";    // 
+    public static GET_SAMPLE_DATA_START = "GET_SAMPLE_DATA_START";    // 
+    public static GET_SAMPLE_DATA_END = "GET_SAMPLE_DATA_END";    // 
+    public static OUTPUT = "OUTPUT";    // 
+}
 

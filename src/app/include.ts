@@ -1,3 +1,4 @@
+import { WORKER_MSG_TYPE } from "./constants";
 import { DBObjDef, GroupDef, ColumnDef } from './project-def';
 
 export abstract class DataGenerator {
@@ -45,4 +46,9 @@ export function fnGetLargeRandomNumber() {
 
 export function fnGetCleanName(name: string) {
     return name.replace(/[\$ #@]/g, '_');
+}
+
+export class WorkerMessage {
+    msgType: WORKER_MSG_TYPE;
+    data: Object;
 }
