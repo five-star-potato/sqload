@@ -51,4 +51,12 @@ export function fnGetCleanName(name: string) {
 export class WorkerMessage {
     msgType: WORKER_MSG_TYPE;
     data: Object;
+
+    public constructor(
+        fields?: {
+            msgType?: WORKER_MSG_TYPE;
+            data?: Object;
+        }) {
+        if (fields) Object.assign(this, fields);
+    }
 }

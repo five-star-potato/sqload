@@ -129,10 +129,10 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
         this.outputMapping.dbObjInstance = value;
         let objId: number, instance: number;
         [objId, instance] = value.split(":").map(Number);
-        this.mappableOutputColumns = this.projectService.getMappableOutputColumns(objId, instance);
+        this.mappableOutputColumns = this.projectService.project.getMappableOutputColumns(objId, instance);
     }
     private findExistingOutputMap(objId: number, instance: number, dirType: COL_DIR_TYPE, colName: string): OutputMap {
-        let map: OutputMap = this.projectService.outputMaps.find(o => {
+        let map: OutputMap = this.projectService.project.outputMaps.find(o => {
             return (o.dbObjectId === objId && o.instance === instance && o.dirType == dirType && o.outputName == colName);
         });
         return map;
@@ -149,10 +149,10 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
         return true;
     }
     private deleteOutputMapping() {
-        let outputMap = this.projectService.outputMaps.find(m => m.id == this.outputMapping.id);
+        let outputMap = this.projectService.project.outputMaps.find(m => m.id == this.outputMapping.id);
         if (outputMap) {
             (this.currColDef.plugIn[0] as CommandOutputGenerator).outputMappingId = null;
-            this.projectService.reduceOutputMappingRefCount(outputMap);
+            this.projectService.project.reduceOutputMappingRefCount(outputMap);
             this.drawFlow();
         }
         this.outputMapping.clear();
@@ -162,16 +162,16 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
     private boundOutputTargetIntoGroup() {
         let srcObjId: number, srcInst: number;
         [srcObjId, srcInst] = this.outputMapping.dbObjInstance.split(':').map(Number);
-        let srcObj: DBObjDef = this.projectService.getDBObjInstance(srcObjId, srcInst);
-        let targetObj: DBObjDef = this.projectService.getDBObjInstance(this.currColDef.dbObjId, this.currColDef.instance);
+        let srcObj: DBObjDef = this.projectService.project.getDBObjInstance(srcObjId, srcInst);
+        let targetObj: DBObjDef = this.projectService.project.getDBObjInstance(this.currColDef.dbObjId, this.currColDef.instance);
 
         try {
             if (srcObj.groupId && !targetObj.groupId) { // if the src obj is already in a group
-                let grp: GroupDef = this.projectService.groups.find(g => g.id == srcObj.groupId);
-                this.projectService.joinDbObjToGroup(targetObj, grp);
+                let grp: GroupDef = this.projectService.project.groups.find(g => g.id == srcObj.groupId);
+                this.projectService.project.joinDbObjToGroup(targetObj, grp);
             }
             else if (!srcObj.groupId && !targetObj.groupId) { // neither object is in a group
-                this.projectService.formGroup(targetObj, srcObj);
+                this.projectService.project.formGroup(targetObj, srcObj);
             }
             else {  // both objects are in groups (same or different groups?)
             }
@@ -185,7 +185,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
         let objId: number, instance: number;
         let dirType: COL_DIR_TYPE, colName: string;
         let cmdGen: CommandOutputGenerator = this.currColDef.plugIn[0] as CommandOutputGenerator;
-        let oldMap = this.projectService.outputMaps.find(o => (o.id == cmdGen.outputMappingId));
+        let oldMap = this.projectService.project.outputMaps.find(o => (o.id == cmdGen.outputMappingId));
 
         // the logic is:
         // 1. if we can't find a similar mapping object, create one
@@ -203,7 +203,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
                 outputName: colName,
                 refCount: 1
             });
-            this.projectService.outputMaps.push(newMap);
+            this.projectService.project.outputMaps.push(newMap);
             cmdGen.outputMappingId = newMap.id;
         }
         else if (cmdGen.outputMappingId != newMap.id) { 
@@ -212,7 +212,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
         }
         //reduce refcount of the old one; if refCount dropped to 0, remove it
         if (oldMap && oldMap.id != newMap.id) {
-            this.projectService.reduceOutputMappingRefCount(oldMap);
+            this.projectService.project.reduceOutputMappingRefCount(oldMap);
         }
         this.boundOutputTargetIntoGroup();
         this.outputMapping.clear();
@@ -270,7 +270,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
                         }
                     });
                     if (!this.dragDbObj) {
-                        this.projectService.groups.forEach(g => {
+                        this.projectService.project.groups.forEach(g => {
                             if (dx >= g.x && dx <= (g.x + g.width) && dy >= g.y && dy <= (g.y + g.height)) {
                                 this.dragdx = dx - g.x; this.dragdy = dy - g.y;
                                 //console.log("drag group found:");
@@ -294,14 +294,14 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
                                 if ((!this.dragDbObj.groupId && !o.groupId) || (this.dragDbObj.groupId && o.groupId && this.dragDbObj.groupId == o.groupId)) {
                                     [o.sequence, this.dragDbObj.sequence] = [this.dragDbObj.sequence, o.sequence];
                                     if (this.dragDbObj.groupId)
-                                        this.projectService.sortGroupMember(this.dragDbObj.groupId);
+                                        this.projectService.project.sortGroupMember(this.dragDbObj.groupId);
                                 }
                                 else if (!this.dragDbObj.groupId && o.groupId) { // swapping the position of one object with a group
                                     let minmax: string = (this.dragDbObj.sequence > o.sequence ? "min" : "max"); // dragging from below "min" or dragging from above "max"; counterintuitive ...
-                                    let edgeObj: DBObjDef = this.projectService.findEdgeObjInGroup(o.groupId, minmax);
+                                    let edgeObj: DBObjDef = this.projectService.project.findEdgeObjInGroup(o.groupId, minmax);
                                     if (edgeObj === o) { // same obj
                                         this.dragDbObj.sequence = o.sequence + (minmax == "min" ? -1 : 1);
-                                        this.projectService.resequenceDbObjs();
+                                        this.projectService.project.resequenceDbObjs();
                                     }
                                 }
                                 break;
@@ -314,7 +314,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
                         this.dragGrp.y = d3.event.sourceEvent.offsetY - this.dragdy;
                         let deltaY = this.dragGrp.y - oldy;
                         // for all its group members, it should move too
-                        this.projectService.forEachGroupMember(this.dragGrp, a => {
+                        this.projectService.project.forEachGroupMember(this.dragGrp, a => {
                             a.y += deltaY
                             a.isDrag = true;
                         });
@@ -324,30 +324,30 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
                             let cnt = this.dragGrp.members.length;
                             if (Math.abs(o.y - this.dragGrp.y) < 10) {
                                 if (o.groupId) { // if o doesn't belong in a group, just switch position
-                                    let edgeObj: DBObjDef = this.projectService.findEdgeObjInGroup(o.groupId, "min");
+                                    let edgeObj: DBObjDef = this.projectService.project.findEdgeObjInGroup(o.groupId, "min");
                                     if (edgeObj != o) { // same obj; we're hitting the top object of another group
                                         continue;
                                     }
                                 }
                                 let seq = o.sequence - cnt - 1; // should be enough?
-                                this.projectService.forEachGroupMember(this.dragGrp, a => {
+                                this.projectService.project.forEachGroupMember(this.dragGrp, a => {
                                     a.sequence = ++seq;
                                 });
                             }
                             else if (Math.abs(o.y - (this.dragGrp.y + this.dragGrp.height)) < 10) {
                                 if (o.groupId) {
-                                    let edgeObj: DBObjDef = this.projectService.findEdgeObjInGroup(o.groupId, "max");
+                                    let edgeObj: DBObjDef = this.projectService.project.findEdgeObjInGroup(o.groupId, "max");
                                     if (edgeObj != o) { // same obj; we're hitting the bottom  object of another group
                                         continue;
                                     }
                                 }
                                 let seq = o.sequence;
-                                this.projectService.forEachGroupMember(this.dragGrp, a => {
+                                this.projectService.project.forEachGroupMember(this.dragGrp, a => {
                                     a.sequence = ++seq;
                                 });
                             }
                         }
-                        this.projectService.resequenceDbObjs();
+                        this.projectService.project.resequenceDbObjs();
                         this.drawFlow();
                     }
                 })
@@ -357,7 +357,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
                         this.dragDbObj = null;
                     }
                     if (this.dragGrp) {
-                        this.projectService.forEachGroupMember(this.dragGrp, o => o.isDrag = false);
+                        this.projectService.project.forEachGroupMember(this.dragGrp, o => o.isDrag = false);
                         this.dragGrp.isDrag = false;
                         this.dragGrp = null;
                     }
@@ -426,7 +426,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
     private drawFlow() {
         let shiftRight: number = 0;
         let rightPos: { [objId: number]: number } = {};
-        this.mergedDbObjs = this.projectService.getAllObjects();;
+        this.mergedDbObjs = this.projectService.project.getAllObjects();;
         // SX is the x of the db object rect; 
         let sx: number = 120;
         let szTxtRows = 80;
@@ -446,7 +446,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
         });
 
         // Draw group boundaries
-        for (let grp of this.projectService.groups) {
+        for (let grp of this.projectService.project.groups) {
             if (!grp.isDrag) {
                 let minY = Number.MAX_VALUE; let maxY = Number.MIN_VALUE;
                 for (let objId of grp.members) {
@@ -460,7 +460,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             }
         }
         let selectGroupBoundary = this.gfx.selectAll(".groupBoundary");
-        let updateSel = selectGroupBoundary.data(this.projectService.groups, d => d.id);   // UPDATE selection
+        let updateSel = selectGroupBoundary.data(this.projectService.project.groups, d => d.id);   // UPDATE selection
         updateSel.exit().remove();
         updateSel.enter().insert('rect',":first-child")
             .attr("class", "groupBoundary")
@@ -580,7 +580,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             .html((d, i) =>
                 `<input id="chkInclude_${i}" data-obj-id="${d.id}" data-obj-inst="${d.instance}" class="flowChkGrouping" type="checkbox">`)
             .merge(updateSel)
-            .style("display", d => this.projectService.isFirstObjInGroup(d) || !d.groupId ? "" : "none" )
+            .style("display", d => this.projectService.project.isFirstObjInGroup(d) || !d.groupId ? "" : "none" )
             .attr("x", sx - 70)
             .attr("y", d => yband(d.id + ":" + d.instance));
 
@@ -595,7 +595,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             .html((d, i) =>
                 `<input class="form-control input-sm" id="txtRows_${i}" data-obj-id="${d.id}" data-obj-inst="${d.instance}"  type="text" style="width:${szTxtRows}px">`)
             .merge(updateSel)
-            .style("display", d => this.projectService.isFirstObjInGroup(d) || !d.groupId ? "" : "none" )
+            .style("display", d => this.projectService.project.isFirstObjInGroup(d) || !d.groupId ? "" : "none" )
             .attr("x", sx + this.maxObjWidth + 20)
             .attr("y", d => yband(d.id + ":" + d.instance));
 
@@ -604,7 +604,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
         this.mergedDbObjs.forEach(o => {
             rightPos[o.id] = sx + this.maxObjWidth + szTxtRows + 30 + shiftRight;
             shiftRight = (shiftRight == 30) ? 0 : 30;
-            allMappableTarget = allMappableTarget.concat(this.projectService.getMappableTargetColumns(o.id, o.instance));
+            allMappableTarget = allMappableTarget.concat(this.projectService.project.getMappableTargetColumns(o.id, o.instance));
         });
         // Using nested selection (columndef objects), draw the buttons that represent mappable target columnDefs
         let targetColSelection = this.svgContainer.selectAll('.mappableTarget')
@@ -616,7 +616,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             .attr("class", "mappableTarget")
             .attr('height', colBtnHeight)
             .html((c: ColumnDef, i, j) => {
-                let o: DBObjDef = this.projectService.getDBObjInstance(c.dbObjId, c.instance);
+                let o: DBObjDef = this.projectService.project.getDBObjInstance(c.dbObjId, c.instance);
                 let btn = `<button id="btnMap_${fnGetCleanName(c.name)}_${o.objType}" data-obj-id="${c.dbObjId}" data-obj-inst="${o.instance}" data-col-type="${c.dirType}" class="btn btn-xs flowBtnColumn ${this.getColumnDirClass(c.dirType)}" >${c.name}</button>`;
                 return btn;
             })
@@ -635,7 +635,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
         // Preparing to draw the mapped output colums (source)
         let allMappedOutput: ColumnDef[] = []
         this.mergedDbObjs.forEach(o => {
-            allMappedOutput = allMappedOutput.concat(this.projectService.getMappedOutputColumns(o.id, o.instance));
+            allMappedOutput = allMappedOutput.concat(this.projectService.project.getMappedOutputColumns(o.id, o.instance));
         });
         // This should also be resulting in an UPDATE selection
         let mappedColSelection = this.svgContainer.selectAll('.mappedOutput')
@@ -683,12 +683,12 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
         let series: any[] = []; // series represent the group of connector lines
         let lineIds: string[] = []; // don't know how to embedded a unique id in the series
         let lineAttr: any[] = [];
-        this.projectService.getAllObjects().forEach(o => {
-            this.projectService.getMappableTargetColumns(o.id, o.instance).forEach(target => {
+        this.projectService.project.getAllObjects().forEach(o => {
+            this.projectService.project.getMappableTargetColumns(o.id, o.instance).forEach(target => {
                 let cmdGen: CommandOutputGenerator = target.plugIn[0] as CommandOutputGenerator;
                 if (cmdGen.outputMappingId) {
-                    let outMap: OutputMap = this.projectService.outputMaps.find(p => p.id == cmdGen.outputMappingId);
-                    let src: ColumnDef = this.projectService.getColumnByDBObjDirType(outMap.dbObjectId, outMap.instance, outMap.dirType, outMap.outputName);
+                    let outMap: OutputMap = this.projectService.project.outputMaps.find(p => p.id == cmdGen.outputMappingId);
+                    let src: ColumnDef = this.projectService.project.getColumnByDBObjDirType(outMap.dbObjectId, outMap.instance, outMap.dirType, outMap.outputName);
                     series.push([{ x: src.x, y: src.y + (target.y > src.y ? 22 : 0) },
                     { x: src.x, y: (src.y + target.y) / 2 }, { x: target.x, y: (src.y + target.y) / 2 },
                     { x: target.x, y: target.y + (target.y > src.y ? -8 : 30) }]);
@@ -735,11 +735,11 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             if ($(e).prop("checked") && $(e).css('display') != 'none') {
                 let objId = $(e).data("obj-id");
                 let inst = $(e).data("obj-inst");
-                let dbObj = this.projectService.getDBObjInstance(objId, inst);
+                let dbObj = this.projectService.project.getDBObjInstance(objId, inst);
                 if (!dbObj.groupId) 
-                    this.projectService.deleteObj(dbObj);
+                    this.projectService.project.deleteObj(dbObj);
                 else 
-                    this.projectService.deleteGroup(dbObj.groupId);
+                    this.projectService.project.deleteGroup(dbObj.groupId);
                 $(e).prop("checked",false);
             }
         });
@@ -751,11 +751,11 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             if ($(e).prop("checked") && $(e).css('display') != 'none') {
                 let objId = $(e).data("obj-id");
                 let inst = $(e).data("obj-inst");
-                let dbObj = this.projectService.getDBObjInstance(objId, inst);
+                let dbObj = this.projectService.project.getDBObjInstance(objId, inst);
                 if (!dbObj.groupId) 
-                    this.projectService.duplicateObj(dbObj);
+                    this.projectService.project.duplicateObj(dbObj);
                 else 
-                    this.projectService.duplicateGroup(dbObj.groupId);
+                    this.projectService.project.duplicateGroup(dbObj.groupId);
                 $(e).prop("checked",false);
             }
         });
@@ -776,9 +776,9 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             if ($(e).prop("checked") && $(e).css('display') != 'none') {
                 let objId = $(e).data("obj-id");
                 let inst = $(e).data("obj-inst");
-                let dbObj = this.projectService.getDBObjInstance(objId, inst);
+                let dbObj = this.projectService.project.getDBObjInstance(objId, inst);
                 if (dbObj.groupId) {
-                    let grp:GroupDef = this.projectService.groups.find(g => g.id == dbObj.groupId);
+                    let grp:GroupDef = this.projectService.project.groups.find(g => g.id == dbObj.groupId);
                     chkObjs.push(grp);
                 }
                 $(e).prop("checked",false);
@@ -786,7 +786,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
         });
         for (let i = 0; i < chkObjs.length; i++) {
             let grp = chkObjs[i];
-            this.projectService.ungroup(grp);
+            this.projectService.project.ungroup(grp);
         }
         this.drawFlow();
     }
@@ -796,11 +796,11 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             if ($(e).prop("checked") && $(e).css('display') != 'none') {
                 let objId = $(e).data("obj-id");
                 let inst = $(e).data("obj-inst");
-                let dbObj = this.projectService.getDBObjInstance(objId, inst);
+                let dbObj = this.projectService.project.getDBObjInstance(objId, inst);
                 if (!dbObj.groupId)
                     chkObjs.push(dbObj);
                 else {
-                    let grp:GroupDef = this.projectService.groups.find(g => g.id == dbObj.groupId);
+                    let grp:GroupDef = this.projectService.project.groups.find(g => g.id == dbObj.groupId);
                     chkObjs.push(grp);
                 }
                 $(e).prop("checked",false);
@@ -821,18 +821,18 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             newGrp.id = fnGetLargeRandomNumber();
             newGrp.members.push(new DbObjIdentifier({ dbObjectId: obj.id, instance: obj.instance }));
             obj.groupId = newGrp.id;
-            this.projectService.groups.push(newGrp);
-            this.projectService.resequenceDbObjs();
+            this.projectService.project.groups.push(newGrp);
+            this.projectService.project.resequenceDbObjs();
         }
         for (let i = 1; i < chkObjs.length; i++) {
             let obj = chkObjs[i];
             if (fnIsGroup(obj)) {
-                this.projectService.joinGroups(newGrp, obj);
+                this.projectService.project.joinGroups(newGrp, obj);
             }
             else {
-                this.projectService.joinDbObjToGroup(obj, newGrp);
+                this.projectService.project.joinDbObjToGroup(obj, newGrp);
             }
-            this.projectService.resequenceDbObjs();
+            this.projectService.project.resequenceDbObjs();
         }
         this.drawFlow();
     }
@@ -846,7 +846,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             if (e.target.id.startsWith("txtRows_")) {
                 let objId = $(e.target).data("obj-id");
                 let inst = $(e.target).data("obj-inst");
-                let dbObj: DBObjDef = this.projectService.getDBObjInstance(objId, inst);
+                let dbObj: DBObjDef = this.projectService.project.getDBObjInstance(objId, inst);
                 dbObj.rowcount = e.target.value;
             }
             //});
@@ -876,11 +876,11 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
                 let dirType = $(e.target).data("col-type");
                 let colName = $(e.target).html();
                 this.clearOutputMapping();
-                this.currColDef = this.projectService.getDBObjInstance(objId, inst).columns[dirType].find(c => c.name == colName);
+                this.currColDef = this.projectService.project.getDBObjInstance(objId, inst).columns[dirType].find(c => c.name == colName);
                 let cmdGen: CommandOutputGenerator = (this.currColDef.plugIn[0] as CommandOutputGenerator);
                 if (cmdGen && cmdGen.outputMappingId) {
-                    let outMap: OutputMap = this.projectService.outputMaps.find(o => o.id == cmdGen.outputMappingId);
-                    this.mappableOutputColumns = this.projectService.getMappableOutputColumns(outMap.dbObjectId, outMap.instance);
+                    let outMap: OutputMap = this.projectService.project.outputMaps.find(o => o.id == cmdGen.outputMappingId);
+                    this.mappableOutputColumns = this.projectService.project.getMappableOutputColumns(outMap.dbObjectId, outMap.instance);
                     this.outputMapping.dbObjInstance = outMap.dbObjectId + ":" + outMap.instance;
                     this.outputMapping.outputName = outMap.dirType + ":" + outMap.outputName;
                     this.outputMapping.id = outMap.id;
@@ -890,8 +890,8 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             // });
         });
 
-        this.objects = this.projectService.selectedObjs;
-        this.mergedDbObjs = this.projectService.getAllObjects();;
+        this.objects = this.projectService.project.selectedObjs;
+        this.mergedDbObjs = this.projectService.project.getAllObjects();;
 
         this.drawHeader();
         this.drawFlow();

@@ -239,7 +239,7 @@ export class ColumnsComponent extends BaseComponent implements AfterViewInit {
                         }
                         if (cf.plugIn.length == 0)    // we don't know how to generate this field
                             cf.include = false;
-                        this.projectService.getDBObj(tblId).columns[COL_DIR_TYPE.TBLVW_COL].push(cf);
+                        this.projectService.project.getDBObj(tblId).columns[COL_DIR_TYPE.TBLVW_COL].push(cf);
                     });
                 });
             })
@@ -280,7 +280,7 @@ export class ColumnsComponent extends BaseComponent implements AfterViewInit {
                             cf.plugIn.push(dn);
                         if (cf.plugIn.length == 0)    // we don't know how to generate this field
                             cf.include = false;
-                        this.projectService.getDBObj(vwId).columns[COL_DIR_TYPE.TBLVW_COL].push(cf);
+                        this.projectService.project.getDBObj(vwId).columns[COL_DIR_TYPE.TBLVW_COL].push(cf);
                     });
                 });
             })            
@@ -318,9 +318,9 @@ export class ColumnsComponent extends BaseComponent implements AfterViewInit {
                         if (cf.plugIn.length == 0)    // we don't know how to generate this field
                             cf.include = false;
                         if (row['PARAMETER_MODE'] == "IN")
-                            this.projectService.getDBObj(procId).columns[COL_DIR_TYPE.IN_PARAM].push(cf);
+                            this.projectService.project.getDBObj(procId).columns[COL_DIR_TYPE.IN_PARAM].push(cf);
                         else
-                            this.projectService.getDBObj(procId).columns[COL_DIR_TYPE.OUT_PARAM].push(cf);
+                            this.projectService.project.getDBObj(procId).columns[COL_DIR_TYPE.OUT_PARAM].push(cf);
                     });
                 });
             })

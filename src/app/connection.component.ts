@@ -113,14 +113,5 @@ export class ConnectionComponent extends BaseComponent implements OnInit, AfterV
         this.wizardStateService.projectChange({ type: TRON_EVENT.refresh });
     }
     ngOnInit() { 
-        var worker = new Worker("../renderer.bundle.js");
-        worker.onmessage = function(event) {
-            console.log("received msg:");
-            console.log(event);
-        }
-        let msg = new WorkerMessage();
-        msg.msgType = WORKER_MSG_TYPE.RENDER;
-        msg.data = this.projectService.project;
-        worker.postMessage(msg);        
     }
 }

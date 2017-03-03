@@ -1,8 +1,8 @@
 import { Component, OnInit, NgZone } from '@angular/core';
 import { Router } from '@angular/router';
-import { TRON_GLOBAL, TRON_EVENT, NAME_TYPE, OBJ_TYPE, COL_DIR_TYPE, WORKER_MSG_TYPE } from './constants';
+import { TRON_GLOBAL, TRON_EVENT, NAME_TYPE, OBJ_TYPE, COL_DIR_TYPE } from './constants';
 import { BaseComponent } from './base.component';
-import { fnGetDataTypeDesc, fnStringifyNoCircular, fnGetCleanName, WorkerMessage } from './include';
+import { fnGetDataTypeDesc, fnStringifyNoCircular, fnGetCleanName } from './include';
 import { SampleAddressGenerator, GivenNameGenerator, SurnameGenerator, IntegerGenerator, TextGenerator, DateGenerator, UUIDGenerator, CustomSqlGenerator, CustomValueGenerator, FKGenerator } from './generator/generators.component';
 import { WizardStateService } from "./service/wizard-state";
 import { Address, PersonName, SampleDataService } from "./service/sample-data";
@@ -99,7 +99,7 @@ export class GenerateComponent extends BaseComponent {
     
     progressMsg: string = "";
     lineCount: number = 0;
-    //fileSubDir: string;
+    fileSubDir: string;
 
     constructor(router: Router, ngZone: NgZone, wizardStateService: WizardStateService, dataService: SampleDataService, projectService: ProjectService) {
         super(router, ngZone, wizardStateService, dataService, projectService);
@@ -108,13 +108,12 @@ export class GenerateComponent extends BaseComponent {
         var tbls = this.projectService.selectedObjs['U'];
         tbls.forEach(t => {
             // trim unused plugin; cf.plugins is a list of plugins; only the first one is used. The rest are for users to undo changes only
-            this.projectService.project.getAllColumnsByObjIdInst(t.id, t.instance).forEach((cf: ColumnDef) => {
+            this.projectService.getAllColumnsByObjIdInst(t.id, t.instance).forEach((cf: ColumnDef) => {
                 if (cf.plugIn.length > 1)
                     cf.plugIn.splice(1);
             });
         });
     }
-/*
     private substituteAddressField(field: string, addr: any, isSQL:boolean): string {
         var tmp: string = field;
         tmp = field.replace('@id', "'" + addr.id + "'")
@@ -153,7 +152,7 @@ export class GenerateComponent extends BaseComponent {
                             if (!addressData) {
                                 if (this.sampleAdresses[ag.key].length == 0) {
                                     console.log("no more addresses");
-                                    //await this.getSampleAddresses();
+                                    await this.getSampleAddresses();
                                     this.progressMsg = "";
                                 }
                                 addressData = this.sampleAdresses[ag.key].pop();
@@ -175,7 +174,7 @@ export class GenerateComponent extends BaseComponent {
                     else if (cf.plugIn[0] instanceof GivenNameGenerator) {
                         if (this.sampleNames[NAME_TYPE.FN].length == 0) {
                             console.log("no more given names");
-                            //await this.getSampleNames();
+                            await this.getSampleNames();
                             this.progressMsg = "";
                         }
                         let givenName: PersonName = this.sampleNames[NAME_TYPE.FN].pop();
@@ -184,7 +183,7 @@ export class GenerateComponent extends BaseComponent {
                     else if (cf.plugIn[0] instanceof SurnameGenerator) {
                         if (this.sampleNames[NAME_TYPE.LN].length == 0) {
                             console.log("no more given names");
-                            //await this.getSampleNames();
+                            await this.getSampleNames();
                             this.progressMsg = "";
                         }
                         let surname: PersonName = this.sampleNames[NAME_TYPE.LN].pop();
@@ -255,7 +254,7 @@ export class GenerateComponent extends BaseComponent {
                 this.wizardStateService.hideSpinning();
             }
         }
-    }   
+    }
     private generateDeclareVars(colArr: ColumnDef[], fkConstraints: Set<number>, colNames: string[], variables: string[], obj: DBObjDef, objIndex: number) {
         this.declareStmts = [];
         // generate declare varialbles
@@ -302,29 +301,64 @@ export class GenerateComponent extends BaseComponent {
         // generate [rowcount] number INSERTS for each table
         setTimeout(this.generateDataForRow.bind(this, colArr, fkConstraints, colNames, variables, obj, objProgress, objIndex, 0), 0);
     }
-    */
-    private generateData() {
-        let dt = new Date();
-        let fileSubDir:string = dt.toISOString().replace(/\.\d+/,'').replace(/:/g,'');
-        this.cleanUnusedPlugin();
-        var worker = new Worker("../renderer.bundle.js");
-        worker.onmessage = event => {
-            console.log("received msg:");
-            let msg:WorkerMessage = event.data as WorkerMessage;
-            switch (msg.msgType) {
-                case WORKER_MSG_TYPE.OUTPUT:
-                    let msgData:any = msg.data;
-                    this.fnWriteSqlToFile(fileSubDir, this.projectService.connection, fnGetCleanName(msgData.name), msgData.rows, msgData.stmts);
-                    break;
+    private async getSampleAddresses() {
+        this.progressMsg = "Fetching sample addresses";
+        for (let s in this.sampleAdresses) {
+            if (this.sampleAdresses[s].length == 0) { // only get addresses when empty
+                let key: string[] = s.split('-');
+                let arr = await this.dataService.getAddresses(key[0], key[1]);
+                this.sampleAdresses[s] = arr;
             }
-            console.log(event);
         }
-        worker.postMessage(new WorkerMessage({ msgType: WORKER_MSG_TYPE.RENDER, data: this.projectService.project }));        
+    }
+    private async getSampleNames() {
+        this.progressMsg = "Fetching sample names";
+        for (let k of [NAME_TYPE.FN, NAME_TYPE.LN]) {
+            if (this.sampleNames[k].length == 0) {
+                let arr = await this.dataService.getPersonNames(k);
+                this.sampleNames[k] = arr;
+            }
+        }
+    }
+    private async generateData() {
+        let dt = new Date();
+        this.fileSubDir = dt.toISOString().replace(/\.\d+/,'').replace(/:/g,'');
+        
+        let needNames: boolean = false;
+        this.cleanUnusedPlugin();
         this.stmts = [];
         this.progress = [];
         // This is where preprocessing happens. E.g. calling data service to get sample addresses and names
-
+        this.allObjects.forEach(t => {
+            let colArr = this.projectService.getAllColumnsByObjIdInst(t.id, t.instance);
+            colArr.forEach((cf: ColumnDef) => {
+                if (cf.include) {
+                    if (cf.plugIn.length > 0) {
+                        // FK generation is different from other generator
+                        if (cf.plugIn[0] instanceof SampleAddressGenerator) {
+                            let sg: SampleAddressGenerator = cf.plugIn[0] as SampleAddressGenerator;
+                            if (!(sg.key in this.sampleAdresses)) {
+                                this.sampleAdresses[sg.key] = [];
+                            }
+                        }
+                        if (cf.plugIn[0] instanceof GivenNameGenerator || cf.plugIn[0] instanceof SurnameGenerator) {
+                            this.sampleNames[NAME_TYPE.FN] = [];
+                            this.sampleNames[NAME_TYPE.LN] = [];
+                            needNames = true;
+                        }
+                    }
+                }
+            });
+        });
+        this.allObjects.forEach(t => {
+            this.totalRowCnt += (t.rowcount);
+        });
+        await this.getSampleAddresses();
+        if (needNames)
+            await this.getSampleNames();
         this.progressMsg = "";
+        console.log('left getSampleAddress');
+        setTimeout(this.generateDataForObj.bind(this, 0), 0);
     }
     back() {
         this.router.navigate(['/flow']);
@@ -340,13 +374,13 @@ export class GenerateComponent extends BaseComponent {
         */
         this.cleanUnusedPlugin();
         this.projectService.groups.forEach(g => {
-            this.projectService.project.sortGroupMember(g)
+            this.projectService.sortGroupMember(g)
         });
         let projectContent = fnStringifyNoCircular(this.projectService);
         this.fnSaveProject(projectContent);
     }
     ngOnInit() {
-        this.allObjects = this.projectService.project.getAllObjects();
+        this.allObjects = this.projectService.getAllObjects();
         this.allObjects.sort((a, b) => a.sequence - b.sequence);
     }
 }

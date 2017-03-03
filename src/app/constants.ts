@@ -35,6 +35,7 @@ export class COL_DIR_TYPE {
 }
 export class WORKER_MSG_TYPE {
     public static RENDER = "RENDER";    // 
+    public static RENDER_ERR = "RENDER_ERROR";    // 
     public static GET_SAMPLE_DATA_START = "GET_SAMPLE_DATA_START";    // 
     public static GET_SAMPLE_DATA_END = "GET_SAMPLE_DATA_END";    // 
     public static OUTPUT = "OUTPUT";    // 
