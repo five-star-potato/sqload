@@ -316,6 +316,9 @@ export class GenerateComponent extends BaseComponent {
                     let msgData:any = msg.data;
                     this.fnWriteSqlToFile(fileSubDir, this.projectService.connection, fnGetCleanName(msgData.name), msgData.rows, msgData.stmts);
                     break;
+                case WORKER_MSG_TYPE.RENDER_ERR:
+                    alert(msg.data);
+                    break;
             }
             console.log(event);
         }

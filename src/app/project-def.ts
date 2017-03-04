@@ -5,6 +5,23 @@ import * as gen from './generator/generators.component';
 declare var require:(moduleId:string) => any;
 var appConf = require('../app.conf');
 
+export class Address {
+    id:number;
+    lon:number;
+    lat:number;
+    num: string;
+    street: string;
+    city: string;
+    region: string;
+    district: string;
+    country: string;
+    postcode: string;
+}
+export class PersonName {
+    id: number;
+    name: string;
+}
+
 //import { TRON_GLOBAL, TRON_EVENT } from '../constants';
 interface Serializable<T> {
     deserialize(input: Object): T;
