@@ -7,7 +7,6 @@ import { TRON_GLOBAL, TRON_EVENT, OBJ_TYPE, COL_DIR_TYPE } from './constants';
 import { BaseComponent } from './base.component';
 import { OrderBy } from './orderby.component';
 import { WizardStateService } from "./service/wizard-state";
-import { SampleDataService } from "./service/sample-data";
 import { ColumnDef, DBObjDef } from "./project-def";
 import { ProjectService } from './service/project-service';
 import { fnGetLargeRandomNumber } from './include'
@@ -132,8 +131,8 @@ export class ObjectsComponent extends BaseComponent {
     private isAvailCollapsed: { [objType: string]: boolean } = { 'U': false, 'V': false, 'P': false };
     private isSelectedCollapsed: { [objType: string]: boolean } = { 'U': false, 'V': false, 'P': false };
 
-    constructor(router: Router, ngZone: NgZone, wizardStateService: WizardStateService, dataService: SampleDataService, projectService: ProjectService) {
-        super(router, ngZone, wizardStateService, dataService, projectService);
+    constructor(router: Router, ngZone: NgZone, wizardStateService: WizardStateService, projectService: ProjectService) {
+        super(router, ngZone, wizardStateService, projectService);
     }
     private getAvailObjLength(objType: string) {
         // cannot be zero - if zero, the SELECT elemet becomes actually bigger (i.e. default size?)

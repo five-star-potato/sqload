@@ -34,10 +34,14 @@ export class COL_DIR_TYPE {
     public static TBLVW_COL = "TBLVW_COL";  // Table or View Column
 }
 export class WORKER_MSG_TYPE {
-    public static RENDER = "RENDER";    // 
-    public static RENDER_ERR = "RENDER_ERROR";    // 
-    public static GET_SAMPLE_DATA_START = "GET_SAMPLE_DATA_START";    // 
-    public static GET_SAMPLE_DATA_END = "GET_SAMPLE_DATA_END";    // 
-    public static OUTPUT = "OUTPUT";    // 
+    public static RENDER = "RENDER";    
+    public static RENDER_ERR = "RENDER_ERROR";    
+    public static GET_SAMPLE_ADDR_START = "GET_SAMPLE_ADDR_START";    
+    public static GET_SAMPLE_ADDR_END = "GET_SAMPLE_ADDR_END";    
+    public static GET_SAMPLE_NAME_START = "GET_SAMPLE_NAME_START";    
+    public static GET_SAMPLE_NAME_END = "GET_SAMPLE_NAME_END";    
+    public static RENDER_PROGRESS = "RENDER_PROGRESS";
+    public static OUTPUT = "OUTPUT";    
+    public static DONE = "DONE";
 }
 

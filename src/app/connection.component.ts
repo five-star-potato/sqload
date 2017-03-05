@@ -3,7 +3,6 @@ import { Router } from '@angular/router';
 import { TRON_GLOBAL, TRON_EVENT, WORKER_MSG_TYPE } from "./constants";
 import { BaseComponent } from './base.component';
 import { WizardStateService } from "./service/wizard-state";
-import { SampleDataService } from "./service/sample-data";
 import { ConnectionConfig } from "./project-def";
 import { ProjectService, fnIsGroup } from './service/project-service';
 import { WorkerMessage } from './include';
@@ -69,8 +68,8 @@ export class ConnectionComponent extends BaseComponent implements OnInit, AfterV
     @ViewChild('connectForm') form;
     dataSet: any[] = [];
 
-    constructor(router: Router, ngZone: NgZone, wizardStateService: WizardStateService, dataService: SampleDataService, projectService: ProjectService) {
-        super(router, ngZone, wizardStateService, dataService, projectService);
+    constructor(router: Router, ngZone: NgZone, wizardStateService: WizardStateService, projectService: ProjectService) {
+        super(router, ngZone, wizardStateService, projectService);
     }
     back() {
         // Crashing chromium once a project is opened

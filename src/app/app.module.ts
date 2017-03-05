@@ -13,7 +13,6 @@ import { RouterModule, Routes } from '@angular/router';
 import { selectedObjectsPipe } from './pipes.component';
 import { OrderBy } from './orderby.component';
 import { WizardStateService } from "./service/wizard-state";
-import { SampleDataService } from "./service/sample-data";
 import { ProjectService } from "./service/project-service";
 import { SampleAddressConfigComponent } from "./sample-address-config.component";
 
@@ -32,7 +31,7 @@ const appRoutes: Routes = [
 @NgModule({
   imports:      [ BrowserModule, FormsModule, RouterModule.forRoot(appRoutes), HttpModule ],
   declarations: [ AppComponent, ConnectionComponent, HomeComponent, ObjectsComponent, ColumnsComponent, FlowComponent,  GenerateComponent, selectedObjectsPipe, OrderBy, SampleAddressConfigComponent ],
-  providers:    [ WizardStateService, SampleDataService, ProjectService ],
+  providers:    [ WizardStateService, ProjectService ],
   bootstrap:    [ AppComponent ]
 })
 export class AppModule { 

@@ -6,7 +6,6 @@ import { TRON_GLOBAL, TRON_EVENT, OBJ_TYPE, COL_DIR_TYPE } from './constants';
 import { DataGenerator, fnGetDataTypeDesc, fnGetCleanName, fnGetLargeRandomNumber } from './include';
 import * as gen from './generator/generators.component';
 import { WizardStateService } from "./service/wizard-state";
-import { SampleDataService } from "./service/sample-data";
 import { ColumnDef, DBObjDef, OutputMap, GroupDef, DbObjIdentifier } from "./project-def";
 import { ProjectService, fnIsGroup } from './service/project-service';
 import { CommandOutputGenerator } from "./generator/generators.component";
@@ -121,9 +120,9 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
     //D3 related
     svgContainer: any;
 
-    constructor(router: Router, ngZone: NgZone, wizardStateService: WizardStateService, dataService: SampleDataService, projectService: ProjectService,
+    constructor(router: Router, ngZone: NgZone, wizardStateService: WizardStateService, projectService: ProjectService,
         public el: ElementRef, public renderer: Renderer) {
-        super(router, ngZone, wizardStateService, dataService, projectService);
+        super(router, ngZone, wizardStateService, projectService);
     }
     private mappingObjChanged(value) {
         this.outputMapping.dbObjInstance = value;

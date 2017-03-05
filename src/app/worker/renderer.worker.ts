@@ -1,5 +1,5 @@
 //import { TRON_GLOBAL, TRON_EVENT, NAME_TYPE, OBJ_TYPE, COL_DIR_TYPE } from '../constants';
-import { fnGetDataTypeDesc, fnStringifyNoCircular, fnGetCleanName, WorkerMessage, fnGetLargeRandomNumber } from '../include';
+import { fnGetDataTypeDesc, fnStringifyNoCircular, fnGetCleanName, WorkerMessage, fnGetLargeRandomNumber, ProgressData } from '../include';
 import { ProjectStruct, DBObjDef, DbObjIdentifier, OutputMap, ColumnDef, GroupDef, Address, PersonName } from '../project-def';
 import { NAME_TYPE, WORKER_MSG_TYPE, OBJ_TYPE, COL_DIR_TYPE } from "../constants";
 import { SampleAddressGenerator, GivenNameGenerator, SurnameGenerator, IntegerGenerator, TextGenerator, DateGenerator, UUIDGenerator, CustomSqlGenerator, CustomValueGenerator, FKGenerator } from '../generator/generators.component';
@@ -10,6 +10,7 @@ class RendererEngine {
     sampleAdresses = {}; // the assoc array will be { key:  region-country }, values:[] }
     sampleNames = {};
     totalRowCnt: number = 0;
+    runningRowCnt: number = 0;
 
     constructor(public project: ProjectStruct) { }
     private substituteAddressField(field: string, addr: any, isSQL:boolean): string {
@@ -27,9 +28,9 @@ class RendererEngine {
             .replace('@postcode', "'" + (addr.postcode || '').replace("'", isSQL ? "''" : "'") + "'");
         return `${tmp}`;
     }
-
-    private generateDataForRow(colArr: ColumnDef[], fkConstraints: Set<number>, colNames: string[], variables: string[], obj: DBObjDef, objIndex: number) {
+    private generateRows(declareStmts:string[], colArr: ColumnDef[], fkConstraints: Set<number>, colNames: string[], variables: string[], obj: DBObjDef, objIndex: number) {
         let vals: string[] = [];
+        let stmts: string[] = [];
         let k = 0;
         let incr: number = appConf.options.sqlFileMaxInserts;
         // Don't "setTimeout" every row. How about every XXX rows. Does it improve performance?
@@ -81,7 +82,7 @@ class RendererEngine {
                         if (this.sampleNames[NAME_TYPE.LN].length == 0) {
                             console.log("no more given names");
                             this.loadSampleNames();
-                            
+                        }   
                         let surname: PersonName = this.sampleNames[NAME_TYPE.LN].pop();
                         vals.push(`SET ${cf.variable} = '${surname.name}';`);
                     }
@@ -124,30 +125,15 @@ class RendererEngine {
                 str += "EXEC sp_executesql N'" + obj.sql.replace("'","''") + "',N'" + declareParams + "'," + variables.join();
             }
             //console.log(str);
-            this.stmts.push(str);
+            stmts.push(str);
             vals.length = 0;
             k++;
-        }
-        rowCnt += k;
-        this.runningRowCnt += k;
-        objProgress.percent = Math.round(rowCnt * 100 / obj.rowcount);
-        if (rowCnt < obj.rowcount) {
-            this.overallProgress = Math.ceil(this.runningRowCnt * 100 / this.totalRowCnt);
-            console.log("overall progress: " + this.overallProgress.toString());
-            this.fnWriteSqlToFile(this.fileSubDir, this.projectService.connection, fnGetCleanName(obj.name), rowCnt, [...this.declareStmts, ...this.stmts]);
-            this.stmts = [];
-            setTimeout(this.generateDataForRow.bind(this, colArr, fkConstraints, colNames, variables, obj, objProgress, objIndex, rowCnt), 100);
-        }
-        else {
-            objIndex++;
-            if (objIndex < this.allObjects.length) {
-                setTimeout(this.generateDataForObj.bind(this, objIndex), 50);
-            }
-            else {
-                this.overallProgress = 100;
-                this.fnWriteSqlToFile(this.fileSubDir, this.projectService.connection, fnGetCleanName(obj.name), rowCnt, [...this.declareStmts, ...this.stmts]);
-                this.stmts = [];
-                this.wizardStateService.hideSpinning();
+            this.runningRowCnt++;
+
+            if ((k % 1000) == 0 || k >= obj.rowcount) {
+                (<any>postMessage)(new WorkerMessage({msgType: WORKER_MSG_TYPE.OUTPUT, 
+                    data: { name: obj.name, percent: k / obj.rowcount, overallProgress: this.runningRowCnt / this.totalRowCnt, rows: k, stmts: [...declareStmts, ...stmts]}}));
+                stmts = [];
             }
         }
     }   
@@ -195,9 +181,9 @@ class RendererEngine {
         }
         // generate declare vars
         let declareStmts = this.generateDeclareVars(colArr, variables, index);
-        (<any>postMessage)(new WorkerMessage({msgType: WORKER_MSG_TYPE.OUTPUT, data: { name: obj.name, rows: "", stmts: declareStmts }}));
+        //(<any>postMessage)(new WorkerMessage({msgType: WORKER_MSG_TYPE.OUTPUT, data: { name: obj.name, rows: "", stmts: declareStmts }}));
         // generate [rowcount] number INSERTS for each table
-        this.generateDataForRow(colArr, fkConstraints, colNames, variables, obj, index);
+        this.generateRows(declareStmts, colArr, fkConstraints, colNames, variables, obj, index);
     }
     loadSampleAddresses() {
         var xhttp = new XMLHttpRequest();
@@ -205,12 +191,13 @@ class RendererEngine {
             if (this.sampleAdresses[s].length == 0) { // only get addresses when empty
                 let key: string[] = s.split('-');
                 let url = `${appConf.dataService.url}/address?region=${key[0]}&country=${key[1]}&rc=10000`;
-                (<any>postMessage)(new WorkerMessage({msgType: WORKER_MSG_TYPE.GET_SAMPLE_DATA_START}));
+                (<any>postMessage)(new WorkerMessage({msgType: WORKER_MSG_TYPE.GET_SAMPLE_ADDR_START}));
                 xhttp.open("GET", url, false);
                 xhttp.send();
                 this.sampleAdresses[s] = JSON.parse(xhttp.responseText);
                 //console.log(this.sampleAdresses[s][0]);
-                (<any>postMessage)(new WorkerMessage({msgType: WORKER_MSG_TYPE.GET_SAMPLE_DATA_END}));            }
+                (<any>postMessage)(new WorkerMessage({msgType: WORKER_MSG_TYPE.GET_SAMPLE_ADDR_END}));
+            }
         }
     }
     loadSampleNames() {
@@ -218,12 +205,12 @@ class RendererEngine {
         for (let k of [NAME_TYPE.FN, NAME_TYPE.LN]) {
             if (this.sampleNames[k] && this.sampleNames[k].length == 0) {
                 let url = `${appConf.dataService.url}/name?nameType=${k}&rc=1000`;
-                (<any>postMessage)(new WorkerMessage({msgType: WORKER_MSG_TYPE.GET_SAMPLE_DATA_START}));
+                (<any>postMessage)(new WorkerMessage({msgType: WORKER_MSG_TYPE.GET_SAMPLE_NAME_START}));
                 xhttp.open("GET", url, false);
                 xhttp.send();
                 this.sampleNames[k] = JSON.parse(xhttp.responseText);
                 //console.log(this.sampleNames[s][0]);
-                (<any>postMessage)(new WorkerMessage({msgType: WORKER_MSG_TYPE.GET_SAMPLE_DATA_END}));            
+                (<any>postMessage)(new WorkerMessage({msgType: WORKER_MSG_TYPE.GET_SAMPLE_NAME_END}));            
             }
         }
     }
@@ -253,6 +240,7 @@ class RendererEngine {
         });
     }
     generateData() {
+        this.runningRowCnt = 0;
         this.project.getAllObjects().forEach(t => {
             if (t.groupId) {
                 let group:GroupDef = this.project.groups.find(g => g.id == t.groupId);
@@ -266,8 +254,15 @@ class RendererEngine {
         });
         let allObjs: DBObjDef[] = this.project.getAllObjects();
         for (let i = 0; i < allObjs.length; i++) {
+            let obj: DBObjDef = allObjs[i];
+            (<any>postMessage)(new WorkerMessage({msgType: WORKER_MSG_TYPE.RENDER_PROGRESS, data: new ProgressData({
+                name: obj.name,
+                targetRows: obj.rowcount,
+                percent: 0
+            })}));
             this.generateDataForObj(allObjs[i], i);
         }
+        (<any>postMessage)(new WorkerMessage({msgType: WORKER_MSG_TYPE.DONE}));
     }
 }
 

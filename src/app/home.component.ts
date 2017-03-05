@@ -5,7 +5,6 @@ import { TRON_GLOBAL, TRON_EVENT } from './constants';
 import { DataGenerator, fnGetDataTypeDesc } from './include';
 import * as gen from './generator/generators.component';
 import { WizardStateService } from "./service/wizard-state";
-import { SampleDataService } from "./service/sample-data";
 import { ColumnDef, DBObjDef,  ProjectStruct } from "./project-def";
 import { ProjectService } from './service/project-service';
 import { Subscription } from 'rxjs/Subscription';
@@ -33,8 +32,8 @@ import { COL_DIR_TYPE } from './constants';
     ]
 })
 export class HomeComponent extends BaseComponent implements OnInit {
-    constructor(router: Router, ngZone: NgZone, wizardStateService: WizardStateService, dataService: SampleDataService, projectService: ProjectService) {
-        super(router, ngZone, wizardStateService, dataService, projectService);
+    constructor(router: Router, ngZone: NgZone, wizardStateService: WizardStateService, projectService: ProjectService) {
+        super(router, ngZone, wizardStateService, projectService);
     }
     ngOnInit() {
     }

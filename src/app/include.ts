@@ -60,3 +60,18 @@ export class WorkerMessage {
         if (fields) Object.assign(this, fields);
     }
 }
+ 
+export class ProgressData {
+    name: string;
+    targetRows: number;
+    percent: number;
+
+    public constructor(
+        fields?: {
+            name: string;
+            targetRows: number;
+            percent: number;
+        }) {
+        if (fields) Object.assign(this, fields);
+    }
+}

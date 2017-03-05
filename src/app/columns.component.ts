@@ -5,7 +5,6 @@ import { DataGenerator, fnGetDataTypeDesc } from './include';
 import { BaseComponent } from './base.component';
 import * as gen from './generator/generators.component';
 import { WizardStateService } from "./service/wizard-state";
-import { SampleDataService } from "./service/sample-data";
 import { DBObjDef, ColumnDef } from "./project-def";
 import { ProjectService } from "./service/project-service";
 
@@ -50,8 +49,8 @@ export class ColumnsComponent extends BaseComponent implements AfterViewInit {
     // this is just to make initial binding working
     dummyAddressGenerator: gen.SampleAddressGenerator = new gen.SampleAddressGenerator(); 
 
-    constructor(router: Router, ngZone: NgZone, wizardStateService: WizardStateService, dataService: SampleDataService, projectService: ProjectService) {
-        super(router, ngZone, wizardStateService, dataService, projectService);
+    constructor(router: Router, ngZone: NgZone, wizardStateService: WizardStateService, projectService: ProjectService) {
+        super(router, ngZone, wizardStateService, projectService);
     }
     back() {
         this.router.navigate(['/objects']);

@@ -2,7 +2,6 @@ import { NgZone } from '@angular/core';
 import { Router } from '@angular/router';
 import { TRON_GLOBAL, TRON_EVENT, OBJECT_TYPES_LIST, OBJ_TYPE, COL_DIR_TYPE } from './constants';
 import { WizardStateService } from "./service/wizard-state";
-import { SampleDataService } from "./service/sample-data";
 import { DBObjDef } from "./project-def";
 import { ProjectService } from "./service/project-service";
 
@@ -13,15 +12,13 @@ export abstract class BaseComponent {
     protected ngZone: NgZone;
     protected remote: any;
     protected wizardStateService: WizardStateService;
-    protected dataService: SampleDataService;
     protected projectService: ProjectService;
 
-    constructor(router: Router, ngZone: NgZone, wizardStateService: WizardStateService, dataService: SampleDataService, projectService: ProjectService) { 
+    constructor(router: Router, ngZone: NgZone, wizardStateService: WizardStateService, projectService: ProjectService) { 
         this.router = router;
         this.ngZone = ngZone;
         this.remote = electron.remote;
         this.wizardStateService = wizardStateService;
-        this.dataService = dataService;
         this.projectService = projectService;
    }
     abstract back(): void;
