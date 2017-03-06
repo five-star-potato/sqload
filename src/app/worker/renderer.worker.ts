@@ -6,6 +6,14 @@ import { SampleAddressGenerator, GivenNameGenerator, SurnameGenerator, IntegerGe
 declare var require: (moduleId: string) => any;
 var appConf = require('../../app.conf');
 
+class DbObjExecContext {
+    // to store temp vars needed for data generation for each object
+    colDefs: ColumnDef[];
+    fkConstraints: Set<number>;
+    colNames: string[];
+    variables: string[];
+}
+
 class RendererEngine {
     sampleAdresses = {}; // the assoc array will be { key:  region-country }, values:[] }
     sampleNames = {};
@@ -32,12 +40,12 @@ class RendererEngine {
             .replace('@postcode', "'" + (addr.postcode || '').replace("'", isSQL ? "''" : "'") + "'");
         return `${tmp}`;
     }
-    private generateOneRow(colArr: ColumnDef[], fkConstraints: Set<number>, colNames: string[], variables: string[], obj: DBObjDef): string[] {
+    private generateOneRow(colDefs: ColumnDef[], fkConstraints: Set<number>, colNames: string[], variables: string[], obj: DBObjDef): string {
         let vals: string[] = [];
         let stmts: string[] = [];
 
         let addressData: any = null;
-        for (let cf of colArr) {
+        for (let cf of colDefs) {
             if (cf.include) {
                 if (cf.plugIn[0] instanceof CustomSqlGenerator) {
                     let tmpTbl = cf.variable.replace('@', '@T_');
@@ -99,7 +107,7 @@ class RendererEngine {
             fkConstraints.forEach((constraintId) => {
                 let refTable: string;
                 let colAssign: string[] = [];
-                colArr.forEach((cf: ColumnDef) => {
+                colDefs.forEach((cf: ColumnDef) => {
                     if (cf.fkConstraintID == constraintId) {
                         refTable = `${cf.fkSchema}.${cf.fkTable}`;
                         // can't correlate to "variables"" ...
@@ -120,113 +128,20 @@ class RendererEngine {
         }
         else if (obj.objType == OBJ_TYPE.SQL) {
             // just assume all @vars are nvarchar(max) for now
-            let declareParams: string = colArr.map(c => c.name).join(" nvarchar(max), ") + " nvarchar(max)";
+            let declareParams: string = colDefs.map(c => c.name).join(" nvarchar(max), ") + " nvarchar(max)";
             str += "EXEC sp_executesql N'" + obj.sql.replace("'", "''") + "',N'" + declareParams + "'," + variables.join();
         }
-        //console.log(str);
-        stmts.push(str);
-        return stmts;
+        return str;
     }
 
-    private generateRows(declareStmts: string[], colArr: ColumnDef[], fkConstraints: Set<number>, colNames: string[], variables: string[], obj: DBObjDef) {
-        let vals: string[] = [];
+    private generateRows(declareStmts: string[], colDefs: ColumnDef[], fkConstraints: Set<number>, colNames: string[], variables: string[], obj: DBObjDef) {
         let stmts: string[] = [];
         let k = 0;
         let incr: number = appConf.options.sqlFileMaxInserts;
         // Don't "setTimeout" every row. How about every XXX rows. Does it improve performance?
         while (k < obj.rowcount) {
-            let addressData: any = null;
-            for (let cf of colArr) {
-                if (cf.include) {
-                    if (cf.plugIn[0] instanceof CustomSqlGenerator) {
-                        let tmpTbl = cf.variable.replace('@', '@T_');
-                        vals.push(`INSERT INTO ${tmpTbl}(value) EXEC(N'`);
-                        vals.push(cf.plugIn[0].generate());
-                        vals.push(`');\nSELECT TOP 1 ${cf.variable} = value FROM ${tmpTbl};\nDELETE ${tmpTbl};`);
-                    }
-                    // getting data from pre-loaded sample addresses
-                    else if (cf.plugIn[0] instanceof SampleAddressGenerator) {
-                        let expandedField: string, addrVal: string;
-                        try {
-                            let ag: SampleAddressGenerator = (cf.plugIn[0] as SampleAddressGenerator);
-                            if (!addressData) {
-                                if (this.sampleAdresses[ag.key].length == 0) {
-                                    console.log("no more addresses");
-                                    this.loadSampleAddresses();
-                                }
-                                addressData = this.sampleAdresses[ag.key].pop();
-                            }
-                            if (ag.scriptType == "SQL") {
-                                expandedField = this.substituteAddressField(ag.fieldSpec, addressData, true);
-                                vals.push(`SELECT ${cf.variable} = ${expandedField};`);
-                            }
-                            else { // assuming it's JS
-                                expandedField = this.substituteAddressField(ag.fieldSpec, addressData, false);
-                                addrVal = eval(expandedField);
-                                vals.push(`SELECT ${cf.variable} = '${addrVal}';`);
-                            }
-                        }
-                        catch (err) {
-                            console.log(expandedField + "-" + err);
-                        }
-                    }
-                    else if (cf.plugIn[0] instanceof GivenNameGenerator) {
-                        if (this.sampleNames[NAME_TYPE.FN].length == 0) {
-                            console.log("no more given names");
-                            this.loadSampleNames();
-                        }
-                        let givenName: PersonName = this.sampleNames[NAME_TYPE.FN].pop();
-                        vals.push(`SET ${cf.variable} = '${givenName.name}';`);
-                    }
-                    else if (cf.plugIn[0] instanceof SurnameGenerator) {
-                        if (this.sampleNames[NAME_TYPE.LN].length == 0) {
-                            console.log("no more given names");
-                            this.loadSampleNames();
-                        }
-                        let surname: PersonName = this.sampleNames[NAME_TYPE.LN].pop();
-                        vals.push(`SET ${cf.variable} = '${surname.name}';`);
-                    }
-                    else if (!cf.fkConstraintID) {
-                        vals.push(`SET ${cf.variable} = '${cf.plugIn[0].generate()}';`);
-                    }
-                }
-            }
-
-            // Processing all the FK constraints per row
-            let fkSql: string = "";
-            if (fkConstraints.size > 0) {
-                // processing FK assignments
-                fkSql = "SELECT TOP 1 ";
-                fkConstraints.forEach((constraintId) => {
-                    let refTable: string;
-                    let colAssign: string[] = [];
-                    colArr.forEach((cf: ColumnDef) => {
-                        if (cf.fkConstraintID == constraintId) {
-                            refTable = `${cf.fkSchema}.${cf.fkTable}`;
-                            // can't correlate to "variables"" ...
-                            colAssign.push(`${cf.variable} = ${cf.fkColumn}`);
-                        }
-                    });
-                    fkSql += colAssign.join();
-                    fkSql += ` FROM ${refTable} ORDER BY NEWID();\n`;
-                });
-            }
-            let str: string = "";
-            str += vals.join('\n') + '\n';
-            str += fkSql;
-            if (obj.isTableOrView)
-                str += `INSERT INTO ${obj.name}(${colNames.join()}) VALUES(${variables.join()});`;
-            else if (obj.objType == OBJ_TYPE.SP) {
-                str += `EXEC ${obj.name} ${variables.join()};`;
-            }
-            else if (obj.objType == OBJ_TYPE.SQL) {
-                // just assume all @vars are nvarchar(max) for now
-                let declareParams: string = colArr.map(c => c.name).join(" nvarchar(max), ") + " nvarchar(max)";
-                str += "EXEC sp_executesql N'" + obj.sql.replace("'", "''") + "',N'" + declareParams + "'," + variables.join();
-            }
-            //console.log(str);
+            let str = this.generateOneRow(colDefs, fkConstraints, colNames, variables, obj);
             stmts.push(str);
-            vals.length = 0;
             k++;
             this.runningRowCnt++;
 
@@ -239,53 +154,22 @@ class RendererEngine {
             }
         }
     }
-    private generateDeclareVars(colArr: ColumnDef[], variables, obj: DBObjDef): string[] {
+    private generateDeclareVars(colDefs: ColumnDef[]): string[] {
         let declareStmts: string[] = [];
         // generate declare varialbles
-        for (let cf of colArr) {
+        for (let cf of colDefs) {
             if (cf.include) {
-                let varRoot = `${fnGetCleanName(cf.name)}`;
-                cf.variable = `@${obj.id}_${obj.instance}$` + varRoot;
                 declareStmts.push(`DECLARE ${cf.variable} ${fnGetDataTypeDesc(cf)};`);
-                declareStmts.push(`DECLARE @T_${obj.id}_${obj.instance}$${varRoot} TABLE ( value ${fnGetDataTypeDesc(cf)} );`); // not all columns need this; so far only the ones that use CustomSqlGenerator needs it
-                variables.push(cf.variable);
+                declareStmts.push(`DECLARE @T_${cf.variable} TABLE ( value ${fnGetDataTypeDesc(cf)} );`); // not all columns need this; so far only the ones that use CustomSqlGenerator needs it
             }
         }
         return declareStmts;
     }
     private generateDataForObj(obj: DBObjDef) {
-        let fkConstraints: Set<number> = new Set<number>();
-        let colNames: string[] = [];
-        let variables: string[] = [];
+        let dbCtx: DbObjExecContext = this.getDBExecContext(obj);;
+        let declareStmts:string[] = this.generateDeclareVars(dbCtx.colDefs);
 
-        let colArr: ColumnDef[];
-        if (obj.isTableOrView)
-            colArr = obj.columns[COL_DIR_TYPE.TBLVW_COL];
-        else
-            colArr = obj.columns[COL_DIR_TYPE.IN_PARAM];
-        for (let cf of colArr) {
-            if (cf.include) {
-                colNames.push(`[${cf.name}]`);
-                if (cf.plugIn.length == 0 && !cf.fkConstraintID) {
-                    (<any>postMessage)(new WorkerMessage({ msgType: WORKER_MSG_TYPE.RENDER_ERR, data: "Missing plugin and FK: " + cf.name }));
-                    console.log("Missing plugin and FK: " + cf.name);
-                }
-                else if (cf.plugIn.length > 0) {
-                    // FK generation is different from other generator
-                    if (cf.plugIn[0] instanceof FKGenerator) {
-                        if (cf.fkConstraintID > 0) {
-                            // get the unique set of fk constraints; sometimes FK can have multiple columns. These columns must be set to point to the same entry in the referenced table
-                            fkConstraints.add(cf.fkConstraintID);
-                        }
-                    }
-                }
-            }
-        }
-        // generate declare vars
-        let declareStmts = this.generateDeclareVars(colArr, variables, obj);
-        //(<any>postMessage)(new WorkerMessage({msgType: WORKER_MSG_TYPE.OUTPUT, data: { name: obj.name, rows: "", stmts: declareStmts }}));
-        // generate [rowcount] number INSERTS for each table
-        this.generateRows(declareStmts, colArr, fkConstraints, colNames, variables, obj);
+        this.generateRows(declareStmts, dbCtx.colDefs, dbCtx.fkConstraints, dbCtx.colNames, dbCtx.variables, obj);
     }
     loadSampleAddresses() {
         var xhttp = new XMLHttpRequest();
@@ -341,7 +225,79 @@ class RendererEngine {
             });
         });
     }
+    private getDBExecContext(obj: DBObjDef): DbObjExecContext {
+        let dbCtx:DbObjExecContext = new DbObjExecContext();
+
+        let fkConstraints: Set<number> = new Set<number>();
+        let colNames: string[] = [];
+        let variables: string[] = [];
+        let colArr: ColumnDef[];
+        if (obj.isTableOrView)
+            colArr = obj.columns[COL_DIR_TYPE.TBLVW_COL];
+        else
+            colArr = obj.columns[COL_DIR_TYPE.IN_PARAM];
+
+        for (let cf of colArr) {
+            if (cf.include) {
+                let varRoot = `${fnGetCleanName(cf.name)}`;
+                cf.variable = `@${obj.id}_${obj.instance}$` + varRoot;
+                variables.push(cf.variable);
+                colNames.push(`[${cf.name}]`);
+                if (cf.plugIn.length == 0 && !cf.fkConstraintID) {
+                    (<any>postMessage)(new WorkerMessage({ msgType: WORKER_MSG_TYPE.RENDER_ERR, data: "Missing plugin and FK: " + cf.name }));
+                    console.log("Missing plugin and FK: " + cf.name);
+                }
+                else if (cf.plugIn.length > 0) {
+                    // FK generation is different from other generator
+                    if (cf.plugIn[0] instanceof FKGenerator) {
+                        if (cf.fkConstraintID > 0) {
+                            // get the unique set of fk constraints; sometimes FK can have multiple columns. These columns must be set to point to the same entry in the referenced table
+                            fkConstraints.add(cf.fkConstraintID);
+                        }
+                    }
+                }
+            }
+        }
+        dbCtx.colDefs = colArr;
+        dbCtx.colNames = colNames;
+        dbCtx.fkConstraints = fkConstraints;
+        dbCtx.variables = variables;
+        return dbCtx;
+    }
     private generateDataForGroup(grp: GroupDef) {
+        let stmts: string[] = [];
+        let declareStmts: string[] = [];
+        let k = 0;
+        //let incr: number = appConf.options.sqlFileMaxInserts;
+        let firstObj = this.project.getDBObjInstance(grp.members[0].dbObjectId, grp.members[0].instance);
+        // Don't "setTimeout" every row. How about every XXX rows. Does it improve performance?
+        let context: { [key:string]: DbObjExecContext } = {};
+
+        for (let objId of grp.members) {
+            let obj:DBObjDef = this.project.getDBObjInstance(objId.dbObjectId, objId.instance);
+            let ctxKey: string = obj.id + "-" + obj.instance;
+            context[ctxKey] = this.getDBExecContext(obj);;
+            declareStmts = declareStmts.concat(this.generateDeclareVars(context[ctxKey].colDefs));
+        }
+
+        while (k < firstObj.rowcount) {
+            for (let objId of grp.members) {
+                let ctx: DbObjExecContext = context[objId.dbObjectId + "-" + objId.instance];
+                let obj:DBObjDef = this.project.getDBObjInstance(objId.dbObjectId, objId.instance);
+                let str = this.generateOneRow(ctx.colDefs, ctx.fkConstraints, ctx.colNames, ctx.variables, obj);
+                stmts.push(str);
+                this.runningRowCnt++;
+            }
+            k++;
+            if ((k % 1000) == 0 || k >= firstObj.rowcount) {
+                (<any>postMessage)(new WorkerMessage({
+                    msgType: WORKER_MSG_TYPE.OUTPUT,
+                    data: { name: "group - " + firstObj.name, percent: k / firstObj.rowcount, overallProgress: this.runningRowCnt / this.totalRowCnt, rows: k, stmts: [...declareStmts, ...stmts] }
+                }));
+                stmts = [];
+            }
+        }
+
         for (let objId of grp.members) {
             let obj: DBObjDef = this.project.getAllObjects().find(t => t.id == objId.dbObjectId && t.instance == objId.instance);
 
