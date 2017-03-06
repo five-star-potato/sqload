@@ -592,7 +592,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             .attr("width", szTxtRows)
             .attr("height", d => d.height = 20)
             .html((d, i) =>
-                `<input class="form-control input-sm" id="txtRows_${i}" data-obj-id="${d.id}" data-obj-inst="${d.instance}"  type="text" style="width:${szTxtRows}px">`)
+                `<input class="form-control input-sm" id="txtRows_${i}" data-obj-id="${d.id}" data-obj-inst="${d.instance}"  type="text" style="width:${szTxtRows}px" value="${d.rowcount}">`)
             .merge(updateSel)
             .style("display", d => this.projectService.project.isFirstObjInGroup(d) || !d.groupId ? "" : "none" )
             .attr("x", sx + this.maxObjWidth + 20)

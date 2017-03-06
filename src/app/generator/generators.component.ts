@@ -168,7 +168,7 @@ export class CustomSqlGenerator extends DataGenerator {
             this.sql = sql;
     }
     generate(): String {
-        return this.sql;
+        return this.sql.replace(/'/g, "''");
     }
 }
 

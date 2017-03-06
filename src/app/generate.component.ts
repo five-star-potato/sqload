@@ -160,17 +160,22 @@ export class GenerateComponent extends BaseComponent {
     }
     next() {
         this.wizardStateService.showSpinning("generate");
+        this.preprocessing();
         this.generateData();
+    }
+    private preprocessing() {
+        // do some house cleaning here
+        this.cleanUnusedPlugin();
+        this.projectService.groups.forEach(g => {
+            this.projectService.project.sortGroupMember(g)
+        });
     }
     private async saveProject() {
         /*
                 let somePromises = [1, 2, 3, 4, 5].map(n => Promise.resolve(n));
                 let resolvedPromises = await Promise.all(somePromises);
         */
-        this.cleanUnusedPlugin();
-        this.projectService.groups.forEach(g => {
-            this.projectService.project.sortGroupMember(g)
-        });
+        this.preprocessing();
         let projectContent = fnStringifyNoCircular(this.projectService);
         this.fnSaveProject(projectContent);
     }
