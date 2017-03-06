@@ -133,7 +133,6 @@ class RendererEngine {
         }
         return str;
     }
-
     private generateRows(declareStmts: string[], colDefs: ColumnDef[], fkConstraints: Set<number>, colNames: string[], variables: string[], obj: DBObjDef) {
         let stmts: string[] = [];
         let k = 0;
