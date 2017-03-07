@@ -121,7 +121,7 @@ class RendererEngine {
         let str: string = "";
         str += vals.join('\n') + '\n';
         str += fkSql;
-        if (obj.isTableOrView)
+        if (obj.isTableOrView())
             str += `INSERT INTO ${obj.name}(${colNames.join()}) VALUES(${variables.join()});`;
         else if (obj.objType == OBJ_TYPE.SP) {
             str += `INSERT INTO ${obj.tmpTbl}\n`;
@@ -130,8 +130,13 @@ class RendererEngine {
         else if (obj.objType == OBJ_TYPE.SQL) {
             // just assume all @vars are nvarchar(max) for now
             str += `INSERT INTO ${obj.tmpTbl}\n`;
-            let declareParams: string = colDefs.map(c => c.name).join(" nvarchar(max), ") + " nvarchar(max)";
-            str += "EXEC sp_executesql N'" + obj.sql.replace("'", "''") + "',N'" + declareParams + "'," + variables.join();
+            if (colDefs.length > 0) {
+                let declareParams: string = colDefs.map(c => c.name + " nvarchar(max)").join();
+                str += "EXEC sp_executesql N'" + obj.sql.replace("'", "''") + "',N'" + declareParams + "'," + variables.join() + ";";
+            }
+            else {
+                str += "EXEC sp_executesql N'" + obj.sql.replace("'", "''") + "';"
+            }
         }
         return str;
     }
@@ -174,9 +179,9 @@ class RendererEngine {
             // create temp table
             if (obj.columns[COL_DIR_TYPE.RSLTSET].length > 0) {
                 obj.tmpTbl = `@T_RESULT$${obj.id}_${obj.instance}`;
-                let tmpTblStmt:string = `DECLARE ${obj.tmpTbl} (`;
+                let tmpTblStmt:string = `DECLARE ${obj.tmpTbl} TABLE (`;
                 for (let c of obj.columns[COL_DIR_TYPE.RSLTSET]) {
-                    tmpTblStmt += `\n${c.name} ${c.dataType},`;
+                    tmpTblStmt += `\n[${c.name}] ${c.dataType},`;
                 }
                 tmpTblStmt = tmpTblStmt.slice(0, -1);
                 tmpTblStmt += ");\n"
@@ -246,7 +251,7 @@ class RendererEngine {
         let colNames: string[] = [];
         let variables: string[] = [];
         let colArr: ColumnDef[];
-        if (obj.isTableOrView)
+        if (obj.isTableOrView())
             colArr = obj.columns[COL_DIR_TYPE.TBLVW_COL];
         else
             colArr = obj.columns[COL_DIR_TYPE.IN_PARAM];
