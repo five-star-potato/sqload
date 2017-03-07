@@ -124,8 +124,8 @@ export class ObjectsComponent extends BaseComponent {
     currSQL: string;
     currSQLName: string;
     currSQLObj: DBObjDef;
-    tmpSqlVars: string[];
-    sqlParser = require('sqlite-parser');
+    //tmpSqlVars: string[];
+    //sqlParser = require('sqlite-parser');
 
     // isAvailCollapsed and isSelectedCollapsed is to control the open/close of the tree structures of Table/View/Procedure ...
     private isAvailCollapsed: { [objType: string]: boolean } = { 'U': false, 'V': false, 'P': false };
@@ -147,9 +147,10 @@ export class ObjectsComponent extends BaseComponent {
     private toggleSelectedView(objType: string) {
         this.isSelectedCollapsed[objType] = !this.isSelectedCollapsed[objType];
     }
-    private getFirstResultSet(dbObj:DBObjDef)  {
+    private getFirstResultSet(dbObj:DBObjDef, sqlVars:string[])  {
         dbObj.columns[COL_DIR_TYPE.RSLTSET] = [];
-        this.getSQL2Fn(this.projectService.connection, `exec sp_describe_first_result_set N'${dbObj.sql.replace("'", "''")}'`)
+        let sql = `exec sp_describe_first_result_set N'${dbObj.sql.replace("'", "''")}', @params=N'${sqlVars.map(v => v + " varchar(80)").join()}'`;
+        this.getSQL2Fn(this.projectService.connection, sql)
             .then(res => {
                 res.forEach((row) => {
                     if (row['is_hidden'] == '0') {
@@ -171,23 +172,18 @@ export class ObjectsComponent extends BaseComponent {
                 this.fnMsgBox("Get First Result Set Error", err.toString());
             });
     }
-    private async parseSQL(dbObj:DBObjDef) {
+    private parseSQL(dbObj:DBObjDef) {
         let objId = dbObj.id;
-        let ast = this.sqlParser(dbObj.sql);
-        // I have modified sqlite-parser.js in node_modules dist folder. Don't reinstall this package
-        // change is: ... peg$otherExpectation("FROM Clause"),function(f,s){return{'from':s,'savedFromStartPos': peg$savedPos};}, ...
-        let fromPos = ast.statement[0].savedFromStartPos;
-        this.tmpSqlVars = [];
-        this.findSqlVars(ast);
+        let sqlVars = this.findSqlVars(dbObj.sql);
         // don't want to completely replaces all the coldefs, because that will erase all the connections too
         // removed unused coldef; add new from tmpVars; leave existing alone; so that connections can be preserved
         let colArr = dbObj.columns[COL_DIR_TYPE.IN_PARAM];
         for (let i = colArr.length - 1; i >= 0; i--) {
             let col:ColumnDef = colArr[i];
-            if (!this.tmpSqlVars.find(t => t == col.name))
+            if (!sqlVars.find(t => t == col.name))
                 colArr.splice(i, 1);
         }
-        this.tmpSqlVars.forEach(v => {
+        sqlVars.forEach(v => {
             if (!colArr.find(c => c.name == v)) {
                 colArr.push(new ColumnDef({
                     name: v,
@@ -198,12 +194,17 @@ export class ObjectsComponent extends BaseComponent {
                 }));
             }
         });
-        this.getFirstResultSet(dbObj);
+        this.getFirstResultSet(dbObj, sqlVars);
     }
     private saveSQLChanges() {
         this.currSQLObj.sql = this.currSQL;
         this.currSQLObj.name = this.currSQLName;
-        this.parseSQL(this.currSQLObj);
+        try {
+            this.parseSQL(this.currSQLObj);
+        }
+        catch(err) {
+            this.fnMsgBox("Parsing SQL Error", err.toString());            
+        }
     }
     private editSQL(obj: DBObjDef) {
         this.currSQLObj = obj;
@@ -226,11 +227,17 @@ export class ObjectsComponent extends BaseComponent {
             id: fnGetLargeRandomNumber(), // probably a big random number is enough to make it unique
             name: 'Sample SQL',
             objType: OBJ_TYPE.SQL,
-            sql: "select * from Person.Person where BusinessEntityId = @EntityId",
+            sql: "select * from sys.objects where object_id = @id",
             selected: true
         });
         this.objects[OBJ_TYPE.SQL].push(newObj);
-        this.parseSQL(newObj);
+        try {
+            this.parseSQL(newObj);
+        }
+        catch(err) {
+            this.fnMsgBox("Parsing SQL Error", err.toString());   
+            return;        
+        }
         this.updateGlobalObjectsSelection();
         this.rearrangeSequence();
         this.isSelectedCollapsed[OBJ_TYPE.SQL] = false;
@@ -276,17 +283,12 @@ export class ObjectsComponent extends BaseComponent {
     back() {
         this.router.navigate(['/connect']);
     }
-    private findSqlVars(obj) {
-        for (var property in obj) {
-            if (obj.hasOwnProperty(property)) {
-                if (typeof obj[property] == "object") {
-                    this.findSqlVars(obj[property]);
-                } else {
-                    if (property == "type" && obj["type"] == "variable" && obj["format"] == "named")
-                        this.tmpSqlVars.push(obj["name"]);
-                }
-            }
-        }
+    private findSqlVars(sql: string): string[] {
+        //var re = /(@[a-z|0-9|#|_|\$]+)(?!.+\1[^a-z|0-9|#|_|\$]+)/i; // negative look-ahead to remove duplicates, and avoid substrings of one var is misunderstood as same var. E.g @id and @id2 are two distinct vars
+        // look-ahead behaved weird
+        let re = /(@[a-z|0-9|#|_|\$]+)/gi;
+        let set = new Set(sql.match(re));
+        return [...set];
     }
     private rearrangeSequence() {
         // merge all the selected object together and sort it; for sequence = null, leave them at the end (because they are newly selected objects)

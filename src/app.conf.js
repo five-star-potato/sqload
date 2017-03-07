@@ -8,11 +8,11 @@ module.exports = {
         token: ""
     },
     database : {
-        serverName: '192.168.0.17',
+        serverName: 'DELL',
         instanceName: '',
-        databaseName: 'HomeDB',
-        userName: 'home_user',
-        password: '12345!'
+        databaseName: 'TestDB',
+        userName: 'sa',
+        password: ''
     }
     
 };
