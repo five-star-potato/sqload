@@ -124,10 +124,12 @@ class RendererEngine {
         if (obj.isTableOrView)
             str += `INSERT INTO ${obj.name}(${colNames.join()}) VALUES(${variables.join()});`;
         else if (obj.objType == OBJ_TYPE.SP) {
+            str += `INSERT INTO ${obj.tmpTbl}\n`;
             str += `EXEC ${obj.name} ${variables.join()};`;
         }
         else if (obj.objType == OBJ_TYPE.SQL) {
             // just assume all @vars are nvarchar(max) for now
+            str += `INSERT INTO ${obj.tmpTbl}\n`;
             let declareParams: string = colDefs.map(c => c.name).join(" nvarchar(max), ") + " nvarchar(max)";
             str += "EXEC sp_executesql N'" + obj.sql.replace("'", "''") + "',N'" + declareParams + "'," + variables.join();
         }
@@ -168,6 +170,19 @@ class RendererEngine {
         let dbCtx: DbObjExecContext = this.getDBExecContext(obj);;
         let declareStmts:string[] = this.generateDeclareVars(dbCtx.colDefs);
 
+        if (obj.objType == OBJ_TYPE.SP || obj.objType == OBJ_TYPE.SQL) {
+            // create temp table
+            if (obj.columns[COL_DIR_TYPE.RSLTSET].length > 0) {
+                obj.tmpTbl = `@T_RESULT$${obj.id}_${obj.instance}`;
+                let tmpTblStmt:string = `DECLARE ${obj.tmpTbl} (`;
+                for (let c of obj.columns[COL_DIR_TYPE.RSLTSET]) {
+                    tmpTblStmt += `\n${c.name} ${c.dataType},`;
+                }
+                tmpTblStmt = tmpTblStmt.slice(0, -1);
+                tmpTblStmt += ");\n"
+                declareStmts.push(tmpTblStmt);
+            }
+        }
         this.generateRows(declareStmts, dbCtx.colDefs, dbCtx.fkConstraints, dbCtx.colNames, dbCtx.variables, obj);
     }
     loadSampleAddresses() {
@@ -277,6 +292,7 @@ class RendererEngine {
             let ctxKey: string = obj.id + "-" + obj.instance;
             context[ctxKey] = this.getDBExecContext(obj);;
             declareStmts = declareStmts.concat(this.generateDeclareVars(context[ctxKey].colDefs));
+            this.processedObjs.push(obj);
         }
 
         while (k < firstObj.rowcount) {
@@ -289,17 +305,13 @@ class RendererEngine {
             }
             k++;
             if ((k % 1000) == 0 || k >= firstObj.rowcount) {
+                console.log("running row count: " + this.runningRowCnt);
                 (<any>postMessage)(new WorkerMessage({
                     msgType: WORKER_MSG_TYPE.OUTPUT,
-                    data: { name: "group - " + firstObj.name, percent: k / firstObj.rowcount, overallProgress: this.runningRowCnt / this.totalRowCnt, rows: k, stmts: [...declareStmts, ...stmts] }
+                    data: { name: "group_" + firstObj.name, percent: k / firstObj.rowcount, overallProgress: this.runningRowCnt / this.totalRowCnt, rows: k, stmts: [...declareStmts, ...stmts] }
                 }));
                 stmts = [];
             }
-        }
-
-        for (let objId of grp.members) {
-            let obj: DBObjDef = this.project.getAllObjects().find(t => t.id == objId.dbObjectId && t.instance == objId.instance);
-
         }
     }
     generateData() {
@@ -310,12 +322,16 @@ class RendererEngine {
                 let group: GroupDef = this.project.groups.find(g => g.id == t.groupId);
                 let objId: DbObjIdentifier = group.members[0];
                 let dbObj: DBObjDef = this.project.getDBObjInstance(objId.dbObjectId, objId.instance);
+                console.log("dbObj:");
+                console.log(dbObj);
                 this.totalRowCnt += dbObj.rowcount;
             }
             else {
                 this.totalRowCnt += t.rowcount;
             }
         });
+        console.log("total row count:" + this.totalRowCnt);
+
         let allObjs: DBObjDef[] = this.project.getAllObjects();
         for (let i = 0; i < allObjs.length; i++) {
             let obj: DBObjDef = allObjs[i];
@@ -336,6 +352,13 @@ class RendererEngine {
                 this.processedObjs.push(allObjs[i]);
             }
             else { // group
+                (<any>postMessage)(new WorkerMessage({
+                    msgType: WORKER_MSG_TYPE.RENDER_PROGRESS, data: new ProgressData({
+                        name: "group_" + obj.name,
+                        targetRows: obj.rowcount,
+                        percent: 0
+                    })
+                }));
                 let grp: GroupDef = this.project.groups.find(g => g.id == obj.groupId);
                 this.generateDataForGroup(grp);
             }

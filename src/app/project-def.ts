@@ -122,6 +122,7 @@ export class DBObjDef implements Serializable<DBObjDef> {
     fromStmtStartPos?: number; // the position of the word "from" in the SQL; in order to insert INTO ##tmpTbl for storing results
     isDrag: boolean = false;
     groupId: number;
+    tmpTbl: string;
 
     public deserialize(input) {
         this.id = input.id;

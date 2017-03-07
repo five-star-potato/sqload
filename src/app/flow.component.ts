@@ -386,15 +386,14 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             .style("fill", "#ccc");
 
         this.svgContainer.append("text")
-            .attr("x", 35)
+            .attr("x", 70)
             .attr("y", 10)
             .attr("color", "#888")
-            .text("Group");
+            .text("Select");
         this.svgContainer.append("text")
-            .attr("x", 110)
+            .attr("x", 160)
             .attr("y", 10)
             .attr("color", "#888")
-
             .text("Database Object");
         this.svgContainer.append("line")
             .attr("x1", 0)
@@ -427,7 +426,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
         let rightPos: { [objId: number]: number } = {};
         this.mergedDbObjs = this.projectService.project.getAllObjects();;
         // SX is the x of the db object rect; 
-        let sx: number = 120;
+        let sx: number = 160;
         let szTxtRows = 80;
         let colBtnHeight: number = 25;
         // find width of the object with the longest name
@@ -846,7 +845,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
                 let objId = $(e.target).data("obj-id");
                 let inst = $(e.target).data("obj-inst");
                 let dbObj: DBObjDef = this.projectService.project.getDBObjInstance(objId, inst);
-                dbObj.rowcount = e.target.value;
+                dbObj.rowcount = parseInt(e.target.value);
             }
             //});
         });
