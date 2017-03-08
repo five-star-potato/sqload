@@ -2,7 +2,7 @@
 import { fnGetDataTypeDesc, fnStringifyNoCircular, fnGetCleanName, WorkerMessage, fnGetLargeRandomNumber, ProgressData } from '../include';
 import { ProjectStruct, DBObjDef, DbObjIdentifier, OutputMap, ColumnDef, GroupDef, Address, PersonName } from '../project-def';
 import { NAME_TYPE, WORKER_MSG_TYPE, OBJ_TYPE, COL_DIR_TYPE } from "../constants";
-import { SampleAddressGenerator, GivenNameGenerator, SurnameGenerator, IntegerGenerator, TextGenerator, DateGenerator, UUIDGenerator, CustomSqlGenerator, CustomValueGenerator, FKGenerator } from '../generator/generators.component';
+import { SampleAddressGenerator, GivenNameGenerator, SurnameGenerator, IntegerGenerator, TextGenerator, DateGenerator, UUIDGenerator, CustomSqlGenerator, CustomValueGenerator, FKGenerator, CommandOutputGenerator } from '../generator/generators.component';
 declare var require: (moduleId: string) => any;
 var appConf = require('../../app.conf');
 
@@ -77,6 +77,20 @@ class RendererEngine {
                     }
                     catch (err) {
                         console.log(expandedField + "-" + err);
+                    }
+                }
+                else if (cf.plugIn[0] instanceof CommandOutputGenerator) {
+                    let cmdGen:CommandOutputGenerator = cf.plugIn[0] as CommandOutputGenerator;
+                    if (cmdGen.outputMappingId) {
+                        let outMap:OutputMap = this.project.outputMaps.find(m => m.id == cmdGen.outputMappingId);
+                        let dbObj:DBObjDef = this.project.getDBObjInstance(outMap.dbObjectId, outMap.instance);
+                        let outCol:ColumnDef = dbObj.columns[outMap.dirType.toString()].find(c => c.name == outMap.outputName);
+                        if (outMap.dirType == COL_DIR_TYPE.IN_PARAM || outMap.dirType == COL_DIR_TYPE.TBLVW_COL)
+                            vals.push(`SET ${cf.variable} = ${outCol.variable};`);
+                        else {
+                            // resultset?
+                            vals.push(`SELECT TOP 1 ${cf.variable} = [${outCol.name}] FROM ${dbObj.tmpTbl} ORDER BY NEWID();`);
+                        } 
                     }
                 }
                 else if (cf.plugIn[0] instanceof GivenNameGenerator) {
@@ -171,10 +185,7 @@ class RendererEngine {
         }
         return declareStmts;
     }
-    private generateDataForObj(obj: DBObjDef) {
-        let dbCtx: DbObjExecContext = this.getDBExecContext(obj);;
-        let declareStmts:string[] = this.generateDeclareVars(dbCtx.colDefs);
-
+    private generateTempTblDeclaration(obj:DBObjDef): string {
         if (obj.objType == OBJ_TYPE.SP || obj.objType == OBJ_TYPE.SQL) {
             // create temp table
             if (obj.columns[COL_DIR_TYPE.RSLTSET].length > 0) {
@@ -185,9 +196,18 @@ class RendererEngine {
                 }
                 tmpTblStmt = tmpTblStmt.slice(0, -1);
                 tmpTblStmt += ");\n"
-                declareStmts.push(tmpTblStmt);
+                return tmpTblStmt;
             }
         }
+        return null;
+    }
+    private generateDataForObj(obj: DBObjDef) {
+        let dbCtx: DbObjExecContext = this.getDBExecContext(obj);;
+        let declareStmts:string[] = this.generateDeclareVars(dbCtx.colDefs);
+        let tmpTbl:string = this.generateTempTblDeclaration(obj);
+        if (tmpTbl)
+            declareStmts.push(tmpTbl);
+
         this.generateRows(declareStmts, dbCtx.colDefs, dbCtx.fkConstraints, dbCtx.colNames, dbCtx.variables, obj);
     }
     loadSampleAddresses() {
@@ -295,8 +315,11 @@ class RendererEngine {
         for (let objId of grp.members) {
             let obj:DBObjDef = this.project.getDBObjInstance(objId.dbObjectId, objId.instance);
             let ctxKey: string = obj.id + "-" + obj.instance;
-            context[ctxKey] = this.getDBExecContext(obj);;
+            context[ctxKey] = this.getDBExecContext(obj);
             declareStmts = declareStmts.concat(this.generateDeclareVars(context[ctxKey].colDefs));
+            let tmpTbl:string = this.generateTempTblDeclaration(obj);
+            if (tmpTbl)
+                declareStmts.push(tmpTbl);
             this.processedObjs.push(obj);
         }
 
@@ -307,6 +330,11 @@ class RendererEngine {
                 let str = this.generateOneRow(ctx.colDefs, ctx.fkConstraints, ctx.colNames, ctx.variables, obj);
                 stmts.push(str);
                 this.runningRowCnt++;
+            }
+            for (let objId of grp.members) {
+                let obj:DBObjDef = this.project.getDBObjInstance(objId.dbObjectId, objId.instance);
+                if (obj.tmpTbl)
+                    stmts.push(`DELETE FROM ${obj.tmpTbl};`);
             }
             k++;
             if ((k % 1000) == 0 || k >= firstObj.rowcount) {
