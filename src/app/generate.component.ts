@@ -1,6 +1,6 @@
 import { Component, OnInit, NgZone } from '@angular/core';
 import { Router } from '@angular/router';
-import { TRON_GLOBAL, TRON_EVENT, NAME_TYPE, OBJ_TYPE, COL_DIR_TYPE, WORKER_MSG_TYPE } from './constants';
+import { TRON_GLOBAL, TRON_EVENT, NAME_TYPE, OBJ_TYPE, COL_DIR_TYPE, WORKER_MSG_TYPE, DIALOG_MSG_TYPE } from './constants';
 import { BaseComponent } from './base.component';
 import { fnGetDataTypeDesc, fnStringifyNoCircular, fnGetCleanName, WorkerMessage, ProgressData } from './include';
 import { SampleAddressGenerator, GivenNameGenerator, SurnameGenerator, IntegerGenerator, TextGenerator, DateGenerator, UUIDGenerator, CustomSqlGenerator, CustomValueGenerator, FKGenerator } from './generator/generators.component';
@@ -59,6 +59,30 @@ var appConf = require('../app.conf');
                 <button style="margin-top:30px" class='btn btn-primary nav-btn' (click)="saveProject()">Save Project</button>
             </div>
         </div>
+
+<div class="modal fade" id="modalMsgBox" tabindex="-1" role="dialog" aria-labelledby="">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title">SQL Scripts</h4>
+         All SQL scripts are saved in this directory:<br>
+
+    <div class="input-group">
+      <input id="scriptPath" type="text" class="form-control" value="{{modalMsg}}">
+      <span class="input-group-btn">
+        <button data-clipboard-target="#scriptPath" class="btn btnCopyText btn-secondary" type="button"><i class="fa fa-files-o" aria-hidden="true"></i></button>
+      </span>
+    </div>
+         You can modify the output directory in <span style='font-style:italic'>app.config.js</span> file
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+        
     `,
     styleUrls: [
         './css/host.css'
@@ -89,6 +113,8 @@ export class GenerateComponent extends BaseComponent {
     runningRowCnt: number = 0;
     sampleAdresses = {}; // the assoc array will be { key:  region-country }, values:[] }
     sampleNames = {};    
+    modalTitle: string;
+    modalMsg: string;
     
     progressMsg: string = "";
     lineCount: number = 0;
@@ -146,6 +172,9 @@ export class GenerateComponent extends BaseComponent {
                     case WORKER_MSG_TYPE.DONE:
                         this.wizardStateService.hideSpinning();
                         this.progressMsg = "Data generation is finished";
+                        this.modalTitle = "SQL Scripts Generated";
+                        this.modalMsg = appConf.options.sqlOutputDir + "/" + fileSubDir;
+                        jQuery("#modalMsgBox").modal();
                         break;
                 }
             });

@@ -44,4 +44,7 @@ export class WORKER_MSG_TYPE {
     public static OUTPUT = "OUTPUT";    
     public static DONE = "DONE";
 }
-
+export class DIALOG_MSG_TYPE {
+    public static ERR = "error";
+    public static INFO = "info";
+}

@@ -1,6 +1,6 @@
 import { Component, OnInit, NgZone, ViewChild, AfterViewInit } from '@angular/core';
 import { Router } from '@angular/router';
-import { TRON_GLOBAL, TRON_EVENT, WORKER_MSG_TYPE } from "./constants";
+import { TRON_GLOBAL, TRON_EVENT, WORKER_MSG_TYPE, DIALOG_MSG_TYPE } from "./constants";
 import { BaseComponent } from './base.component';
 import { WizardStateService } from "./service/wizard-state";
 import { ConnectionConfig } from "./project-def";

@@ -41,7 +41,6 @@ function openProjectFile() {
         });
     }
 }
-
 function writeSqlToFile(subDir, connection, prefix, counter, content) {
     // assume content is any array
     var fileDir = `${appConf.options.sqlOutputDir}/${subDir}`;

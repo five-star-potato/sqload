@@ -2,7 +2,7 @@ import * as d3 from 'd3';
 import { Component, NgZone, ElementRef, Renderer, OnDestroy } from "@angular/core";
 import { Router } from '@angular/router';
 import { BaseComponent } from "./base.component";
-import { TRON_GLOBAL, TRON_EVENT, OBJ_TYPE, COL_DIR_TYPE } from './constants';
+import { TRON_GLOBAL, TRON_EVENT, OBJ_TYPE, COL_DIR_TYPE, DIALOG_MSG_TYPE } from './constants';
 import { DataGenerator, fnGetDataTypeDesc, fnGetCleanName, fnGetLargeRandomNumber } from './include';
 import * as gen from './generator/generators.component';
 import { WizardStateService } from "./service/wizard-state";
@@ -806,7 +806,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
         });
         let newGrp:GroupDef;
         if (chkObjs.length <= 1) {
-            this.fnMsgBox("You need to select more than one object to group");
+            this.fnMsgBox("Grouping", "You need to select more than one object to group");
             return;
         }
         let obj = chkObjs[0];

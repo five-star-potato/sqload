@@ -51,7 +51,7 @@ module.exports = {
             { from: 'src/jquery-3.1.1.js'},
             { from: 'node_modules/bootstrap/dist/js/bootstrap.min.js'},
             */
-            //{ from: 'src/app/worker.js'},            
+            { from: 'node_modules/clipboard/dist/clipboard.min.js'},            
             { from: 'src/css', to: "css" },
             { from: 'node_modules/font-awesome/css/font-awesome.css', to: "css" },
             { from: 'src/img', to: "img" },

@@ -1,6 +1,6 @@
 import { Component, OnInit, NgZone, TemplateRef, ViewChild, AfterViewInit } from '@angular/core';
 import { Router } from '@angular/router';
-import { TRON_GLOBAL, TRON_EVENT, OBJ_TYPE, OBJECT_TYPES_LIST, COL_DIR_TYPE } from './constants';
+import { TRON_GLOBAL, TRON_EVENT, OBJ_TYPE, OBJECT_TYPES_LIST, COL_DIR_TYPE, DIALOG_MSG_TYPE } from './constants';
 import { DataGenerator, fnGetDataTypeDesc } from './include';
 import { BaseComponent } from './base.component';
 import * as gen from './generator/generators.component';

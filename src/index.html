@@ -16,6 +16,7 @@
     	var electron = require('electron');
 	</script>
 	<script src="https://use.fontawesome.com/d0b0359521.js"></script>
+	<script src="clipboard.min.js"></script>	
 
 	<style>
 
@@ -210,6 +211,7 @@ button.flowBtnColumn {
 		<my-app></my-app>
 		<script type="text/javascript">
 			/* All required js, including main.ts(js) are injected by webpack as part of app.bundle.js. See webpack.config.js for reference */
+			new Clipboard('.btnCopyText');
 		</script>
 	</div>
 </body>	

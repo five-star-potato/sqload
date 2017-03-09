@@ -3,7 +3,7 @@
 /// <reference path="../../node_modules/@types/jquery/index.d.ts" />
 import { Component, OnInit, NgZone, Pipe } from '@angular/core';
 import { Router } from '@angular/router';
-import { TRON_GLOBAL, TRON_EVENT, OBJ_TYPE, COL_DIR_TYPE } from './constants';
+import { TRON_GLOBAL, TRON_EVENT, OBJ_TYPE, COL_DIR_TYPE, DIALOG_MSG_TYPE } from './constants';
 import { BaseComponent } from './base.component';
 import { OrderBy } from './orderby.component';
 import { WizardStateService } from "./service/wizard-state";
