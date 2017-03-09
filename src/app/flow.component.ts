@@ -51,7 +51,6 @@ interface SrcTargetLine {
             <div class="flexbox-item footer">
                 <button style="margin-top:30px" class='btn btn-primary nav-btn' (click)="back()">Back</button>
                 <button style="margin-top:30px" class='btn btn-primary nav-btn' (click)="next()">Next</button>
-                <button style="margin-top:30px" class='btn btn-warning nav-btn' (click)="drawFlow()">Redraw</button>
             </div>
         </div>
 
@@ -79,6 +78,24 @@ interface SrcTargetLine {
         <button type="button" class="btn btn-danger" [hidden]="hideDeleteOutputMapping()" data-dismiss="modal" (click)="deleteOutputMapping()">Delete mapping</button>
         <button type="button" class="btn btn-primary" [disabled]="checkMappingDisabled()" data-dismiss="modal" (click)="saveOutputMappingChanges()">Save mapping</button>
         <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="modalInvalidMap" tabindex="-1" role="dialog" aria-labelledby="">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title">Invalid Mapping</h4>
+      </div>
+      <div class="modal-body">
+        Linked database objects must be placed in the same group. Invalid mapping(s) have been removed. Do you want to continue to the next page?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" data-dismiss="modal" (click)="continueNext()">Yes</button>
+        <button type="button" class="btn btn-default" data-dismiss="modal">No</button>
       </div>
     </div>
   </div>
@@ -115,6 +132,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
     dragdx: number; dragdy: number; // offset to the dragged object when first dragged
     maxObjWidth: number;
     gfx: any;
+    invalidMap: OutputMap[];
     //breakpt: boolean = false;
 
     //D3 related
@@ -222,9 +240,18 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
     back() {
         this.router.navigate(['/columns']);
     }
-    next() {
+    continueNext() {
         this.wizardStateService.projectChange({ type: TRON_EVENT.refresh });
         this.router.navigate(['/generate']);
+    }
+    next() {
+        let linksRemoved:boolean = this.projectService.project.removeInvalidOutputMapping();
+        if (linksRemoved) {
+            $("#modalInvalidMap").modal('show');
+            this.drawFlow();
+        }
+        else
+            this.continueNext();
     }
     private getColumnDirClass(dirType: COL_DIR_TYPE): string {
         switch (dirType) {

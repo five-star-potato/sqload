@@ -165,7 +165,7 @@ class RendererEngine {
             k++;
             this.runningRowCnt++;
 
-            if ((k % 1000) == 0 || k >= obj.rowcount) {
+            if ((k % 100000) == 0 || k >= obj.rowcount) {
                 (<any>postMessage)(new WorkerMessage({
                     msgType: WORKER_MSG_TYPE.OUTPUT,
                     data: { name: obj.name, percent: k / obj.rowcount, overallProgress: this.runningRowCnt / this.totalRowCnt, rows: k, stmts: [...declareStmts, ...stmts] }
@@ -337,7 +337,7 @@ class RendererEngine {
                     stmts.push(`DELETE FROM ${obj.tmpTbl};`);
             }
             k++;
-            if ((k % 1000) == 0 || k >= firstObj.rowcount) {
+            if ((k % 100000) == 0 || k >= firstObj.rowcount) {
                 console.log("running row count: " + this.runningRowCnt);
                 (<any>postMessage)(new WorkerMessage({
                     msgType: WORKER_MSG_TYPE.OUTPUT,

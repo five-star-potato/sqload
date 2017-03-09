@@ -372,7 +372,7 @@ export class ProjectStruct implements Serializable<ProjectStruct> {
         return tmp;
     }
     // find all the columns of an object that have been used for mapping (output). We need this list to draw the rect and connect the line.
-    // I don't intend to draw every columns even if they don't participate in mapping
+    // I don't intend to draw every columns if they don't participate in mapping
     getMappedOutputColumns(objId: number, instance: number): ColumnDef[] {
         let colArr: ColumnDef[] = [];
         for (let o of this.outputMaps) {
@@ -585,5 +585,28 @@ export class ProjectStruct implements Serializable<ProjectStruct> {
         }
         let index = this.groups.findIndex(g => g.id == grp.id);
         this.groups.splice(index, 1);
+    }
+    public removeInvalidOutputMapping():boolean {
+        // objects can only be linked if they are in the same group
+        let invalidMap: OutputMap[] = [];
+        for (let o of this.getAllObjects()) {
+            let cols:ColumnDef[] = this.getMappableTargetColumns(o.id, o.instance);
+            for (let c of cols) {
+                let cmdGen:gen.CommandOutputGenerator = c.plugIn[0] as gen.CommandOutputGenerator;
+                let outMap:OutputMap = this.outputMaps.find(m => m.id == cmdGen.outputMappingId);
+                let target:DBObjDef = this.getDBObjInstance(outMap.dbObjectId, outMap.instance);
+                if (!o.groupId || !target.groupId || (o.groupId != target.groupId)) {
+                    invalidMap.push(outMap);
+                    cmdGen.outputMappingId = null;
+                }
+            }
+        }
+        if (invalidMap.length) {
+            invalidMap.forEach(m =>{
+                this.reduceOutputMappingRefCount(m);
+            });
+            return true;
+        }
+        return false; //nothing removed
     }
 }

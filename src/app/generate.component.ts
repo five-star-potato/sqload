@@ -146,16 +146,20 @@ export class GenerateComponent extends BaseComponent {
                 switch (msg.msgType) {
                     case WORKER_MSG_TYPE.OUTPUT:
                         let msgData:any = msg.data;
-                        this.progress[this.progress.length - 1].percent = msgData.percent * 100;
-                        this.overallProgress = msgData.overallProgress * 100;
-                        this.fnWriteSqlToFile(fileSubDir, this.projectService.connection, fnGetCleanName(msgData.name), msgData.rows, msgData.stmts);
+                        setTimeout(() => {
+                            this.progress[this.progress.length - 1].percent = msgData.percent * 100;
+                            this.overallProgress = msgData.overallProgress * 100;
+                            this.fnWriteSqlToFile(fileSubDir, this.projectService.connection, fnGetCleanName(msgData.name), msgData.rows, msgData.stmts);
+                        },0);
                         break;
                     case WORKER_MSG_TYPE.RENDER_ERR:
                         alert(msg.data);
                         break;
                     case WORKER_MSG_TYPE.RENDER_PROGRESS:
                         let progData: ProgressData = msg.data as ProgressData;
-                        this.progress.push(progData);
+                        setTimeout(() => {
+                            this.progress.push(progData);
+                        }, 0);
                         break;
                     case WORKER_MSG_TYPE.GET_SAMPLE_ADDR_START:
                         this.progressMsg = "Fetching sample addresses";
@@ -201,8 +205,8 @@ export class GenerateComponent extends BaseComponent {
     }
     private async saveProject() {
         /*
-                let somePromises = [1, 2, 3, 4, 5].map(n => Promise.resolve(n));
-                let resolvedPromises = await Promise.all(somePromises);
+            let somePromises = [1, 2, 3, 4, 5].map(n => Promise.resolve(n));
+            let resolvedPromises = await Promise.all(somePromises);
         */
         this.preprocessing();
         let projectContent = fnStringifyNoCircular(this.projectService);
