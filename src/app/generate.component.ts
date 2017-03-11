@@ -22,7 +22,7 @@ var appConf = require('../app.conf');
                     <div style="display:flex; flex-direction:column; width:100%">
                         <p>Overall Progress <span class="blink_me progress_msg">{{progressMsg}}</span></p>
                         <div class="progress">
-                            <div class="progress-bar progress-bar-striped active" role="progressbar"
+                            <div class="progress-bar progress-bar-striped active" role="progressbar" style="color:#aaa"
                             aria-valuenow="40" aria-valuemin="0" aria-valuemax="100" [style.width]="overallProgress + '%'">
                                 {{ overallProgress }}%
                             </div>
@@ -41,7 +41,7 @@ var appConf = require('../app.conf');
                                     <td>{{p.targetRows.toLocaleString()}}</td>
                                     <td>
                                         <div class="progress">
-                                        <div class="progress-bar progress-bar-warning" role="progressbar" [style.width]="p.percent + '%'">
+                                        <div class="progress-bar progress-bar-warning" role="progressbar" style="color:#aaa" [style.width]="p.percent + '%'">
                                             {{ p.percent }}%
                                         </div>
                                         </div>                          
@@ -146,20 +146,17 @@ export class GenerateComponent extends BaseComponent {
                 switch (msg.msgType) {
                     case WORKER_MSG_TYPE.OUTPUT:
                         let msgData:any = msg.data;
-                        setTimeout(() => {
-                            this.progress[this.progress.length - 1].percent = msgData.percent * 100;
-                            this.overallProgress = msgData.overallProgress * 100;
-                            this.fnWriteSqlToFile(fileSubDir, this.projectService.connection, fnGetCleanName(msgData.name), msgData.rows, msgData.stmts);
-                        },0);
+                        this.progress[this.progress.length - 1].percent = msgData.percent * 100;
+                        this.overallProgress = Math.round(msgData.overallProgress * 100);
+                        console.log("OUTPUT: progress: " + this.overallProgress);
+                        this.fnWriteSqlToFile(fileSubDir, this.projectService.connection, fnGetCleanName(msgData.name), msgData.rows, msgData.stmts);
                         break;
                     case WORKER_MSG_TYPE.RENDER_ERR:
                         alert(msg.data);
                         break;
                     case WORKER_MSG_TYPE.RENDER_PROGRESS:
                         let progData: ProgressData = msg.data as ProgressData;
-                        setTimeout(() => {
-                            this.progress.push(progData);
-                        }, 0);
+                        this.progress.push(progData);   
                         break;
                     case WORKER_MSG_TYPE.GET_SAMPLE_ADDR_START:
                         this.progressMsg = "Fetching sample addresses";

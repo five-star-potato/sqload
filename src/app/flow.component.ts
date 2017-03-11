@@ -91,7 +91,8 @@ interface SrcTargetLine {
         <h4 class="modal-title">Invalid Mapping</h4>
       </div>
       <div class="modal-body">
-        Linked database objects must be placed in the same group. Invalid mapping(s) have been removed. Do you want to continue to the next page?
+        Linked database objects must be placed in the same group, and the source must be above the target. Invalid mapping(s) have been detected. They will be removed the next time the project is saved.
+        <p>Do you want to continue to next page?</p>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-primary" data-dismiss="modal" (click)="continueNext()">Yes</button>
@@ -245,8 +246,8 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
         this.router.navigate(['/generate']);
     }
     next() {
-        let linksRemoved:boolean = this.projectService.project.removeInvalidOutputMapping();
-        if (linksRemoved) {
+        let invalidLinks:boolean = this.projectService.project.detectInvalidOutputMapping();
+        if (invalidLinks) {
             $("#modalInvalidMap").modal('show');
             this.drawFlow();
         }
@@ -449,6 +450,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             
     }
     private drawFlow() {
+        let maxHeight:number;
         let shiftRight: number = 0;
         let rightPos: { [objId: number]: number } = {};
         this.mergedDbObjs = this.projectService.project.getAllObjects();;
@@ -461,22 +463,24 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
         this.maxObjWidth = Math.max(this.maxObjWidth, 300);
         let maxY = this.mergedDbObjs.length * 100; // calculate the upperbound of rangeRound.
         // yband to calculate the y position for each dbobject, using id:instance as a marker
-        let yband = d3.scaleBand().rangeRound([50, maxY]).domain(this.mergedDbObjs.map(o => o.id + ":" + o.instance));
+        let yband = d3.scaleBand().rangeRound([50, maxY]).domain(this.mergedDbObjs.map(o => o.sequence + ":" + o.id + ":" + o.instance));
         this.mergedDbObjs.forEach(o => {
             // preset the y
             if (!o.isDrag) {
-                o.y = yband(o.id + ":" + o.instance);
+                o.y = yband(o.sequence + ":" + o.id + ":" + o.instance);
                 //console.log(o.name + ":" + o.y);
             }
         });
+        this.svgContainer.attr("height", this.mergedDbObjs[this.mergedDbObjs.length - 1].y + 500);
 
         // Draw group boundaries
         for (let grp of this.projectService.project.groups) {
             if (!grp.isDrag) {
                 let minY = Number.MAX_VALUE; let maxY = Number.MIN_VALUE;
                 for (let objId of grp.members) {
-                    minY = Math.min(minY, yband(objId.dbObjectId + ":" + objId.instance));
-                    maxY = Math.max(maxY, yband(objId.dbObjectId + ":" + objId.instance));
+                    let dbObj:DBObjDef = this.projectService.project.getDBObjInstance(objId.dbObjectId, objId.instance)
+                    minY = Math.min(minY, yband(dbObj.sequence + ":" + objId.dbObjectId + ":" + objId.instance));
+                    maxY = Math.max(maxY, yband(dbObj.sequence + ":" + objId.dbObjectId + ":" + objId.instance));
                 }
                 grp.x = sx - 10; grp.y = minY;
                 grp.y = minY - 20;
@@ -499,7 +503,6 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             .merge(updateSel)
             .attr("x", d => d.x) // set up the connection point origin
             .attr("y", d => {
-                //console.log("group y: " + d.y);
                 return d.y;
             })
             .attr("height", d => d.height);
@@ -607,7 +610,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             .merge(updateSel)
             .style("display", d => this.projectService.project.isFirstObjInGroup(d) || !d.groupId ? "" : "none" )
             .attr("x", sx - 70)
-            .attr("y", d => yband(d.id + ":" + d.instance));
+            .attr("y", d => yband(d.sequence + ":" + d.id + ":" + d.instance));
 
         // the "# rows" textbox
         let selectRowsTextbox = this.svgContainer.selectAll(".selectRowsTextbox");
@@ -622,7 +625,7 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             .merge(updateSel)
             .style("display", d => this.projectService.project.isFirstObjInGroup(d) || !d.groupId ? "" : "none" )
             .attr("x", sx + this.maxObjWidth + 20)
-            .attr("y", d => yband(d.id + ":" + d.instance));
+            .attr("y", d => yband(d.sequence + ":" + d.id + ":" + d.instance));
 
         // instead of using nested data, it's simpler to flatten the mappable target as one collection
         let allMappableTarget: ColumnDef[] = []
@@ -654,7 +657,8 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
                 return tmpX;
             })
             .attr('y', (c: ColumnDef) => {
-                return c.y = yband(String(c.dbObjId + ":" + c.instance)) + 3;
+                let dbObj:DBObjDef = this.projectService.project.getDBObjInstance(c.dbObjId, c.instance);
+                return c.y = yband(String(dbObj.sequence + ":" + c.dbObjId + ":" + c.instance)) + 3;
             });
 
         // Preparing to draw the mapped output colums (source)
@@ -685,7 +689,8 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
                 return tmpX;
             })
             .attr('y', (c: ColumnDef) => {
-                return c.y = yband(String(c.dbObjId + ":" + c.instance)) + 4;
+                let dbObj:DBObjDef = this.projectService.project.getDBObjInstance(c.dbObjId, c.instance);
+                return c.y = yband(String(dbObj.sequence + ":" + c.dbObjId + ":" + c.instance)) + 4;
             });
 
         let mappedColTextSelection = this.svgContainer.selectAll('.mappedOutputText')
@@ -914,7 +919,6 @@ export class FlowComponent extends BaseComponent implements OnDestroy {
             }
             // });
         });
-
         this.objects = this.projectService.project.selectedObjs;
         this.mergedDbObjs = this.projectService.project.getAllObjects();;
 

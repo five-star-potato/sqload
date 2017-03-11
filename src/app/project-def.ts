@@ -586,27 +586,39 @@ export class ProjectStruct implements Serializable<ProjectStruct> {
         let index = this.groups.findIndex(g => g.id == grp.id);
         this.groups.splice(index, 1);
     }
-    public removeInvalidOutputMapping():boolean {
-        // objects can only be linked if they are in the same group
-        let invalidMap: OutputMap[] = [];
-        for (let o of this.getAllObjects()) {
-            let cols:ColumnDef[] = this.getMappableTargetColumns(o.id, o.instance);
+    private getInvalidCommandGenerators():gen.CommandOutputGenerator[] {
+        let invalidGen:gen.CommandOutputGenerator[] = [];
+        for (let t of this.getAllObjects()) {
+            let cols:ColumnDef[] = this.getMappableTargetColumns(t.id, t.instance);
             for (let c of cols) {
                 let cmdGen:gen.CommandOutputGenerator = c.plugIn[0] as gen.CommandOutputGenerator;
                 let outMap:OutputMap = this.outputMaps.find(m => m.id == cmdGen.outputMappingId);
-                let target:DBObjDef = this.getDBObjInstance(outMap.dbObjectId, outMap.instance);
-                if (!o.groupId || !target.groupId || (o.groupId != target.groupId)) {
-                    invalidMap.push(outMap);
-                    cmdGen.outputMappingId = null;
+                let origin:DBObjDef = this.getDBObjInstance(outMap.dbObjectId, outMap.instance);
+                if (!t.groupId || !origin.groupId || (t.groupId != origin.groupId)) {
+                    invalidGen.push(cmdGen);
+                }
+                else if (t.sequence < origin.sequence) {
+                    invalidGen.push(cmdGen);
                 }
             }
         }
-        if (invalidMap.length) {
-            invalidMap.forEach(m =>{
-                this.reduceOutputMappingRefCount(m);
-            });
+        return invalidGen;
+    }
+    public detectInvalidOutputMapping():boolean {
+        // objects can only be linked if they are in the same group
+        let invalidGen = this.getInvalidCommandGenerators();
+        if (invalidGen.length) {
             return true;
         }
         return false; //nothing removed
+    }
+    public removeInvalidOutputMapping():void {
+        // objects can only be linked if they are in the same group
+        let invalidGen = this.getInvalidCommandGenerators();
+        for (let cmdGen of invalidGen) {
+            cmdGen.outputMappingId = null;
+            let outMap:OutputMap = this.outputMaps.find(m => m.id == cmdGen.outputMappingId);
+            this.reduceOutputMappingRefCount(outMap);
+        }
     }
 }

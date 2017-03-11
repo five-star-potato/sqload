@@ -27,18 +27,21 @@ class RendererEngine {
     }
     private substituteAddressField(field: string, addr: any, isSQL: boolean): string {
         var tmp: string = field;
-        tmp = field.replace('@id', "'" + addr.id + "'")
-            .replace('@lat', "'" + (addr.lat || '0') + "'")
-            .replace('@lon', "'" + (addr.lon || '0') + "'")
-            .replace('@num', "'" + (addr.num || '').replace("'", isSQL ? "''" : "'") + "'")
-            .replace('@unit', "'" + (addr.unit || '').replace("'", isSQL ? "''" : "'") + "'")
-            .replace('@street', "'" + (addr.street || '').replace("'", isSQL ? "''" : "'") + "'")
-            .replace('@city', "'" + (addr.city || '').replace("'", isSQL ? "''" : "'") + "'")
-            .replace('@region', "'" + (addr.region || '').replace("'", isSQL ? "''" : "'") + "'")
-            .replace('@district', "'" + (addr.district || '').replace("'", isSQL ? "''" : "'") + "'")
-            .replace('@country', "'" + (addr.country || '').replace("'", isSQL ? "''" : "'") + "'")
-            .replace('@postcode', "'" + (addr.postcode || '').replace("'", isSQL ? "''" : "'") + "'");
-        return `${tmp}`;
+        console.log('sub addr');
+        console.log(addr);
+        tmp = field.replace('@id', "'" + addr.id + "'");
+        tmp = tmp.replace('@lat', "'" + (addr.lat || '0') + "'")
+        tmp = tmp.replace('@lon', "'" + (addr.lon || '0') + "'")
+        tmp = tmp.replace('@num', "'" + (addr.num || '').replace("'", isSQL ? "''" : "\\'") + "'")
+        tmp = tmp.replace('@unit', "'" + (addr.unit || '').replace("'", isSQL ? "''" : "\\'") + "'")
+        tmp = tmp.replace('@street', "'" + (addr.street || '').replace("'", isSQL ? "''" : "\\'") + "'")
+        tmp = tmp.replace('@city', "'" + (addr.city || '').replace("'", isSQL ? "''" : "\\'") + "'")
+        tmp = tmp.replace('@region', "'" + (addr.region || '').replace("'", isSQL ? "''" : "\\'") + "'")
+        tmp = tmp.replace('@district', "'" + (addr.district || '').replace("'", isSQL ? "''" : "\\'") + "'")
+        tmp = tmp.replace('@country', "'" + (addr.country || '').replace("'", isSQL ? "''" : "\\'") + "'")
+        tmp = tmp.replace('@postcode', "'" + (addr.postcode || '').replace("'", isSQL ? "''" : "\\'") + "'");
+        console.log(tmp);
+        return tmp;
     }
     private generateOneRow(colDefs: ColumnDef[], fkConstraints: Set<number>, colNames: string[], variables: string[], obj: DBObjDef): string {
         let vals: string[] = [];
@@ -48,7 +51,7 @@ class RendererEngine {
         for (let cf of colDefs) {
             if (cf.include) {
                 if (cf.plugIn[0] instanceof CustomSqlGenerator) {
-                    let tmpTbl = cf.variable.replace('@', '@T_');
+                    let tmpTbl = cf.variable.replace('@', '@T_@');
                     vals.push(`INSERT INTO ${tmpTbl}(value) EXEC(N'`);
                     vals.push(cf.plugIn[0].generate());
                     vals.push(`');\nSELECT TOP 1 ${cf.variable} = value FROM ${tmpTbl};\nDELETE ${tmpTbl};`);
@@ -56,7 +59,7 @@ class RendererEngine {
                 // getting data from pre-loaded sample addresses
                 else if (cf.plugIn[0] instanceof SampleAddressGenerator) {
                     let expandedField: string, addrVal: string;
-                    try {
+                    //try {
                         let ag: SampleAddressGenerator = (cf.plugIn[0] as SampleAddressGenerator);
                         if (!addressData) {
                             if (this.sampleAdresses[ag.key].length == 0) {
@@ -71,13 +74,14 @@ class RendererEngine {
                         }
                         else { // assuming it's JS
                             expandedField = this.substituteAddressField(ag.fieldSpec, addressData, false);
-                            addrVal = eval(expandedField);
+                            //let a = expandedField.indexOf("'");
+                            addrVal = eval(expandedField).replace("'", "''");
                             vals.push(`SELECT ${cf.variable} = '${addrVal}';`);
                         }
-                    }
-                    catch (err) {
-                        console.log(expandedField + "-" + err);
-                    }
+                    //}
+                    //catch (err) {
+                    //    console.log(expandedField + "-" + err);
+                    //}
                 }
                 else if (cf.plugIn[0] instanceof CommandOutputGenerator) {
                     let cmdGen:CommandOutputGenerator = cf.plugIn[0] as CommandOutputGenerator;
@@ -165,10 +169,14 @@ class RendererEngine {
             k++;
             this.runningRowCnt++;
 
-            if ((k % 100000) == 0 || k >= obj.rowcount) {
+            if ((k % 10000) == 0 || k >= obj.rowcount) {
                 (<any>postMessage)(new WorkerMessage({
                     msgType: WORKER_MSG_TYPE.OUTPUT,
-                    data: { name: obj.name, percent: k / obj.rowcount, overallProgress: this.runningRowCnt / this.totalRowCnt, rows: k, stmts: [...declareStmts, ...stmts] }
+                    data: { name: obj.name, 
+                            percent: k / obj.rowcount, 
+                            overallProgress: this.runningRowCnt / this.totalRowCnt, 
+                            rows: k, 
+                            stmts: [...declareStmts, ...stmts] }
                 }));
                 stmts = [];
             }
@@ -337,11 +345,15 @@ class RendererEngine {
                     stmts.push(`DELETE FROM ${obj.tmpTbl};`);
             }
             k++;
-            if ((k % 100000) == 0 || k >= firstObj.rowcount) {
+            if ((k % 10000) == 0 || k >= firstObj.rowcount) {
                 console.log("running row count: " + this.runningRowCnt);
                 (<any>postMessage)(new WorkerMessage({
                     msgType: WORKER_MSG_TYPE.OUTPUT,
-                    data: { name: "group_" + firstObj.name, percent: k / firstObj.rowcount, overallProgress: this.runningRowCnt / this.totalRowCnt, rows: k, stmts: [...declareStmts, ...stmts] }
+                    data: { name: "group_" + firstObj.name, 
+                            percent: k / firstObj.rowcount, 
+                            overallProgress: this.runningRowCnt / this.totalRowCnt, 
+                            rows: k, 
+                            stmts: [...declareStmts, ...stmts] }
                 }));
                 stmts = [];
             }

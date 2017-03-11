@@ -52,23 +52,25 @@ export class WizardStateService {
                 proj.selectedObjs[OBJ_TYPE.SQL].length > 0);
     }
     private isColumnReady(proj: ProjectStruct):boolean {
-        proj.selectedObjs[OBJ_TYPE.TB].forEach(t => {
-            if (t.columns[COL_DIR_TYPE.TBLVW_COL].length == 0) return false;
-        })
-        proj.selectedObjs[OBJ_TYPE.VW].forEach(t => {
-            if (t.columns[COL_DIR_TYPE.TBLVW_COL].length == 0) return false;
-        })
-        proj.selectedObjs[OBJ_TYPE.SP].forEach(t => {
-            if (t.columns[COL_DIR_TYPE.IN_PARAM].length == 0 &&
-                t.columns[COL_DIR_TYPE.OUT_PARAM].length == 0 &&
-                t.columns[COL_DIR_TYPE.RSLTSET ].length == 0)
+        for (let obj of proj.selectedObjs[OBJ_TYPE.TB]) {
+            if (obj.columns[COL_DIR_TYPE.TBLVW_COL].length == 0)
+                return false;
+        }
+        for (let obj of proj.selectedObjs[OBJ_TYPE.VW]) {
+            if (obj.columns[COL_DIR_TYPE.TBLVW_COL].length == 0)
+                return false;
+        }
+        for (let obj of proj.selectedObjs[OBJ_TYPE.VW]) {
+            if (obj.columns[COL_DIR_TYPE.IN_PARAM].length == 0 &&
+                obj.columns[COL_DIR_TYPE.OUT_PARAM].length == 0 &&
+                obj.columns[COL_DIR_TYPE.RSLTSET ].length == 0)
                 return false; // you have to have something in, out params or result set
-        })
-        proj.selectedObjs[OBJ_TYPE.SP].forEach(t => {
-            if (t.columns[COL_DIR_TYPE.IN_PARAM].length == 0 &&
-                t.columns[COL_DIR_TYPE.RSLTSET ].length == 0)
+        }        
+        for (let obj of proj.selectedObjs[OBJ_TYPE.SP]) {
+            if (obj.columns[COL_DIR_TYPE.IN_PARAM].length == 0 &&
+                obj.columns[COL_DIR_TYPE.RSLTSET ].length == 0)
                 return false; // you have to have something in, out params or result set
-        })
+        }
         return true;
     }
     private isRowsReady(proj: ProjectStruct):boolean {
