@@ -21,7 +21,7 @@ function init() {
 app.on('ready', _ => {
     init();
     var mainWindow = new BrowserWindow({
-        width: 800,
+        width: 1200,
         height: 900
     });
     /* this is the entry point of angular 2 */

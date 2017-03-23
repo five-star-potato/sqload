@@ -52,9 +52,8 @@ class RendererEngine {
             if (cf.include) {
                 if (cf.plugIn[0] instanceof CustomSqlGenerator) {
                     let tmpTbl = cf.variable.replace('@', '@T_@');
-                    vals.push(`INSERT INTO ${tmpTbl}(value) EXEC(N'`);
-                    vals.push(cf.plugIn[0].generate());
-                    vals.push(`');\nSELECT TOP 1 ${cf.variable} = value FROM ${tmpTbl};\nDELETE ${tmpTbl};`);
+                    vals.push(`INSERT INTO ${tmpTbl}(value) EXEC(${cf.variable}_SQL);`);
+                    vals.push(`SELECT TOP 1 ${cf.variable} = value FROM ${tmpTbl};\nDELETE ${tmpTbl};`);
                 }
                 // getting data from pre-loaded sample addresses
                 else if (cf.plugIn[0] instanceof SampleAddressGenerator) {
@@ -189,6 +188,13 @@ class RendererEngine {
             if (cf.include) {
                 declareStmts.push(`DECLARE ${cf.variable} ${fnGetDataTypeDesc(cf)};`);
                 declareStmts.push(`DECLARE @T_${cf.variable} TABLE ( value ${fnGetDataTypeDesc(cf)} );`); // not all columns need this; so far only the ones that use CustomSqlGenerator needs it
+                // if the column uses Custom SQL, put the SQL statment in a @var so that we don't have to repeat it over and over
+                if (cf.plugIn[0] instanceof CustomSqlGenerator) {
+                    let tmpTbl = cf.variable.replace('@', '@T_@');
+                    declareStmts.push(`DECLARE ${cf.variable}_SQL NVARCHAR(MAX) = '`);
+                    declareStmts.push(cf.plugIn[0].generate());
+                    declareStmts.push(`';`);
+                }
             }
         }
         return declareStmts;

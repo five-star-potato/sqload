@@ -19,6 +19,7 @@ import { COL_DIR_TYPE } from './constants';
                 <strong>SQLOAD</strong> is test data generation tool built for SQL Server. We have been using SQL Server 2016 for testing, but it should be backward compatible to version 2012 as well. Our goal is to 
                 allow flexible and <i>realistic</i> test data generation. The tool includes various <a href="#">data generators</a> to provide the flexibility of generating data of different shapes. 
                 <br /><br />      
+                <h5 style="font-family:Arial;opacity:0.5">Version 1.1.1</h5>
             </div>
         </div>
         
