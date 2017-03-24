@@ -65,6 +65,8 @@ class RendererEngine {
                                 console.log("no more addresses");
                                 this.loadSampleAddresses();
                             }
+                            console.log(ag);
+                            console.log(this.sampleAdresses);
                             addressData = this.sampleAdresses[ag.key].pop();
                         }
                         if (ag.scriptType == "SQL") {
@@ -229,7 +231,10 @@ class RendererEngine {
         for (let s in this.sampleAdresses) {
             if (this.sampleAdresses[s].length == 0) { // only get addresses when empty
                 let key: string[] = s.split('-');
+                console.log("key");
+                console.log(key);
                 let url = `${appConf.dataService.url}/address?region=${key[0]}&country=${key[1]}&rc=10000`;
+                console.log(url);
                 (<any>postMessage)(new WorkerMessage({ msgType: WORKER_MSG_TYPE.GET_SAMPLE_ADDR_START }));
                 xhttp.open("GET", url, false);
                 xhttp.send();

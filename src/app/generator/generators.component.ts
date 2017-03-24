@@ -231,7 +231,7 @@ export class SampleAddressGenerator extends DataGenerator {
     public region:string;
     public country:string;
     public fieldSpec:string;
-    public scriptType:string; /* javascript vs sql */
+    public scriptType:string = 'JS'; /* javascript vs sql */
 
     constructor() {
         super("SampleAddressGenerator");

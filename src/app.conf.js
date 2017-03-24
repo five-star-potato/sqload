@@ -10,7 +10,7 @@ module.exports = {
     database : {
         serverName: 'DELL',
         instanceName: '',
-        databaseName: 'TestDB',
+        databaseName: 'AdventureWorks2014',
         userName: 'sa',
         password: ''
     }
