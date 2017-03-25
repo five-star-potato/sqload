@@ -27,8 +27,6 @@ class RendererEngine {
     }
     private substituteAddressField(field: string, addr: any, isSQL: boolean): string {
         var tmp: string = field;
-        console.log('sub addr');
-        console.log(addr);
         tmp = field.replace('@id', "'" + addr.id + "'");
         tmp = tmp.replace('@lat', "'" + (addr.lat || '0') + "'")
         tmp = tmp.replace('@lon', "'" + (addr.lon || '0') + "'")
@@ -40,7 +38,6 @@ class RendererEngine {
         tmp = tmp.replace('@district', "'" + (addr.district || '').replace("'", isSQL ? "''" : "\\'") + "'")
         tmp = tmp.replace('@country', "'" + (addr.country || '').replace("'", isSQL ? "''" : "\\'") + "'")
         tmp = tmp.replace('@postcode', "'" + (addr.postcode || '').replace("'", isSQL ? "''" : "\\'") + "'");
-        console.log(tmp);
         return tmp;
     }
     private generateOneRow(colDefs: ColumnDef[], fkConstraints: Set<number>, colNames: string[], variables: string[], obj: DBObjDef): string {
@@ -62,11 +59,9 @@ class RendererEngine {
                         let ag: SampleAddressGenerator = (cf.plugIn[0] as SampleAddressGenerator);
                         if (!addressData) {
                             if (this.sampleAdresses[ag.key].length == 0) {
-                                console.log("no more addresses");
+                                //console.log("no more addresses");
                                 this.loadSampleAddresses();
                             }
-                            console.log(ag);
-                            console.log(this.sampleAdresses);
                             addressData = this.sampleAdresses[ag.key].pop();
                         }
                         if (ag.scriptType == "SQL") {
@@ -100,7 +95,6 @@ class RendererEngine {
                 }
                 else if (cf.plugIn[0] instanceof GivenNameGenerator) {
                     if (this.sampleNames[NAME_TYPE.FN].length == 0) {
-                        console.log("no more given names");
                         this.loadSampleNames();
                     }
                     let givenName: PersonName = this.sampleNames[NAME_TYPE.FN].pop();
@@ -108,7 +102,6 @@ class RendererEngine {
                 }
                 else if (cf.plugIn[0] instanceof SurnameGenerator) {
                     if (this.sampleNames[NAME_TYPE.LN].length == 0) {
-                        console.log("no more given names");
                         this.loadSampleNames();
                     }
                     let surname: PersonName = this.sampleNames[NAME_TYPE.LN].pop();
@@ -231,15 +224,11 @@ class RendererEngine {
         for (let s in this.sampleAdresses) {
             if (this.sampleAdresses[s].length == 0) { // only get addresses when empty
                 let key: string[] = s.split('-');
-                console.log("key");
-                console.log(key);
                 let url = `${appConf.dataService.url}/address?region=${key[0]}&country=${key[1]}&rc=10000`;
-                console.log(url);
                 (<any>postMessage)(new WorkerMessage({ msgType: WORKER_MSG_TYPE.GET_SAMPLE_ADDR_START }));
                 xhttp.open("GET", url, false);
                 xhttp.send();
                 this.sampleAdresses[s] = JSON.parse(xhttp.responseText);
-                //console.log(this.sampleAdresses[s][0]);
                 (<any>postMessage)(new WorkerMessage({ msgType: WORKER_MSG_TYPE.GET_SAMPLE_ADDR_END }));
             }
         }
@@ -253,7 +242,6 @@ class RendererEngine {
                 xhttp.open("GET", url, false);
                 xhttp.send();
                 this.sampleNames[k] = JSON.parse(xhttp.responseText);
-                //console.log(this.sampleNames[s][0]);
                 (<any>postMessage)(new WorkerMessage({ msgType: WORKER_MSG_TYPE.GET_SAMPLE_NAME_END }));
             }
         }
@@ -262,7 +250,6 @@ class RendererEngine {
         console.log("Worker: checkNeedForSample");
         let allObjs: DBObjDef[] = this.project.getAllObjects();
         allObjs.forEach(t => {
-            console.log(t.name);
             let colArr: ColumnDef[] = t.columns[COL_DIR_TYPE.IN_PARAM].concat(t.columns[COL_DIR_TYPE.TBLVW_COL]);
             colArr.forEach((cf: ColumnDef) => {
                 if (cf.include) {
@@ -378,8 +365,6 @@ class RendererEngine {
                 let group: GroupDef = this.project.groups.find(g => g.id == t.groupId);
                 let objId: DbObjIdentifier = group.members[0];
                 let dbObj: DBObjDef = this.project.getDBObjInstance(objId.dbObjectId, objId.instance);
-                console.log("dbObj:");
-                console.log(dbObj);
                 this.totalRowCnt += dbObj.rowcount;
             }
             else {
