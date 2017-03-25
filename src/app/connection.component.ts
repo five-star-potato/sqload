@@ -6,7 +6,6 @@ import { WizardStateService } from "./service/wizard-state";
 import { ConnectionConfig } from "./project-def";
 import { ProjectService, fnIsGroup } from './service/project-service';
 import { WorkerMessage } from './include';
-
 declare var require:(moduleId:string) => any;
 
 @Component({
@@ -50,18 +49,16 @@ declare var require:(moduleId:string) => any;
             </div>
     </form>
     `,
-    styleUrls: [
-        './css/host.css'
-    ],
     styles: [
+        require('../css/host.scss'),
         `
-    .ng-valid[required], .ng-valid.required  {
-      border-left: 5px solid #42A948; /* green */
-    }
-    .ng-invalid:not(form)  {
-      border-left: 5px solid #a94442; /* red */
-    }
-    `
+        .ng-valid[required], .ng-valid.required  {
+        border-left: 5px solid #42A948; /* green */
+        }
+        .ng-invalid:not(form)  {
+        border-left: 5px solid #a94442; /* red */
+        }
+        `
     ]
 })
 export class ConnectionComponent extends BaseComponent implements OnInit, AfterViewInit {

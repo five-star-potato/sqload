@@ -84,22 +84,20 @@ var appConf = require('../app.conf');
 </div>
         
     `,
-    styleUrls: [
-        './css/host.css'
-    ],
     styles: [
+        require('../css/host.scss'),
         `
-            .progress_msg {
-                float:right;
-                /* margin-left: 20px; */
-            }
-            .blink_me {
-                animation: blinker 1s linear infinite;
-            }
+        .progress_msg {
+            float:right;
+            /* margin-left: 20px; */
+        }
+        .blink_me {
+            animation: blinker 1s linear infinite;
+        }
 
-            @keyframes blinker {  
-                50% { opacity: 0; }
-            }        
+        @keyframes blinker {  
+            50% { opacity: 0; }
+        }        
         `
     ]
 })

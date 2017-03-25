@@ -97,10 +97,8 @@ declare var require: (moduleId: string) => any;
   </div>
 </div>
     `,
-    styleUrls: [
-        './css/host.css'
-    ],
     styles: [
+        require('../css/host.scss'),
         `pre {
             margin:0 !important;
             /* max-height:25px; */

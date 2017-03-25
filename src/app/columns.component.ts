@@ -7,10 +7,13 @@ import * as gen from './generator/generators.component';
 import { WizardStateService } from "./service/wizard-state";
 import { DBObjDef, ColumnDef } from "./project-def";
 import { ProjectService } from "./service/project-service";
+declare var require:(moduleId:string) => any;
 
 @Component({
     templateUrl: "./columns.component.html",
-    styles: [`
+    styles: [
+    require('../css/host.scss'),
+    `
     .table > tbody > tr.active td {
         background-color: wheat;
     }
@@ -21,9 +24,6 @@ import { ProjectService } from "./service/project-service";
         padding: 5px;
     }
     `],
-    styleUrls: [
-        './css/host.css'
-    ]
 })
 export class ColumnsComponent extends BaseComponent implements AfterViewInit {
     @ViewChild('SequenceTemplate') sequenceTemplate: TemplateRef<any>;

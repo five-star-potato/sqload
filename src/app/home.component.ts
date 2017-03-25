@@ -9,6 +9,7 @@ import { ColumnDef, DBObjDef,  ProjectStruct } from "./project-def";
 import { ProjectService } from './service/project-service';
 import { Subscription } from 'rxjs/Subscription';
 import { COL_DIR_TYPE } from './constants';
+declare var require: (moduleId: string) => any;
 
 @Component({
     template: `
@@ -28,9 +29,7 @@ import { COL_DIR_TYPE } from './constants';
             <a (click)="next()" class="btn btn-lg btn-primary">Quick Start</a>
         </div>
     `,
-    styleUrls: [
-        './css/host.css'
-    ]
+    styles: [ require('../css/host.scss') ]
 })
 export class HomeComponent extends BaseComponent implements OnInit {
     constructor(router: Router, ngZone: NgZone, wizardStateService: WizardStateService, projectService: ProjectService) {

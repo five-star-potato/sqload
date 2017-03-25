@@ -1,3 +1,5 @@
+//$primary-color: red;
+
 :host {
     width: 100%;
     height: 100%;
@@ -7,4 +9,6 @@
     justify-content: flex-start; /* align items in Main Axis */
     align-items: stretch; /* align items in Cross Axis */
     align-content: stretch; /* Extra space in Cross Axis */
+
+    //background-color: $primary-color;
 }

@@ -1,4 +1,4 @@
-import { Component, OnInit } from "@angular/core";
+import { Component, OnInit, ViewEncapsulation } from "@angular/core";
 import { Router } from "@angular/router";
 import { WizardStateService } from "./service/wizard-state";
 import { TRON_EVENT } from "./constants"
@@ -6,7 +6,7 @@ import { TRON_EVENT } from "./constants"
 @Component({
     selector: 'my-app',
     template: `
-<div class="container-fluid" style="height:100%; margin: 0 auto">
+<div id="divApp" class="container-fluid" style="height:100%; margin: 0 auto">
     <div class="flexbox-parent">
         <div class="flexbox-item header">
             <div class="row">
@@ -100,7 +100,8 @@ import { TRON_EVENT } from "./constants"
     </div>
 </div>
     `,
-    styleUrls:  [ './css/wizard.css' ]
+    styleUrls:  [ './css/wizard.css'],
+    encapsulation: ViewEncapsulation.None
 })
 export class AppComponent implements OnInit {
     private urlLoading: string = "";

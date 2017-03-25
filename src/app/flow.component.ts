@@ -103,10 +103,8 @@ interface SrcTargetLine {
 </div>
         
     `,
-    styleUrls: [
-        './css/host.css'
-    ],
     styles: [
+        require('../css/host.scss'),
         `
         .object-sup-tag {
             font-size:10px;

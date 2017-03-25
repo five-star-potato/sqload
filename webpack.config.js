@@ -26,12 +26,11 @@ module.exports = {
                 test: /\.css$/,
                 exclude: /node_modules/,
                 loader: "style-loader!css-loader"
-            }
-            /*,
-            { 
-                test: /worker\.js$/,
-                loader: 'worker'
-            }*/
+            },
+            {
+                test: /\.scss$/,
+                loader: 'raw-loader!sass-loader'
+            }            
         ]
     },
     resolve: {
@@ -51,8 +50,10 @@ module.exports = {
             { from: 'src/jquery-3.1.1.js'},
             { from: 'node_modules/bootstrap/dist/js/bootstrap.min.js'},
             */
-            { from: 'node_modules/clipboard/dist/clipboard.min.js'},            
-            { from: 'src/css', to: "css" },
+            { from: 'node_modules/clipboard/dist/clipboard.min.js' },
+            { from: 'src/css/bootstrap-colors.css', to: "css" },
+            { from: 'src/css/bootstrap.min.css', to: "css" },
+            { from: 'src/css/wizard.css', to: "css" },
             { from: 'node_modules/font-awesome/css/font-awesome.css', to: "css" },
             { from: 'src/img', to: "img" },
             /* { from: 'node_modules/bootstrap/dist/fonts', to: "fonts" }, */
