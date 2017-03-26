@@ -135,8 +135,9 @@ class RendererEngine {
         str += fkSql;
         if (obj.isTableOrView())
             str += `INSERT INTO ${obj.name}(${colNames.join()}) VALUES(${variables.join()});`;
-        else if (obj.objType == OBJ_TYPE.SP) {
-            str += `INSERT INTO ${obj.tmpTbl}\n`;
+        else if (obj.objType == OBJ_TYPE.SP) { // tmpTbl may not be set if SP doesn't return results
+            if (obj.tmpTbl)
+                str += `INSERT INTO ${obj.tmpTbl}\n`;
             str += `EXEC ${obj.name} ${variables.join()};`;
         }
         else if (obj.objType == OBJ_TYPE.SQL) {

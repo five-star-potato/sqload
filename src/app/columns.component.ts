@@ -308,7 +308,7 @@ export class ColumnsComponent extends BaseComponent implements AfterViewInit {
                             precision: row['NUMERIC_PRECISION'],
                             scale: row['NUMERIC_SCALE'],
                             include: true,
-                            dirType: row['PARAMETER_MODE'] == "IN" ? COL_DIR_TYPE.IN_PARAM : COL_DIR_TYPE.OUT_PARAM,
+                            dirType: row['PARAMETER_MODE'] == "IN" || row['PARAMETER_MODE'] == "INOUT" ? COL_DIR_TYPE.IN_PARAM : COL_DIR_TYPE.OUT_PARAM,
                             dbObjId: row["object_id"]
                         });
                         let dn:DataGenerator = this.constructCommonPlughInForDataType(cf);
@@ -316,7 +316,7 @@ export class ColumnsComponent extends BaseComponent implements AfterViewInit {
                             cf.plugIn.push(dn);
                         if (cf.plugIn.length == 0)    // we don't know how to generate this field
                             cf.include = false;
-                        if (row['PARAMETER_MODE'] == "IN")
+                        if (row['PARAMETER_MODE'] == "IN" || row['PARAMETER_MODE'] == "INOUT")
                             this.projectService.project.getDBObj(procId).columns[COL_DIR_TYPE.IN_PARAM].push(cf);
                         else
                             this.projectService.project.getDBObj(procId).columns[COL_DIR_TYPE.OUT_PARAM].push(cf);

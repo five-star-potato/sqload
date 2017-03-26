@@ -1,6 +1,8 @@
 var tedious = require('tedious');
 
 var verifyConnection = function(connection) {
+    console.log("Connection:!");
+    console.log(connection);
     var Connection = tedious.Connection;
     var config = {
         userName: connection.userName,
