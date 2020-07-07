@@ -15,7 +15,7 @@
     "bootstrap": "^3.3.7",
     "copy-webpack-plugin": "^4.0.1",
     "css-loader": "^0.26.0",
-    "electron": "^1.4.7",
+    "electron": "^9.1.0",
     "electron-packager": "^8.3.0",
     "electron-windows-installer": "^1.4.4",
     "file-loader": "^0.9.0",
